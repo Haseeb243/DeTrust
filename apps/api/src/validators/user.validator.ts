@@ -1,0 +1,114 @@
+import { z } from 'zod';
+
+// =============================================================================
+// USER PROFILE
+// =============================================================================
+
+export const updateUserSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  avatarUrl: z.string().url().optional().nullable(),
+});
+
+export const setRoleSchema = z.object({
+  role: z.enum(['CLIENT', 'FREELANCER'], {
+    errorMap: () => ({ message: 'Role must be CLIENT or FREELANCER' }),
+  }),
+});
+
+// =============================================================================
+// FREELANCER PROFILE
+// =============================================================================
+
+export const updateFreelancerProfileSchema = z.object({
+  title: z.string().min(5).max(100).optional(),
+  bio: z.string().min(50).max(2000).optional(),
+  hourlyRate: z.number().min(1).max(1000).optional(),
+  availability: z.enum(['Full-time', 'Part-time', 'Not Available']).optional(),
+  location: z.string().max(100).optional(),
+  timezone: z.string().max(50).optional(),
+  languages: z.array(z.string()).max(10).optional(),
+  portfolioLinks: z.array(z.string().url()).max(10).optional(),
+  resumeUrl: z.string().url().optional().nullable(),
+  linkedinUrl: z.string().url().optional().nullable(),
+  githubUrl: z.string().url().optional().nullable(),
+  websiteUrl: z.string().url().optional().nullable(),
+});
+
+export const addSkillSchema = z.object({
+  skillId: z.string().min(1),
+  yearsExperience: z.number().min(0).max(50).optional(),
+  proficiencyLevel: z.number().min(1).max(5).optional(),
+});
+
+export const updateSkillSchema = z.object({
+  yearsExperience: z.number().min(0).max(50).optional(),
+  proficiencyLevel: z.number().min(1).max(5).optional(),
+});
+
+export const addCertificationSchema = z.object({
+  name: z.string().min(2).max(200),
+  issuer: z.string().min(2).max(200),
+  issueDate: z.string().datetime().optional(),
+  expiryDate: z.string().datetime().optional(),
+  credentialId: z.string().max(100).optional(),
+  credentialUrl: z.string().url().optional(),
+});
+
+export const addEducationSchema = z.object({
+  institution: z.string().min(2).max(200),
+  degree: z.string().min(2).max(200),
+  fieldOfStudy: z.string().max(200).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  description: z.string().max(1000).optional(),
+});
+
+export const addExperienceSchema = z.object({
+  title: z.string().min(2).max(200),
+  company: z.string().min(2).max(200),
+  location: z.string().max(100).optional(),
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime().optional(),
+  isCurrent: z.boolean().optional(),
+  description: z.string().max(2000).optional(),
+});
+
+// =============================================================================
+// CLIENT PROFILE
+// =============================================================================
+
+export const updateClientProfileSchema = z.object({
+  companyName: z.string().min(2).max(200).optional(),
+  companySize: z.enum(['1-10', '11-50', '51-200', '201-500', '500+']).optional(),
+  industry: z.string().max(100).optional(),
+  companyWebsite: z.string().url().optional().nullable(),
+  description: z.string().max(2000).optional(),
+  location: z.string().max(100).optional(),
+});
+
+// =============================================================================
+// QUERY PARAMS
+// =============================================================================
+
+export const getUsersQuerySchema = z.object({
+  role: z.enum(['CLIENT', 'FREELANCER']).optional(),
+  search: z.string().optional(),
+  skills: z.string().optional(), // Comma-separated skill IDs
+  minTrustScore: z.coerce.number().min(0).max(100).optional(),
+  minRating: z.coerce.number().min(0).max(5).optional(),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  sort: z.enum(['trustScore', 'avgRating', 'completedJobs', 'createdAt']).default('createdAt'),
+  order: z.enum(['asc', 'desc']).default('desc'),
+});
+
+// =============================================================================
+// TYPE EXPORTS
+// =============================================================================
+
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export type UpdateFreelancerProfileInput = z.infer<typeof updateFreelancerProfileSchema>;
+export type UpdateClientProfileInput = z.infer<typeof updateClientProfileSchema>;
+export type AddSkillInput = z.infer<typeof addSkillSchema>;
+export type GetUsersQuery = z.infer<typeof getUsersQuerySchema>;
+export type AddEducationInput = z.infer<typeof addEducationSchema>;
