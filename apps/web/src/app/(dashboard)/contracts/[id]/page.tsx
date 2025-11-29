@@ -103,7 +103,9 @@ export default function ContractDetailPage() {
 
       const response = await contractApi.submitMilestone(contractId, milestoneId, {
         deliverableUrl,
-        deliverableHash: deliverableUrl, // In real app, would compute hash
+        // TODO: In production, compute a proper hash of the deliverable content
+        // For now, using a simple hash of the URL as a placeholder
+        deliverableHash: btoa(deliverableUrl).slice(0, 32),
       });
       if (response.success) {
         toast.success('Milestone submitted for review');

@@ -70,7 +70,7 @@ export default function JobProposalsPage() {
 
   const [acceptingProposal, setAcceptingProposal] = useState<string | null>(null);
   const [milestones, setMilestones] = useState([
-    { title: 'Initial Milestone', description: '', amount: 0, dueDate: '' },
+    { title: 'Project Completion', description: '', amount: 0, dueDate: '' },
   ]);
 
   const fetchJob = useCallback(async () => {

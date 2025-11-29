@@ -62,11 +62,7 @@ export default function TalentPage() {
   const fetchFreelancers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await userApi.searchFreelancers({
-        ...filters,
-        minTrustScore: filters.minTrustScore,
-        minRating: filters.minRating,
-      });
+      const response = await userApi.searchFreelancers(filters);
 
       if (response.success && response.data) {
         setFreelancers(response.data.items);
