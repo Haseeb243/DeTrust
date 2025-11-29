@@ -321,13 +321,15 @@ export class ProposalService {
       where: { userId: clientId },
     });
 
-    if (clientProfile) {
-      const newHireRate = ((clientProfile.jobsPosted > 0 ? clientProfile.hireRate.toNumber() : 0) * 
-        (clientProfile.jobsPosted - 1) + 100) / clientProfile.jobsPosted;
+    if (clientProfile && clientProfile.jobsPosted > 0) {
+      // Calculate new hire rate: (previousRate * (jobsPosted - 1) + 100) / jobsPosted
+      // This accounts for one more successful hire out of total jobs posted
+      const previousHires = clientProfile.hireRate.toNumber() * (clientProfile.jobsPosted - 1) / 100;
+      const newHireRate = ((previousHires + 1) / clientProfile.jobsPosted) * 100;
       
       await prisma.clientProfile.update({
         where: { userId: clientId },
-        data: { hireRate: newHireRate },
+        data: { hireRate: Math.min(newHireRate, 100) },
       });
     }
 

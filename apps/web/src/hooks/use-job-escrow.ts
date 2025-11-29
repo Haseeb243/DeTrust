@@ -89,10 +89,12 @@ const JOB_ESCROW_ABI = [
 ] as const;
 
 // Contract addresses by chain
+// WARNING: Production addresses (137, 80002) are placeholders - must be updated after deployment
+// Using these placeholder addresses will cause transactions to fail silently
 const CONTRACT_ADDRESSES: Record<number, Address> = {
-  31337: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0', // localhost
-  137: '0x0000000000000000000000000000000000000000', // polygon mainnet - placeholder
-  80002: '0x0000000000000000000000000000000000000000', // polygon amoy - placeholder
+  31337: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0', // localhost (from deployments/localhost.json)
+  137: '0x0000000000000000000000000000000000000000', // polygon mainnet - UPDATE AFTER DEPLOYMENT
+  80002: '0x0000000000000000000000000000000000000000', // polygon amoy - UPDATE AFTER DEPLOYMENT
 };
 
 export enum JobStatus {

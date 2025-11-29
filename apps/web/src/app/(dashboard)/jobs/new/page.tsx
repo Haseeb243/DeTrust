@@ -130,12 +130,19 @@ export default function CreateJobPage() {
       toast.error('Please enter a valid budget');
       return;
     }
-    if (
-      formData.type === 'HOURLY' &&
-      (!formData.hourlyRateMin || !formData.hourlyRateMax || formData.hourlyRateMin <= 0)
-    ) {
-      toast.error('Please enter valid hourly rates');
-      return;
+    if (formData.type === 'HOURLY') {
+      if (!formData.hourlyRateMin || formData.hourlyRateMin <= 0) {
+        toast.error('Please enter a valid minimum hourly rate');
+        return;
+      }
+      if (!formData.hourlyRateMax || formData.hourlyRateMax <= 0) {
+        toast.error('Please enter a valid maximum hourly rate');
+        return;
+      }
+      if (formData.hourlyRateMax < formData.hourlyRateMin) {
+        toast.error('Maximum rate must be greater than or equal to minimum rate');
+        return;
+      }
     }
 
     setLoading(true);
