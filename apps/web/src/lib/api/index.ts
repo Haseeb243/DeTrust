@@ -11,4 +11,4 @@ export type { Job, JobStatus, JobType, JobClient, JobSkill, CreateJobInput, Upda
 export { proposalApi } from './proposal';
 export type { Proposal, ProposalStatus, ProposalMilestone, ProposalFreelancer, CreateProposalInput, UpdateProposalInput, AcceptProposalInput, GetProposalsParams, AcceptProposalResult } from './proposal';
 export { contractApi } from './contract';
-export type { Contract, ContractMilestone, ContractStatus, MilestoneStatus, GetContractsParams } from './contract';
+export type { Contract, ContractMilestone, ContractStatus, MilestoneStatus, GetContractsParams, Payment, PaymentStats } from './contract';

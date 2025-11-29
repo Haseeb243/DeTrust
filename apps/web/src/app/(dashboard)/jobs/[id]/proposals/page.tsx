@@ -274,7 +274,7 @@ export default function JobProposalsPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Star className="h-4 w-4 text-amber-500" />
-                          {proposal.freelancer?.freelancerProfile?.avgRating?.toFixed(1) || '0.0'}
+                          {Number(proposal.freelancer?.freelancerProfile?.avgRating || 0).toFixed(1)}
                         </span>
                         <span className="flex items-center gap-1">
                           <Briefcase className="h-4 w-4" />

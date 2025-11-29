@@ -81,6 +81,37 @@ export interface GetContractsParams {
   order?: 'asc' | 'desc';
 }
 
+export interface Payment {
+  id: string;
+  milestoneId: string;
+  milestoneTitle: string;
+  contractId: string;
+  contractTitle: string;
+  amount: number;
+  type: 'incoming' | 'outgoing';
+  status: 'completed' | 'pending';
+  paidAt?: string;
+  txHash?: string;
+  from?: {
+    id: string;
+    name?: string;
+    avatarUrl?: string;
+  };
+  to?: {
+    id: string;
+    name?: string;
+    avatarUrl?: string;
+  };
+}
+
+export interface PaymentStats {
+  totalEarnings?: number;
+  pendingEarnings?: number;
+  totalSpent?: number;
+  inEscrow?: number;
+  completedPayments: number;
+}
+
 interface PaginatedResponse<T> {
   items: T[];
   total: number;
@@ -127,8 +158,8 @@ export const contractApi = {
     api.post<ContractMilestone>(`/contracts/${contractId}/milestones/${milestoneId}/revision`, { reason }),
 
   // Fund escrow (client)
-  fundEscrow: (contractId: string, txHash: string) =>
-    api.post<Contract>(`/contracts/${contractId}/fund`, { txHash }),
+  fundEscrow: (contractId: string, txHash: string, escrowAddress?: string, blockchainJobId?: string) =>
+    api.post<Contract>(`/contracts/${contractId}/fund`, { txHash, escrowAddress, blockchainJobId }),
 
   // Complete contract
   completeContract: (contractId: string) =>
@@ -137,6 +168,24 @@ export const contractApi = {
   // Raise dispute
   raiseDispute: (contractId: string, reason: string) =>
     api.post<Contract>(`/contracts/${contractId}/dispute`, { reason }),
+
+  // Get payment history
+  getPaymentHistory: (params?: { page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+    }
+    const query = searchParams.toString();
+    return api.get<PaginatedResponse<Payment>>(`/contracts/payments${query ? `?${query}` : ''}`);
+  },
+
+  // Get payment stats
+  getPaymentStats: () =>
+    api.get<PaymentStats>(`/contracts/payments/stats`),
 };
 
 export default contractApi;

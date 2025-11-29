@@ -306,7 +306,7 @@ export default function TalentPage() {
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1 text-sm font-semibold text-slate-900">
                           <Star className="h-4 w-4 text-amber-500" />
-                          {freelancer.freelancerProfile?.avgRating?.toFixed(1) || '0.0'}
+                          {Number(freelancer.freelancerProfile?.avgRating || 0).toFixed(1)}
                         </div>
                         <p className="text-xs text-slate-500">Rating</p>
                       </div>

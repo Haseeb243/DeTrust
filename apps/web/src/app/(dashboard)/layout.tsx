@@ -102,9 +102,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         {/* Logo */}
         <div className="flex h-20 items-center border-b border-slate-100 px-4">
           <Link href="/dashboard" className="flex items-center gap-3 text-2xl font-semibold tracking-tight text-slate-900">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 shadow-inner">
-              Δ
-            </span>
+            <Image
+              src="/images/logo.png"
+              alt="DeTrust"
+              width={48}
+              height={48}
+              className="h-12 w-12 rounded-2xl object-contain"
+            />
             <span className={cn('transition-opacity duration-300', isSidebarCollapsed ? 'opacity-0' : 'opacity-100')}>
               DeTrust
             </span>

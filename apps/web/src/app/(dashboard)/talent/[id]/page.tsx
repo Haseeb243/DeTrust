@@ -158,7 +158,7 @@ export default function FreelancerProfilePage() {
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 text-2xl font-semibold text-slate-900">
                     <Star className="h-6 w-6 text-amber-500" />
-                    {profile?.avgRating?.toFixed(1) || '0.0'}
+                    {Number(profile?.avgRating || 0).toFixed(1)}
                   </div>
                   <p className="text-sm text-slate-500">Rating ({profile?.totalReviews || 0} reviews)</p>
                 </div>
