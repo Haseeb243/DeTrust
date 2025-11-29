@@ -38,6 +38,7 @@ export interface FreelancerProfile {
 }
 
 export interface FreelancerSkill {
+  id?: string;
   skillId: string;
   skill: {
     id: string;
@@ -47,6 +48,7 @@ export interface FreelancerSkill {
   yearsExperience?: number;
   proficiencyLevel?: number;
   verificationStatus: string;
+  verificationScore?: number | null;
 }
 
 export interface EducationEntry {

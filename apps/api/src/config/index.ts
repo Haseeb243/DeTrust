@@ -37,6 +37,7 @@ const envSchema = z.object({
   LIGHTHOUSE_UPLOAD_URL: z.string().default('https://upload.lighthouse.storage/api/v0'),
   LIGHTHOUSE_GATEWAY_URL: z.string().default('https://gateway.lighthouse.storage'),
   FILE_ENCRYPTION_SECRET: z.string().min(32),
+  FILE_ENCRYPTION_SECRET_FALLBACKS: z.string().optional(),
   
   // Email
   SMTP_HOST: z.string().optional(),
@@ -123,6 +124,9 @@ export const config = {
     },
     encryption: {
       masterKey: env.FILE_ENCRYPTION_SECRET,
+      fallbackKeys: env.FILE_ENCRYPTION_SECRET_FALLBACKS
+        ? env.FILE_ENCRYPTION_SECRET_FALLBACKS.split(',').map((key) => key.trim()).filter(Boolean)
+        : [],
     },
   },
   

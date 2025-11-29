@@ -23,6 +23,7 @@ import {
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
 import { contractApi, uploadApi, type Contract, type ContractStatus, type MilestoneStatus } from '@/lib/api';
+import { openSecureFileInNewTab } from '@/lib/secure-files';
 import { useAuthStore } from '@/store';
 import { useJobEscrow } from '@/hooks/use-job-escrow';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
@@ -56,7 +57,8 @@ const formatDate = (date: string) => {
 export default function ContractDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
   const contractId = params.id as string;
   const { approveMilestone: approveOnChain, submitMilestone: submitOnChain, loading: escrowLoading } = useJobEscrow();
 
@@ -68,6 +70,7 @@ export default function ContractDetailPage() {
   const [deliverableFile, setDeliverableFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [submitMode, setSubmitMode] = useState<'url' | 'file'>('url');
+  const [openingDeliverableId, setOpeningDeliverableId] = useState<string | null>(null);
 
   const isClient = user?.role === 'CLIENT';
   const isFreelancer = user?.role === 'FREELANCER';
@@ -99,6 +102,35 @@ export default function ContractDetailPage() {
   useEffect(() => {
     fetchContract();
   }, [fetchContract]);
+
+  const handleViewDeliverable = useCallback(
+    async (milestoneId: string, url: string) => {
+      if (!url) {
+        return;
+      }
+
+      const isSecureUpload = /\/api\/uploads\//.test(url);
+      if (!isSecureUpload) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      if (!token) {
+        toast.error('Please sign in again to view this deliverable.');
+        return;
+      }
+
+      setOpeningDeliverableId(milestoneId);
+      try {
+        await openSecureFileInNewTab(url, { token });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to open deliverable');
+      } finally {
+        setOpeningDeliverableId(null);
+      }
+    },
+    [token]
+  );
 
   const handleSubmitMilestone = async (milestoneId: string, index: number) => {
     let finalDeliverableUrl = deliverableUrl;
@@ -345,18 +377,42 @@ export default function ContractDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {contract.milestones?.map((milestone, index) => (
-                <div
-                  key={milestone.id}
-                  className={cn(
-                    'rounded-xl border p-4',
-                    milestone.status === 'PAID' || milestone.status === 'APPROVED'
-                      ? 'border-emerald-200 bg-emerald-50'
-                      : milestone.status === 'SUBMITTED'
-                      ? 'border-purple-200 bg-purple-50'
-                      : 'border-slate-200 bg-white'
-                  )}
-                >
+              {contract.milestones?.map((milestone, index) => {
+                const deliverableUrl = milestone.deliverableUrl?.trim();
+                const isSecureDeliverable = !!deliverableUrl && /\/api\/uploads\//.test(deliverableUrl);
+                const normalizedExternalUrl =
+                  deliverableUrl && !isSecureDeliverable
+                    ? /^https?:\/\//i.test(deliverableUrl)
+                      ? deliverableUrl
+                      : `https://${deliverableUrl}`
+                    : undefined;
+                let displayUrl = deliverableUrl ?? '';
+
+                if (deliverableUrl) {
+                  try {
+                    const parsed = new URL(normalizedExternalUrl ?? deliverableUrl);
+                    displayUrl = `${parsed.hostname}${parsed.pathname === '/' ? '' : parsed.pathname}`;
+                  } catch {
+                    displayUrl = deliverableUrl.replace(/^https?:\/\//, '');
+                  }
+
+                  if (displayUrl.length > 48) {
+                    displayUrl = `${displayUrl.slice(0, 45)}…`;
+                  }
+                }
+
+                return (
+                  <div
+                    key={milestone.id}
+                    className={cn(
+                      'rounded-xl border p-4',
+                      milestone.status === 'PAID' || milestone.status === 'APPROVED'
+                        ? 'border-emerald-200 bg-emerald-50'
+                        : milestone.status === 'SUBMITTED'
+                        ? 'border-purple-200 bg-purple-50'
+                        : 'border-slate-200 bg-white'
+                    )}
+                  >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2">
@@ -376,16 +432,39 @@ export default function ContractDetailPage() {
                           Due: {formatDate(milestone.dueDate)}
                         </p>
                       )}
-                      {milestone.deliverableUrl && (
-                        <a
-                          href={milestone.deliverableUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline"
-                        >
-                          <FileUp className="h-4 w-4" />
-                          View Deliverable
-                        </a>
+                      {deliverableUrl && (
+                        isSecureDeliverable ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={openingDeliverableId === milestone.id}
+                            onClick={() => handleViewDeliverable(milestone.id, deliverableUrl)}
+                            className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-white/80 px-5 text-emerald-700 shadow-sm hover:from-emerald-100 hover:to-white"
+                          >
+                            {openingDeliverableId === milestone.id ? (
+                              <>
+                                <Spinner size="sm" className="border-emerald-500" />
+                                Opening…
+                              </>
+                            ) : (
+                              <>
+                                <FileUp className="h-4 w-4" />
+                                View Deliverable
+                              </>
+                            )}
+                          </Button>
+                        ) : (
+                          <a
+                            href={normalizedExternalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-5 text-blue-600 shadow-sm transition hover:bg-blue-100"
+                          >
+                            <Link2 className="h-4 w-4" />
+                            <span className="truncate text-sm font-medium">{displayUrl}</span>
+                          </a>
+                        )
                       )}
                     </div>
                     <div className="text-right">
@@ -530,8 +609,9 @@ export default function ContractDetailPage() {
                       Completed {milestone.approvedAt && `on ${formatDate(milestone.approvedAt)}`}
                     </div>
                   )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>

@@ -501,6 +501,7 @@ model Milestone {
   
   // Deliverables
   deliverableHash   String?         // IPFS hash of submitted work
+  deliverableUrl    String?         // Direct URL or secure file reference for downloads
   deliverableNote   String?         @db.Text
   
   // Client Feedback

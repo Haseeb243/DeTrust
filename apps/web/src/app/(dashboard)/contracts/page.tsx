@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { toast } from 'sonner';
 import {
   Briefcase,
@@ -17,6 +16,7 @@ import {
   XCircle,
 } from 'lucide-react';
 
+import { SecureAvatar } from '@/components/secure-avatar';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
 import { contractApi, type Contract, type ContractStatus, type GetContractsParams } from '@/lib/api';
@@ -193,21 +193,13 @@ export default function ContractsPage() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       {/* Contract Info */}
                       <div className="flex items-start gap-4">
-                        <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-emerald-100 bg-slate-100">
-                          {otherParty.avatar ? (
-                            <Image
-                              src={otherParty.avatar}
-                              alt={otherParty.name}
-                              width={56}
-                              height={56}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-xl font-semibold text-slate-500">
-                              {otherParty.name[0]?.toUpperCase()}
-                            </div>
-                          )}
-                        </div>
+                        <SecureAvatar
+                          src={otherParty.avatar}
+                          alt={otherParty.name}
+                          size={56}
+                          fallbackInitial={otherParty.name[0]?.toUpperCase() ?? 'U'}
+                          containerClassName="h-14 w-14 overflow-hidden rounded-full border-2 border-emerald-100 bg-slate-100"
+                        />
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="text-lg font-semibold text-slate-900">

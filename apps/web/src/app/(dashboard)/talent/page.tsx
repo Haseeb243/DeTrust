@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { toast } from 'sonner';
 import {
   Briefcase,
@@ -18,6 +17,7 @@ import {
   Users,
 } from 'lucide-react';
 
+import { SecureAvatar } from '@/components/secure-avatar';
 import { Badge, Button, Card, CardContent, Input } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
 import { userApi, skillApi, type User, type SkillSummary } from '@/lib/api';
@@ -263,21 +263,13 @@ export default function TalentPage() {
                 <Card className="h-full border-slate-200 bg-white shadow-md transition-all hover:border-emerald-200 hover:shadow-lg">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-emerald-100 bg-slate-100">
-                        {freelancer.avatarUrl ? (
-                          <Image
-                            src={freelancer.avatarUrl}
-                            alt={freelancer.name || 'Freelancer'}
-                            width={64}
-                            height={64}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-slate-500">
-                            {freelancer.name?.[0]?.toUpperCase() || 'F'}
-                          </div>
-                        )}
-                      </div>
+                      <SecureAvatar
+                        src={freelancer.avatarUrl}
+                        alt={freelancer.name || 'Freelancer'}
+                        size={64}
+                        fallbackInitial={freelancer.name?.[0] || 'F'}
+                        containerClassName="h-16 w-16 overflow-hidden rounded-full border-2 border-emerald-100 bg-slate-100"
+                      />
                       <div className="flex-1">
                         <h3 className="font-semibold text-slate-900">
                           {freelancer.name || 'Anonymous'}

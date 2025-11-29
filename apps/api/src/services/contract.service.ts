@@ -218,6 +218,7 @@ export class ContractService {
         status: 'SUBMITTED',
         submittedAt: new Date(),
         deliverableHash: data.deliverableHash || data.deliverableUrl,
+        deliverableUrl: data.deliverableUrl,
         deliverableNote: data.deliverableNote,
       },
     });

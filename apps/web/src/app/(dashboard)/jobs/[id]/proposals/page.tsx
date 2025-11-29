@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -24,6 +23,7 @@ import {
   XCircle,
 } from 'lucide-react';
 
+import { SecureAvatar } from '@/components/secure-avatar';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
 import { jobApi, proposalApi, type Job, type Proposal, type GetProposalsParams } from '@/lib/api';
@@ -240,21 +240,13 @@ export default function JobProposalsPage() {
                 <div className="flex flex-wrap items-start gap-6">
                   {/* Freelancer Info */}
                   <div className="flex items-start gap-4">
-                    <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-emerald-100 bg-slate-100">
-                      {proposal.freelancer?.avatarUrl ? (
-                        <Image
-                          src={proposal.freelancer.avatarUrl}
-                          alt={proposal.freelancer.name || 'Freelancer'}
-                          width={56}
-                          height={56}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xl font-semibold text-slate-500">
-                          {proposal.freelancer?.name?.[0]?.toUpperCase() || 'F'}
-                        </div>
-                      )}
-                    </div>
+                    <SecureAvatar
+                      src={proposal.freelancer?.avatarUrl}
+                      alt={proposal.freelancer?.name || 'Freelancer'}
+                      size={56}
+                      fallbackInitial={proposal.freelancer?.name?.[0] || 'F'}
+                      containerClassName="h-14 w-14 overflow-hidden rounded-full border-2 border-emerald-100 bg-slate-100"
+                    />
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="text-lg font-semibold text-slate-900">

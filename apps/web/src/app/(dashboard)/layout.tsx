@@ -30,6 +30,7 @@ import {
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
+import { BrandMark } from '@/components/layout/brand-mark';
 
 const navigation = {
   FREELANCER: [
@@ -101,18 +102,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       >
         {/* Logo */}
         <div className="flex h-20 items-center border-b border-slate-100 px-4">
-          <Link href="/dashboard" className="flex items-center gap-3 text-2xl font-semibold tracking-tight text-slate-900">
-            <Image
-              src="/images/logo.png"
-              alt="DeTrust"
-              width={48}
-              height={48}
-              className="h-12 w-12 rounded-2xl object-contain"
-            />
-            <span className={cn('transition-opacity duration-300', isSidebarCollapsed ? 'opacity-0' : 'opacity-100')}>
-              DeTrust
-            </span>
-          </Link>
+          <BrandMark
+            href="/dashboard"
+            showWordmark={!isSidebarCollapsed}
+            className={cn(
+              'flex w-full items-center justify-start text-2xl font-semibold tracking-tight text-slate-900',
+              isSidebarCollapsed && 'justify-center'
+            )}
+            contentClassName={cn('gap-3', isSidebarCollapsed && 'gap-0')}
+          />
         </div>
 
         {/* Navigation */}
@@ -193,9 +191,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {/* Search */}
           <div className="flex items-center gap-4">
             <button
-              onClick={toggleSidebar}
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleSidebar();
+              }}
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-emerald-200 hover:text-emerald-600"
               aria-label="Toggle sidebar"
+              aria-pressed={isSidebarCollapsed}
             >
               {isSidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
             </button>
