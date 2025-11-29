@@ -99,10 +99,10 @@ export class ContractService {
     ]);
 
     // Calculate paidAmount for each contract
-    const contractsWithPaidAmount = contracts.map(contract => {
+    const contractsWithPaidAmount = contracts.map((contract: { milestones: Array<{ status: string; amount: unknown }> }) => {
       const paidAmount = contract.milestones
-        .filter(m => m.status === 'PAID' || m.status === 'APPROVED')
-        .reduce((sum, m) => sum + Number(m.amount), 0);
+        .filter((m: { status: string }) => m.status === 'PAID' || m.status === 'APPROVED')
+        .reduce((sum: number, m: { amount: unknown }) => sum + Number(m.amount), 0);
       return { ...contract, paidAmount };
     });
 
@@ -177,8 +177,8 @@ export class ContractService {
 
     // Calculate paidAmount
     const paidAmount = contract.milestones
-      .filter(m => m.status === 'PAID' || m.status === 'APPROVED')
-      .reduce((sum, m) => sum + Number(m.amount), 0);
+      .filter((m: { status: string }) => m.status === 'PAID' || m.status === 'APPROVED')
+      .reduce((sum: number, m: { amount: unknown }) => sum + Number(m.amount), 0);
 
     return { ...contract, paidAmount };
   }
@@ -204,7 +204,7 @@ export class ContractService {
       throw new ForbiddenError('Contract is not active');
     }
 
-    const milestone = contract.milestones.find(m => m.id === milestoneId);
+    const milestone = contract.milestones.find((m: { id: string }) => m.id === milestoneId);
     if (!milestone) {
       throw new NotFoundError('Milestone not found');
     }
@@ -262,7 +262,7 @@ export class ContractService {
       throw new ForbiddenError('Only the client can approve milestones');
     }
 
-    const milestone = contract.milestones.find(m => m.id === milestoneId);
+    const milestone = contract.milestones.find((m: { id: string }) => m.id === milestoneId);
     if (!milestone) {
       throw new NotFoundError('Milestone not found');
     }
@@ -284,7 +284,7 @@ export class ContractService {
 
       // Check if all milestones are paid
       const allMilestonesPaid = contract.milestones.every(
-        m => m.id === milestoneId || m.status === 'PAID'
+        (m: { id: string; status: string }) => m.id === milestoneId || m.status === 'PAID'
       );
 
       if (allMilestonesPaid) {
@@ -344,7 +344,7 @@ export class ContractService {
       throw new ForbiddenError('Only the client can request revisions');
     }
 
-    const milestone = contract.milestones.find(m => m.id === milestoneId);
+    const milestone = contract.milestones.find((m: { id: string }) => m.id === milestoneId);
     if (!milestone) {
       throw new NotFoundError('Milestone not found');
     }
@@ -441,9 +441,9 @@ export class ContractService {
     }
 
     // Check all milestones are paid
-    const allPaid = contract.milestones.every(m => m.status === 'PAID');
+    const allPaid = contract.milestones.every((m: { status: string }) => m.status === 'PAID');
     if (!allPaid) {
-      throw new BadRequestError('All milestones must be paid before completing the contract');
+      throw new ValidationError('All milestones must be paid before completing the contract');
     }
 
     const updatedContract = await prisma.contract.update({
