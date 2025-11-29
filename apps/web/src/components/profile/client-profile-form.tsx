@@ -10,6 +10,15 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } fro
 import { userApi, type ClientProfile } from '@/lib/api';
 
 const companySizeOptions = ['1-10', '11-50', '51-200', '201-500', '500+'] as const;
+type CompanySizeOption = (typeof companySizeOptions)[number];
+
+const isCompanySizeOption = (value: string): value is CompanySizeOption =>
+  (companySizeOptions as readonly string[]).includes(value as CompanySizeOption);
+
+const normalizeCompanySize = (value?: string | null): '' | CompanySizeOption => {
+  if (!value) return '';
+  return isCompanySizeOption(value) ? value : '';
+};
 
 const clientProfileSchema = z.object({
   companyName: z.string().min(2, 'Company name is required'),
@@ -39,7 +48,7 @@ export function ClientProfileForm({ profile, onUpdated }: ClientProfileFormProps
     resolver: zodResolver(clientProfileSchema) as Resolver<ClientProfileFormValues>,
     defaultValues: {
       companyName: profile?.companyName || '',
-      companySize: profile?.companySize || '',
+      companySize: normalizeCompanySize(profile?.companySize),
       industry: profile?.industry || '',
       companyWebsite: profile?.companyWebsite || '',
       description: profile?.description || '',
@@ -50,7 +59,7 @@ export function ClientProfileForm({ profile, onUpdated }: ClientProfileFormProps
   useEffect(() => {
     reset({
       companyName: profile?.companyName || '',
-      companySize: profile?.companySize || '',
+      companySize: normalizeCompanySize(profile?.companySize),
       industry: profile?.industry || '',
       companyWebsite: profile?.companyWebsite || '',
       description: profile?.description || '',

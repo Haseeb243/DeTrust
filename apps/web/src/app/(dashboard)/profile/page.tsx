@@ -442,7 +442,7 @@ export default function ProfileViewPage() {
                       <div className="mt-4 flex flex-wrap gap-2">
                         {topSkills.map((skill) => (
                           <div
-                            key={skill.id}
+                            key={skill.id ?? skill.skillId}
                             className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700"
                           >
                             <span>{skill.skill?.name ?? 'Unnamed skill'}</span>

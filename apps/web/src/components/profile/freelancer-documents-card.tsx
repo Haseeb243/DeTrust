@@ -85,8 +85,7 @@ export function FreelancerDocumentsCard({ profile, onResumeUpdated, onCertificat
     }
   };
 
-  const openCertification = async (credentialUrl?: string, certificationId?: string) => {
-    if (!credentialUrl) return;
+  const openCertification = async (credentialUrl: string, certificationId?: string) => {
     if (!requireToken()) return;
 
     try {
@@ -348,7 +347,10 @@ export function FreelancerDocumentsCard({ profile, onResumeUpdated, onCertificat
 
           {certifications.length > 0 && (
             <div className="mt-6 space-y-3">
-              {certifications.map((cert) => (
+              {certifications.map((cert) => {
+                const credentialUrl = cert.credentialUrl ?? null;
+                const isPreviewing = credentialUrl ? certPreviewId === cert.id || certPreviewId === credentialUrl : false;
+                return (
                 <div key={cert.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-base font-semibold text-slate-900">{cert.name}</p>
@@ -364,17 +366,17 @@ export function FreelancerDocumentsCard({ profile, onResumeUpdated, onCertificat
                     {cert.expiryDate && <span>Expires {new Date(cert.expiryDate).toLocaleDateString()}</span>}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {cert.credentialUrl && (
+                    {credentialUrl ? (
                       <Button
                         type="button"
                         variant="outline"
                         className="border-emerald-200 bg-white text-emerald-700"
-                        disabled={certPreviewId === cert.id || certPreviewId === cert.credentialUrl}
-                        onClick={() => openCertification(cert.credentialUrl, cert.id)}
+                        disabled={isPreviewing}
+                        onClick={() => openCertification(credentialUrl, cert.id)}
                       >
-                        {certPreviewId === cert.id || certPreviewId === cert.credentialUrl ? 'Loading…' : 'View document'}
+                        {isPreviewing ? 'Loading…' : 'View document'}
                       </Button>
-                    )}
+                    ) : null}
                     <Button
                       type="button"
                       variant="ghost"
@@ -392,7 +394,8 @@ export function FreelancerDocumentsCard({ profile, onResumeUpdated, onCertificat
                     </Button>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
         </section>

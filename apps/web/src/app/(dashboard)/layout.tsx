@@ -5,42 +5,63 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Menu, PanelLeftClose } from 'lucide-react';
+import {
+  Bell,
+  Briefcase,
+  CreditCard,
+  Crown,
+  FileText,
+  Home,
+  LogOut,
+  MessageSquare,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PlusCircle,
+  Search,
+  Settings,
+  Shield,
+  Star,
+  User,
+  Users,
+  Wallet,
+  Zap,
+} from 'lucide-react';
 
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
+import { BrandMark } from '@/components/layout/brand-mark';
 
 const navigation = {
   FREELANCER: [
-    { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
-    { name: 'Find Jobs', href: '/jobs', icon: '🔍' },
-    { name: 'My Proposals', href: '/proposals', icon: '📝' },
-    { name: 'Active Contracts', href: '/contracts', icon: '📋' },
-    { name: 'Messages', href: '/messages', icon: '💬' },
-    { name: 'Reviews', href: '/reviews', icon: '⭐' },
-    { name: 'Earnings', href: '/earnings', icon: '💰' },
-    { name: 'Profile', href: '/profile', icon: '👤' },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Find Jobs', href: '/jobs', icon: Search },
+    { name: 'My Proposals', href: '/proposals', icon: FileText },
+    { name: 'Active Contracts', href: '/contracts', icon: Briefcase },
+    { name: 'Messages', href: '/messages', icon: MessageSquare },
+    { name: 'Reviews', href: '/reviews', icon: Star },
+    { name: 'Earnings', href: '/payments', icon: Wallet },
+    { name: 'Profile', href: '/profile', icon: User },
   ],
   CLIENT: [
-    { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
-    { name: 'Post Job', href: '/jobs/new', icon: '➕' },
-    { name: 'My Jobs', href: '/jobs/mine', icon: '📋' },
-    { name: 'Find Talent', href: '/talent', icon: '🔍' },
-    { name: 'Active Contracts', href: '/contracts', icon: '📋' },
-    { name: 'Messages', href: '/messages', icon: '💬' },
-    { name: 'Reviews', href: '/reviews', icon: '⭐' },
-    { name: 'Payments', href: '/payments', icon: '💰' },
-    { name: 'Profile', href: '/profile', icon: '👤' },
-    { name: 'Settings', href: '/settings', icon: '⚙️' },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Post Job', href: '/jobs/new', icon: PlusCircle },
+    { name: 'My Jobs', href: '/jobs/mine', icon: Briefcase },
+    { name: 'Find Talent', href: '/talent', icon: Users },
+    { name: 'Active Contracts', href: '/contracts', icon: FileText },
+    { name: 'Messages', href: '/messages', icon: MessageSquare },
+    { name: 'Reviews', href: '/reviews', icon: Star },
+    { name: 'Payments', href: '/payments', icon: CreditCard },
+    { name: 'Profile', href: '/profile', icon: User },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ],
   ADMIN: [
-    { name: 'Dashboard', href: '/admin', icon: '🏠' },
-    { name: 'Users', href: '/admin/users', icon: '👥' },
-    { name: 'Jobs', href: '/admin/jobs', icon: '📋' },
-    { name: 'Disputes', href: '/admin/disputes', icon: '⚖️' },
-    { name: 'Reports', href: '/admin/reports', icon: '📊' },
-    { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
+    { name: 'Dashboard', href: '/admin', icon: Home },
+    { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Jobs', href: '/admin/jobs', icon: Briefcase },
+    { name: 'Disputes', href: '/admin/disputes', icon: Shield },
+    { name: 'Reports', href: '/admin/reports', icon: FileText },
+    { name: 'Settings', href: '/admin/settings', icon: Settings },
   ],
 };
 
@@ -81,20 +102,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       >
         {/* Logo */}
         <div className="flex h-20 items-center border-b border-slate-100 px-4">
-          <Link href="/dashboard" className="flex items-center gap-3 text-2xl font-semibold tracking-tight text-slate-900">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 shadow-inner">
-              Δ
-            </span>
-            <span className={cn('transition-opacity duration-300', isSidebarCollapsed ? 'opacity-0' : 'opacity-100')}>
-              DeTrust
-            </span>
-          </Link>
+          <BrandMark
+            href="/dashboard"
+            showWordmark={!isSidebarCollapsed}
+            className={cn(
+              'flex w-full items-center justify-start text-2xl font-semibold tracking-tight text-slate-900',
+              isSidebarCollapsed && 'justify-center'
+            )}
+            contentClassName={cn('gap-3', isSidebarCollapsed && 'gap-0')}
+          />
         </div>
 
         {/* Navigation */}
         <nav className="flex flex-col gap-1 p-3">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -104,11 +127,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   'group flex items-center rounded-2xl px-4 py-3 text-sm font-medium transition-all',
                   isSidebarCollapsed ? 'justify-center' : 'gap-3',
                   isActive
-                    ? 'bg-slate-900 text-white shadow-[0_10px_30px_rgba(15,23,42,0.25)]'
-                    : 'text-slate-500 hover:bg-slate-100'
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-[0_10px_30px_rgba(16,185,129,0.35)]'
+                    : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
                 )}
               >
-                <span className="text-lg">{item.icon}</span>
+                <Icon className={cn('h-5 w-5', isActive ? 'text-white' : 'text-slate-400 group-hover:text-emerald-500')} />
                 <span
                   className={cn(
                     'whitespace-nowrap text-sm font-medium transition-all duration-200',
@@ -124,17 +147,36 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* Bottom section */}
         <div className="absolute inset-x-0 bottom-0 space-y-3 border-t border-slate-100 p-4">
-          <div className="rounded-2xl border border-emerald-100 bg-white/80 p-3 shadow-inner" aria-hidden={isSidebarCollapsed}>
-            <p className="text-xs uppercase tracking-[0.3em] text-emerald-500">Signal</p>
-            <p className="text-sm font-semibold text-slate-900">{user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0}% trust</p>
-            <p className="text-xs text-slate-500">{role === 'FREELANCER' ? 'Module 1' : 'Org profile'} in progress</p>
+          {/* Premium Badge */}
+          <div className={cn('rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-4 text-white shadow-lg', isSidebarCollapsed && 'p-2')}>
+            <div className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-300" />
+              {!isSidebarCollapsed && (
+                <span className="text-xs font-semibold uppercase tracking-wider">Trust Signal</span>
+              )}
+            </div>
+            {!isSidebarCollapsed && (
+              <>
+                <p className="mt-2 text-2xl font-bold">{user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0}%</p>
+                <p className="text-xs text-emerald-100">{role === 'FREELANCER' ? 'Freelancer Score' : 'Client Score'}</p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/20">
+                  <div 
+                    className="h-full rounded-full bg-white/90 transition-all" 
+                    style={{ width: `${user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0}%` }}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <button
             onClick={handleSignOut}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300"
+            className={cn(
+              'flex w-full items-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600 transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-600',
+              isSidebarCollapsed ? 'justify-center' : 'gap-3'
+            )}
           >
-            <span>🚪</span>
-            <span className={cn('transition-opacity duration-200', isSidebarCollapsed ? 'opacity-0' : 'opacity-100')}>Sign Out</span>
+            <LogOut className="h-5 w-5" />
+            {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
       </aside>
@@ -149,11 +191,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {/* Search */}
           <div className="flex items-center gap-4">
             <button
-              onClick={toggleSidebar}
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleSidebar();
+              }}
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-emerald-200 hover:text-emerald-600"
               aria-label="Toggle sidebar"
+              aria-pressed={isSidebarCollapsed}
             >
-              {isSidebarCollapsed ? <Menu className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+              {isSidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
             </button>
             <div className="relative w-[280px] md:w-[360px]">
               <input
@@ -161,17 +209,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 placeholder="Search..."
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pl-12 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-100"
               />
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                🔍
-              </span>
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             </div>
           </div>
 
           {/* Right side */}
           <div className="flex items-center gap-4">
             {/* Notifications */}
-            <button className="relative rounded-full border border-slate-200 p-3 text-slate-500 transition-all hover:border-slate-300 hover:text-slate-900">
-              <span className="text-lg">🔔</span>
+            <button className="relative rounded-full border border-slate-200 p-3 text-slate-500 transition-all hover:border-emerald-200 hover:text-emerald-600">
+              <Bell className="h-5 w-5" />
+              <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
             </button>
 
             {/* Wallet */}
@@ -190,7 +237,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   {isNewUser && !isProfileRoute ? ' · complete profile' : ''}
                 </div>
               </div>
-              <div className="h-11 w-11 overflow-hidden rounded-full border border-emerald-100 bg-emerald-50">
+              <div className="h-11 w-11 overflow-hidden rounded-full border-2 border-emerald-200 bg-emerald-50 ring-2 ring-emerald-100">
                 {secureAvatarUrl ? (
                   <Image
                     src={secureAvatarUrl}
@@ -202,7 +249,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-emerald-500">
-                    {avatarLoading ? '⏳' : userInitial}
+                    {avatarLoading ? <Zap className="h-5 w-5 animate-pulse" /> : userInitial}
                   </div>
                 )}
               </div>

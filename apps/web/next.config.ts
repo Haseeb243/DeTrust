@@ -1,16 +1,18 @@
 import type { NextConfig } from 'next';
+import type { RemotePattern } from 'next/dist/shared/lib/image-config';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-const apiUploadPattern = (() => {
+const apiUploadPattern: RemotePattern = (() => {
   try {
     const parsed = new URL(apiUrl);
     const pathname = `${parsed.pathname.replace(/\/$/, '')}/uploads/**`;
+    const protocol: RemotePattern['protocol'] = parsed.protocol === 'https:' ? 'https' : 'http';
     return {
-      protocol: parsed.protocol.replace(':', ''),
+      protocol,
       hostname: parsed.hostname,
-      port: parsed.port || '',
+      port: parsed.port || undefined,
       pathname,
-    } as const;
+    } satisfies RemotePattern;
   } catch (error) {
     console.warn('Invalid NEXT_PUBLIC_API_URL supplied, falling back to localhost:4000');
     return {
@@ -18,7 +20,7 @@ const apiUploadPattern = (() => {
       hostname: 'localhost',
       port: '4000',
       pathname: '/api/uploads/**',
-    } as const;
+    } satisfies RemotePattern;
   }
 })();
 

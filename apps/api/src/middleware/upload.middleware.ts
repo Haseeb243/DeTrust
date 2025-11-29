@@ -44,10 +44,27 @@ const avatarFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
 	cb(null, true);
 };
 
+const DOCUMENT_MIME_TYPES = new Set([
+	'application/pdf',
+	'image/png',
+	'image/jpeg',
+	'image/webp',
+	'application/zip',
+	'application/x-zip-compressed',
+	'application/x-7z-compressed',
+	'application/x-tar',
+	'application/gzip',
+	'application/msword',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	'application/vnd.ms-excel',
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+	'application/vnd.ms-powerpoint',
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+]);
+
 const documentFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
-	const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
-	if (!allowed.some((type) => file.mimetype === type)) {
-		cb(new ValidationError('Only PDF or image documents are allowed'));
+	if (!DOCUMENT_MIME_TYPES.has(file.mimetype)) {
+		cb(new ValidationError('Unsupported document type. Allowed: PDF, ZIP archives, PNG/JPG images, or Office docs.'));
 		return;
 	}
 	cb(null, true);

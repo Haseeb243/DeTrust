@@ -1,0 +1,483 @@
+'use client';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import {
+  ArrowLeft,
+  Award,
+  Briefcase,
+  Clock3,
+  ExternalLink,
+  GraduationCap,
+  Layers,
+  Mail,
+  MapPin,
+  ScrollText,
+  Shield,
+  Sparkles,
+  Star,
+  UploadCloud,
+  XCircle,
+} from 'lucide-react';
+
+import { SecureAvatar } from '@/components/secure-avatar';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Spinner } from '@/components/ui/spinner';
+import { userApi, type User } from '@/lib/api';
+import { cn } from '@/lib/utils';
+
+export default function FreelancerProfilePage() {
+  const params = useParams();
+  const router = useRouter();
+  const freelancerId = params.id as string;
+
+  const [freelancer, setFreelancer] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchFreelancer = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await userApi.getUser(freelancerId);
+      if (response.success && response.data) {
+        setFreelancer(response.data);
+      } else {
+        toast.error('Freelancer not found');
+        router.push('/talent');
+      }
+    } catch (error) {
+      toast.error('Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  }, [freelancerId, router]);
+
+  useEffect(() => {
+    fetchFreelancer();
+  }, [fetchFreelancer]);
+
+  const profile = freelancer?.freelancerProfile;
+  const languages = (profile?.languages ?? []).join(' · ');
+  const portfolioLinks = profile?.portfolioLinks ?? [];
+  const certifications = profile?.certifications ?? [];
+  const certificationCount = certifications.length;
+  const resumeUploaded = Boolean(profile?.resumeUrl);
+
+  const highlightStats = useMemo(
+    () => [
+      {
+        label: 'Trust score',
+        value: `${profile?.trustScore ?? 0}%`,
+        detail: `${profile?.totalReviews ?? 0} on-chain reviews`,
+        icon: <Shield className="h-4 w-4 text-emerald-500" />,
+      },
+      {
+        label: 'Rating',
+        value: Number(profile?.avgRating ?? 0).toFixed(1),
+        detail: `${profile?.totalReviews ?? 0} reviews`,
+        icon: <Star className="h-4 w-4 text-amber-500" />,
+      },
+      {
+        label: 'Jobs shipped',
+        value: `${profile?.completedJobs ?? 0}`,
+        detail: 'Across DeTrust marketplace',
+        icon: <Briefcase className="h-4 w-4 text-blue-500" />,
+      },
+      {
+        label: 'AI capability',
+        value: `${profile?.aiCapabilityScore ?? 0}%`,
+        detail: 'Signal refreshes per skill update',
+        icon: <Sparkles className="h-4 w-4 text-fuchsia-500" />,
+      },
+    ],
+    [
+      profile?.trustScore,
+      profile?.totalReviews,
+      profile?.avgRating,
+      profile?.completedJobs,
+      profile?.aiCapabilityScore,
+    ]
+  );
+
+  const topSkills = useMemo(() => {
+    const skills = profile?.skills ?? [];
+    return [...skills]
+      .sort((a, b) => {
+        const aScore = a.verificationScore ?? a.proficiencyLevel ?? 0;
+        const bScore = b.verificationScore ?? b.proficiencyLevel ?? 0;
+        return bScore - aScore;
+      })
+      .slice(0, 8);
+  }, [profile?.skills]);
+
+  const educationEntries = useMemo(() => {
+    const entries = profile?.education ?? [];
+    return [...entries]
+      .sort((a, b) => {
+        const aDate = a.endDate ?? a.startDate ?? new Date(0);
+        const bDate = b.endDate ?? b.startDate ?? new Date(0);
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      })
+      .slice(0, 4);
+  }, [profile?.education]);
+
+  const formatEducationRange = useCallback((start?: Date | string | null, end?: Date | string | null) => {
+    if (!start && !end) return 'Dates not provided';
+    const startYear = start ? new Date(start).getFullYear() : '—';
+    const endYear = end ? new Date(end).getFullYear() : 'Present';
+    return `${startYear} – ${endYear}`;
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!freelancer || freelancer.role !== 'FREELANCER') {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center">
+        <XCircle className="h-12 w-12 text-slate-300" />
+        <h3 className="mt-4 text-lg font-semibold text-slate-900">Profile not found</h3>
+        <Button asChild variant="outline" className="mt-4">
+          <Link href="/talent">Back to Talent</Link>
+        </Button>
+      </div>
+    );
+  }
+
+
+  const getLinkLabel = (value: string) => {
+    try {
+      const url = new URL(value);
+      return url.hostname.replace(/^www\./, '');
+    } catch (error) {
+      return value;
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <Button
+        variant="ghost"
+        onClick={() => router.back()}
+        className="gap-2 text-slate-500 hover:text-slate-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to talent
+      </Button>
+
+      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-white via-slate-50 to-slate-100 p-8 shadow-[0_35px_120px_rgba(15,23,42,0.12)]">
+        <div className="absolute inset-0 opacity-90" aria-hidden>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(79,70,229,0.12),transparent_55%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(16,185,129,0.14),transparent_45%)]" />
+        </div>
+        <div className="relative z-10 flex flex-wrap items-start gap-8">
+          <div className="flex items-start gap-6">
+            <div className="group relative h-28 w-28 rounded-3xl border border-white/60 bg-white p-1 shadow-2xl">
+              <SecureAvatar
+                src={freelancer.avatarUrl}
+                alt={freelancer.name || 'Freelancer avatar'}
+                size={108}
+                fallbackInitial={freelancer.name?.[0] || 'F'}
+                containerClassName="h-full w-full overflow-hidden rounded-2xl"
+              />
+              <div className="absolute inset-0 rounded-3xl border border-emerald-300/50 opacity-0 transition group-hover:opacity-100" />
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs uppercase tracking-[0.4em] text-slate-500">Freelancer dossier</div>
+              <h1 className="text-3xl font-semibold text-slate-900">{freelancer.name || 'Anonymous talent'}</h1>
+              <p className="text-lg text-slate-600">{profile?.title || 'Independent builder'}</p>
+              <div className="flex flex-wrap gap-3 text-sm text-slate-600">
+                <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-emerald-400" /> {profile?.location || 'Location TBD'}</span>
+                {profile?.timezone && <span>UTC {profile.timezone}</span>}
+                {languages && <span>{languages}</span>}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    'border-emerald-200 bg-emerald-50 text-emerald-700',
+                    profile?.availability === 'Part-time' && 'bg-cyan-50 text-cyan-700',
+                    !profile?.availability && 'bg-slate-100 text-slate-600'
+                  )}
+                >
+                  {profile?.availability || 'Availability pending'}
+                </Badge>
+                {profile?.hourlyRate ? (
+                  <Badge variant="outline" className="border-slate-200 text-slate-700">
+                    ${profile.hourlyRate}/hr
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-slate-200 text-slate-600">
+                    Rate on request
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="ml-auto flex flex-col items-end gap-3 text-right">
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Signals</p>
+            <p className="text-sm text-slate-500">Profile completion helps prioritize outreach.</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {highlightStats.map((stat) => (
+                <div key={stat.label} className="rounded-2xl border border-white/40 bg-white/70 p-4 text-left shadow-inner">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-slate-400">
+                    {stat.icon}
+                    <span>{stat.label}</span>
+                  </div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">{stat.value}</div>
+                  <p className="text-xs text-slate-500">{stat.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {profile?.bio ? (
+        <Card className="border-slate-200 bg-white shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-lg text-slate-900">About</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="whitespace-pre-wrap text-base leading-relaxed text-slate-700">{profile.bio}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-slate-200 bg-white shadow-lg">
+          <CardContent className="py-6 text-sm text-slate-500">
+            This talent hasn’t written a long-form narrative yet. Start a conversation to understand their craft and recent wins.
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[1.65fr,1fr]">
+        <div className="space-y-6">
+          <Card className="border-slate-200 bg-white text-slate-800 shadow-xl">
+            <CardHeader className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.45em] text-slate-400">Professional dossier</p>
+              <CardTitle className="flex flex-wrap items-center gap-3 text-2xl text-slate-900">
+                <Layers className="h-6 w-6 text-emerald-500" /> Proof that travels well
+              </CardTitle>
+              <p className="text-sm text-slate-500">Signal-rich resumes, verified skills, and recent study help triage the best collaborator for a mission.</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-5 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.35em] text-emerald-500">Resume signal</p>
+                      <p className="text-lg font-semibold text-slate-900">{resumeUploaded ? 'Encrypted resume on file' : 'No resume uploaded yet'}</p>
+                      <p className="text-sm text-slate-500">{resumeUploaded ? 'Available after mutual interest with a secure share link.' : 'Invite them to upload a PDF to unlock deeper screening.'}</p>
+                    </div>
+                    <ScrollText className="h-8 w-8 text-emerald-400" />
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Button asChild variant="outline" className="border-emerald-200 text-emerald-700">
+                      <Link href={`/messages?to=${freelancer.id}`} className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" /> Request resume
+                      </Link>
+                    </Button>
+                    {resumeUploaded && <Badge variant="secondary" className="bg-white/70 text-emerald-600">Private copy ready</Badge>}
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 via-white to-white p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Core stack</p>
+                      <p className="text-lg font-semibold text-slate-900">{topSkills.length ? 'Featured skills' : 'Awaiting entries'}</p>
+                    </div>
+                    <Sparkles className="h-6 w-6 text-emerald-400" />
+                  </div>
+                  {topSkills.length ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {topSkills.map((skill) => (
+                        <div
+                          key={skill.id ?? skill.skillId}
+                          className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700"
+                        >
+                          <span>{skill.skill?.name ?? 'Unnamed skill'}</span>
+                          <span className="text-xs uppercase tracking-wide text-emerald-500">
+                            {skill.verificationStatus ? skill.verificationStatus.toLowerCase() : 'unverified'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white/70 p-4 text-sm text-slate-500">Skills will appear here as soon as they are documented inside their editor.</p>
+                  )}
+                </div>
+
+                <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/60 via-white to-white p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Education & study</p>
+                      <p className="text-lg font-semibold text-slate-900">{educationEntries.length ? 'Recent learning' : 'No entries yet'}</p>
+                    </div>
+                    <GraduationCap className="h-6 w-6 text-slate-400" />
+                  </div>
+                  {educationEntries.length ? (
+                    <div className="mt-4 space-y-3">
+                      {educationEntries.map((entry) => (
+                        <div key={entry.id} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3">
+                          <p className="text-sm font-semibold text-slate-900">{entry.degree || 'Program'} · {entry.institution}</p>
+                          <p className="text-xs text-slate-500">{formatEducationRange(entry.startDate, entry.endDate)}</p>
+                          {entry.fieldOfStudy ? <p className="text-xs text-slate-500">{entry.fieldOfStudy}</p> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-500">Once the talent logs universities, bootcamps, or certifications, they will appear here.</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200 bg-white text-slate-800 shadow-xl">
+            <CardHeader className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.45em] text-slate-400">Trust artifacts</p>
+              <CardTitle className="flex items-center gap-3 text-2xl text-slate-900">
+                <Award className="h-6 w-6 text-emerald-500" /> Certifications & references
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {certificationCount ? (
+                <div className="space-y-4">
+                  {certifications.map((cert) => (
+                    <div key={cert.id} className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="text-base font-semibold text-slate-900">{cert.name}</h4>
+                        <Badge variant="outline" className="border-cyan-200 text-cyan-700">{cert.issuer}</Badge>
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {cert.issueDate ? `Issued ${new Date(cert.issueDate).toLocaleDateString()}` : 'Issue date not provided'}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        {cert.credentialId && <Badge variant="secondary" className="bg-white text-slate-700">ID · {cert.credentialId}</Badge>}
+                        {cert.credentialUrl && (
+                          <a
+                            href={cert.credentialUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline"
+                          >
+                            View credential <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-sm text-slate-500">
+                  No certifications published yet. Ask the talent to pin references or credentials from their documents tab.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card className="border-slate-200 bg-white shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-base text-slate-900">Contact</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button asChild className="w-full bg-emerald-500 text-white shadow-lg shadow-emerald-300/70 hover:bg-emerald-600">
+                <Link href={`/messages?to=${freelancer.id}`}>
+                  <Mail className="mr-2 h-4 w-4" /> Start a conversation
+                </Link>
+              </Button>
+              <p className="text-xs text-slate-500">Direct messaging keeps everything on-chain ready and avoids sharing personal emails too early.</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200 bg-white shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-base text-slate-900">Availability & logistics</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-slate-600">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-slate-500"><Clock3 className="h-4 w-4 text-emerald-400" /> Status</span>
+                <Badge
+                  className={cn(
+                    profile?.availability === 'Full-time'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : profile?.availability === 'Part-time'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-slate-100 text-slate-700'
+                  )}
+                >
+                  {profile?.availability || 'Not specified'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Hourly rate</span>
+                <span className="font-semibold text-slate-900">{profile?.hourlyRate ? `$${profile.hourlyRate}/hr` : 'Share in chat'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Timezone</span>
+                <span className="text-slate-900">{profile?.timezone || 'Not set'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Languages</span>
+                <span className="text-right text-slate-900">{languages || 'Add languages'}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {portfolioLinks.length > 0 && (
+            <Card className="border-slate-200 bg-white shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-base text-slate-900">Portfolio links</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {portfolioLinks.map((link, index) => (
+                  <a
+                    key={`${link}-${index}`}
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-sm text-emerald-700 transition hover:border-emerald-200 hover:bg-white"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      <span className="font-medium">{getLinkLabel(link)}</span>
+                    </div>
+                    <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Visit</span>
+                  </a>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="border-slate-200 bg-white shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-base text-slate-900">Credentials summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-slate-600">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-slate-500"><UploadCloud className="h-4 w-4 text-emerald-400" /> Documents</span>
+                <span className="font-semibold text-slate-900">{resumeUploaded ? 'Resume ready' : 'Awaiting upload'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Certifications</span>
+                <span className="font-semibold text-slate-900">{certificationCount}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Education entries</span>
+                <span className="font-semibold text-slate-900">{educationEntries.length}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,22 +1,77 @@
 import { Router } from 'express';
+import { authenticate, validateBody, validateQuery, validateParams } from '../middleware';
+import { proposalController } from '../controllers';
+import {
+  updateProposalSchema,
+  acceptProposalSchema,
+  rejectProposalSchema,
+  getProposalsQuerySchema,
+  getProposalByIdParamsSchema,
+} from '../validators';
 
 const router: Router = Router();
 
-// TODO: Implement proposal routes
-// GET /proposals - List proposals (filtered by user/job)
-// POST /proposals - Submit proposal (freelancer only)
-// GET /proposals/:id - Get proposal details
-// PATCH /proposals/:id - Update proposal
-// DELETE /proposals/:id - Withdraw proposal
-// POST /proposals/:id/accept - Accept proposal (client only)
-// POST /proposals/:id/reject - Reject proposal (client only)
+// =============================================================================
+// PROPOSAL ROUTES
+// =============================================================================
 
-router.get('/', (_req, res) => {
-  res.json({
-    success: true,
-    message: 'Proposals API - Not implemented yet',
-    data: { items: [], total: 0 },
-  });
-});
+// Get freelancer's proposals
+router.get(
+  '/mine',
+  authenticate,
+  validateQuery(getProposalsQuerySchema),
+  proposalController.getMyProposals
+);
+
+// Get proposal by ID
+router.get(
+  '/:id',
+  authenticate,
+  validateParams(getProposalByIdParamsSchema),
+  proposalController.getProposal
+);
+
+// Update a proposal (freelancer only)
+router.patch(
+  '/:id',
+  authenticate,
+  validateParams(getProposalByIdParamsSchema),
+  validateBody(updateProposalSchema),
+  proposalController.updateProposal
+);
+
+// Withdraw a proposal (freelancer only)
+router.post(
+  '/:id/withdraw',
+  authenticate,
+  validateParams(getProposalByIdParamsSchema),
+  proposalController.withdrawProposal
+);
+
+// Accept a proposal (client only)
+router.post(
+  '/:id/accept',
+  authenticate,
+  validateParams(getProposalByIdParamsSchema),
+  validateBody(acceptProposalSchema),
+  proposalController.acceptProposal
+);
+
+// Reject a proposal (client only)
+router.post(
+  '/:id/reject',
+  authenticate,
+  validateParams(getProposalByIdParamsSchema),
+  validateBody(rejectProposalSchema),
+  proposalController.rejectProposal
+);
+
+// Shortlist a proposal (client only)
+router.post(
+  '/:id/shortlist',
+  authenticate,
+  validateParams(getProposalByIdParamsSchema),
+  proposalController.shortlistProposal
+);
 
 export default router;
