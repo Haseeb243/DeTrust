@@ -9,4 +9,6 @@ export type { UploadPayload, ResumeUploadPayload, CertificationUploadPayload, Ce
 export { jobApi } from './job';
 export type { Job, JobStatus, JobType, JobClient, JobSkill, CreateJobInput, UpdateJobInput, GetJobsParams, ExperienceLevel, Visibility } from './job';
 export { proposalApi } from './proposal';
-export type { Proposal, ProposalStatus, ProposalMilestone, ProposalFreelancer, CreateProposalInput, UpdateProposalInput, AcceptProposalInput, GetProposalsParams, Contract, ContractMilestone, AcceptProposalResult } from './proposal';
+export type { Proposal, ProposalStatus, ProposalMilestone, ProposalFreelancer, CreateProposalInput, UpdateProposalInput, AcceptProposalInput, GetProposalsParams, AcceptProposalResult } from './proposal';
+export { contractApi } from './contract';
+export type { Contract, ContractMilestone, ContractStatus, MilestoneStatus, GetContractsParams } from './contract';

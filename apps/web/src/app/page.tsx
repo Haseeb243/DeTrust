@@ -63,10 +63,10 @@ const SECURITY_STACK = [
 
 export default function HomePage() {
   return (
-    <main className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-16 px-4 py-6 sm:px-6 lg:px-10">
+    <main className="relative mx-auto flex min-h-screen w-full flex-col gap-16 px-4 py-6 sm:px-8 lg:px-16 xl:px-24">
       <SiteHeader />
 
-      <section className="grid gap-10 md:grid-cols-[1.1fr_0.9fr]">
+      <section className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-8">
           <motion.div
             className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-600 shadow-[0_15px_45px_rgba(15,23,42,0.08)]"
@@ -160,7 +160,7 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      <section id="solutions" className="space-y-12">
+      <section id="solutions" className="mx-auto max-w-7xl space-y-12">
         <div className="space-y-4 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-500">For buyers & builders</p>
           <h2 className="text-3xl font-semibold">One workspace to hire, collaborate, and payout globally.</h2>
@@ -183,7 +183,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="talent" className="rounded-[32px] border border-slate-200 bg-white/90 p-8 shadow-[0_35px_120px_rgba(15,23,42,0.1)]">
+      <section id="talent" className="mx-auto max-w-7xl rounded-[32px] border border-slate-200 bg-white/90 p-8 shadow-[0_35px_120px_rgba(15,23,42,0.1)]">
         <div className="flex flex-col gap-8 lg:flex-row">
           <div className="flex-1 space-y-4">
             <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Curated talent cloud</p>
@@ -204,7 +204,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="workflow" className="grid gap-10 md:grid-cols-[1fr_1fr]">
+      <section id="workflow" className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1fr_1fr]">
         <div className="space-y-4">
           <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Workflow</p>
           <h3 className="text-3xl font-semibold">From wallet connect to final payout — every touchpoint choreographed.</h3>
@@ -249,7 +249,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="security-stack" className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-[0_35px_120px_rgba(15,23,42,0.12)]">
+      <section id="security-stack" className="mx-auto max-w-7xl rounded-[32px] border border-slate-200 bg-white p-8 shadow-[0_35px_120px_rgba(15,23,42,0.12)]">
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div className="space-y-4">
             <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Security Stack</p>
@@ -271,7 +271,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-10 text-center shadow-[0_25px_80px_rgba(15,23,42,0.08)]">
+      <section className="mx-auto max-w-7xl rounded-[32px] border border-slate-200 bg-white p-10 text-center shadow-[0_25px_80px_rgba(15,23,42,0.08)]">
         <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Ready?</p>
         <h3 className="mt-3 text-3xl font-semibold">Spin up your dual-auth workspace today.</h3>
         <p className="mt-2 text-slate-600">Wallet → email pairing → optional KYC. Your call.</p>

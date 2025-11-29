@@ -26,6 +26,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } fro
 import { Spinner } from '@/components/ui/spinner';
 import { jobApi, proposalApi, type Job, type CreateProposalInput } from '@/lib/api';
 import { useAuthStore } from '@/store';
+import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
 import { cn } from '@/lib/utils';
 
 const formatBudget = (job: Job) => {
@@ -67,6 +68,9 @@ export default function JobDetailPage() {
   const isFreelancer = user?.role === 'FREELANCER';
   const isOwner = job?.clientId === user?.id;
   const hasSubmittedProposal = job?.proposals && job.proposals.length > 0;
+
+  // Secure URL for client avatar
+  const { objectUrl: clientAvatarUrl } = useSecureObjectUrl(job?.client?.avatarUrl);
 
   const fetchJob = useCallback(async () => {
     setLoading(true);
@@ -395,17 +399,18 @@ export default function JobDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-                  {job.client?.avatarUrl ? (
+                <div className="h-12 w-12 overflow-hidden rounded-full border-2 border-emerald-100 bg-slate-100">
+                  {clientAvatarUrl ? (
                     <Image
-                      src={job.client.avatarUrl}
-                      alt={job.client.name || 'Client'}
+                      src={clientAvatarUrl}
+                      alt={job.client?.name || 'Client'}
                       width={48}
                       height={48}
                       className="h-full w-full object-cover"
+                      unoptimized
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-slate-500">
+                    <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-emerald-500">
                       {job.client?.name?.[0]?.toUpperCase() || 'C'}
                     </div>
                   )}
