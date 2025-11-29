@@ -118,7 +118,7 @@ export default function JobBoardPage() {
 
   const fetchSkills = useCallback(async () => {
     try {
-      const response = await skillApi.listSkills({ limit: 100 });
+      const response = await skillApi.list({ limit: 100 });
       if (response.success && response.data) {
         setSkills(response.data.items || []);
       }
