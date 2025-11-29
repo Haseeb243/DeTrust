@@ -60,7 +60,7 @@ export class ProposalService {
         coverLetter: data.coverLetter,
         proposedRate: data.proposedRate,
         estimatedDuration: data.estimatedDuration,
-        milestones: data.milestones || null,
+        milestones: data.milestones || undefined,
         attachments: data.attachments || [],
         status: 'PENDING',
       },
