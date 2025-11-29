@@ -6,3 +6,7 @@ export { skillApi } from './skill';
 export type { SkillSummary } from './skill';
 export { uploadApi } from './upload';
 export type { UploadPayload, ResumeUploadPayload, CertificationUploadPayload, CertificationUploadForm } from './upload';
+export { jobApi } from './job';
+export type { Job, JobStatus, JobType, JobClient, JobSkill, CreateJobInput, UpdateJobInput, GetJobsParams, ExperienceLevel, Visibility } from './job';
+export { proposalApi } from './proposal';
+export type { Proposal, ProposalStatus, ProposalMilestone, ProposalFreelancer, CreateProposalInput, UpdateProposalInput, AcceptProposalInput, GetProposalsParams, Contract, ContractMilestone, AcceptProposalResult } from './proposal';
