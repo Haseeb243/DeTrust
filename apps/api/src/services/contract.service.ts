@@ -5,7 +5,6 @@ import { NotFoundError, ForbiddenError, ValidationError } from '../middleware';
 type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
 type ContractStatus = 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'DISPUTED';
-type MilestoneStatus = 'PENDING' | 'IN_PROGRESS' | 'SUBMITTED' | 'REVISION_REQUESTED' | 'APPROVED' | 'PAID' | 'DISPUTED';
 
 export interface GetContractsQuery {
   status?: ContractStatus;
