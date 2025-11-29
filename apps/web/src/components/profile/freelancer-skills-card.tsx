@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { Loader2, Plus, ShieldCheck, Sparkles, Target, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -88,6 +88,7 @@ export function FreelancerSkillsCard({
   }, [fetchCatalog, searchTerm, hasLoadedCatalog]);
 
   const filteredCatalog = useMemo(() => catalog.filter((skill) => !skillIds.has(skill.id)), [catalog, skillIds]);
+  const topSuggestion = useMemo(() => filteredCatalog[0] ?? null, [filteredCatalog]);
 
   const resetSelection = () => {
     setSelectedSkill(null);
@@ -126,6 +127,19 @@ export function FreelancerSkillsCard({
     onSkillAdded?.(response.data);
     resetSelection();
     await onSync?.();
+  };
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return;
+    if (pendingSkillId) return;
+    event.preventDefault();
+    if (selectedSkill) {
+      void handleAddSkill();
+      return;
+    }
+    if (topSuggestion) {
+      setSelectedSkill(topSuggestion);
+    }
   };
 
   const handleRemoveSkill = async (skillId: string) => {
@@ -209,6 +223,7 @@ export function FreelancerSkillsCard({
         value={searchTerm}
         onChange={(event) => setSearchTerm(event.target.value)}
         placeholder="Search e.g. Solidity, React, Zero-Knowledge"
+        onKeyDown={handleSearchKeyDown}
       />
       {catalogError ? (
         <p className="text-sm text-red-500">{catalogError}</p>
@@ -238,7 +253,7 @@ export function FreelancerSkillsCard({
           )}
         </div>
       )}
-      {selectedSkill && (
+      {selectedSkill ? (
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -276,24 +291,28 @@ export function FreelancerSkillsCard({
               </div>
             </div>
           </div>
-          <Button
-            type="button"
-            className="w-full"
-            disabled={pendingSkillId !== null}
-            onClick={handleAddSkill}
-          >
-            {pendingSkillId ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding skill…
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 h-4 w-4" /> Add skill
-              </>
-            )}
-          </Button>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-4 text-sm text-slate-500">
+          Select a skill from the directory or press Enter to auto-select the top match.
         </div>
       )}
+      <Button
+        type="button"
+        className="w-full"
+        disabled={!selectedSkill || pendingSkillId !== null}
+        onClick={handleAddSkill}
+      >
+        {pendingSkillId ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding skill…
+          </>
+        ) : (
+          <>
+            <Plus className="mr-2 h-4 w-4" /> Add skill
+          </>
+        )}
+      </Button>
     </div>
   );
 

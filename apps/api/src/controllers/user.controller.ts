@@ -159,6 +159,22 @@ export class UserController {
   }
 
   /**
+   * Remove certification entry
+   * DELETE /users/me/certifications/:certificationId
+   */
+  async removeCertification(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      await userService.removeCertification(req.userId!, req.params.certificationId);
+      res.json({
+        success: true,
+        message: 'Certification removed',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Search freelancers
    * GET /users/freelancers
    */

@@ -7,7 +7,9 @@ import { toast } from 'sonner';
 import { Copy } from 'lucide-react';
 
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
+import { Spinner } from '@/components/ui/spinner';
 import { uploadApi, userApi, type User } from '@/lib/api';
+import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
 
 interface BasicProfileCardProps {
   user?: User | null;
@@ -34,6 +36,10 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
     },
   });
 
+  useEffect(() => {
+    register('avatarUrl');
+  }, [register]);
+
   const currentAvatar = watch('avatarUrl');
 
   useEffect(() => {
@@ -47,6 +53,8 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
   useEffect(() => {
     setPreviewUrl(currentAvatar || '');
   }, [currentAvatar]);
+
+  const { objectUrl: secureAvatarUrl, isLoading: secureAvatarLoading } = useSecureObjectUrl(previewUrl);
 
   const onSubmit = async (values: { name: string; avatarUrl: string }) => {
     setIsSaving(true);
@@ -114,8 +122,14 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
             <label className="text-sm text-slate-600">Profile image</label>
             <div className="mt-3 flex flex-wrap items-center gap-4">
               <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                {previewUrl ? (
-                  <Image src={previewUrl} alt={user?.name || 'Avatar'} fill className="object-cover" sizes="80px" unoptimized />
+                {secureAvatarUrl ? (
+                  <Image src={secureAvatarUrl} alt={user?.name || 'Avatar'} fill className="object-cover" sizes="80px" unoptimized />
+                ) : secureAvatarLoading && previewUrl ? (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <Spinner size="sm" />
+                  </div>
+                ) : previewUrl ? (
+                  <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">Secure preview unavailable</div>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-2xl">🪪</div>
                 )}
@@ -139,11 +153,6 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
           <div>
             <label className="text-sm text-slate-600">Display name</label>
             <Input placeholder="Add your preferred name" {...register('name')} className="mt-2" />
-          </div>
-          <div>
-            <label className="text-sm text-slate-600">Avatar URL</label>
-            <Input placeholder="https://cdn.detrust.xyz/avatar.png" {...register('avatarUrl')} className="mt-2" />
-            <p className="mt-1 text-xs text-slate-400">We’ll auto-fill this when you upload, but you can paste an external URL too.</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div>

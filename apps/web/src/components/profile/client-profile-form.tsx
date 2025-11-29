@@ -9,11 +9,13 @@ import { toast } from 'sonner';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@/components/ui';
 import { userApi, type ClientProfile } from '@/lib/api';
 
+const companySizeOptions = ['1-10', '11-50', '51-200', '201-500', '500+'] as const;
+
 const clientProfileSchema = z.object({
   companyName: z.string().min(2, 'Company name is required'),
-  companySize: z.string().optional().or(z.literal('')),
+  companySize: z.enum(companySizeOptions).optional().or(z.literal('')),
   industry: z.string().optional().or(z.literal('')),
-  companyWebsite: z.string().optional().or(z.literal('')),
+  companyWebsite: z.string().url('Enter a valid URL including https://').optional().or(z.literal('')),
   description: z.string().optional().or(z.literal('')),
   location: z.string().optional().or(z.literal('')),
 });
@@ -95,7 +97,18 @@ export function ClientProfileForm({ profile, onUpdated }: ClientProfileFormProps
             </div>
             <div>
               <label className="text-sm text-slate-600">Team size</label>
-              <Input placeholder="11-50" {...register('companySize')} className="mt-2" />
+              <select
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none"
+                {...register('companySize')}
+              >
+                <option value="">Select size</option>
+                {companySizeOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              {errors.companySize && <p className="text-sm text-red-500">Choose one of the supported ranges.</p>}
             </div>
           </div>
 
@@ -107,6 +120,7 @@ export function ClientProfileForm({ profile, onUpdated }: ClientProfileFormProps
             <div>
               <label className="text-sm text-slate-600">Website</label>
               <Input placeholder="https://atlas.io" {...register('companyWebsite')} className="mt-2" />
+              {errors.companyWebsite && <p className="text-sm text-red-500">{errors.companyWebsite.message}</p>}
             </div>
           </div>
 

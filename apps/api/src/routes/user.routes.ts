@@ -115,6 +115,18 @@ router.delete(
   userController.removeEducation
 );
 
+/**
+ * @route   DELETE /users/me/certifications/:certificationId
+ * @desc    Remove certification entry
+ * @access  Private (Freelancer)
+ */
+router.delete(
+  '/me/certifications/:certificationId',
+  authenticate,
+  requireFreelancer,
+  userController.removeCertification
+);
+
 // =============================================================================
 // CLIENT PROFILE
 // =============================================================================

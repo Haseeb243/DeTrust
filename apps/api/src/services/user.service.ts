@@ -316,6 +316,46 @@ export class UserService {
     await this.updateProfileCompleteness(userId);
     return { success: true };
   }
+
+  /**
+   * Remove certification entry and associated secure file if present
+   */
+  async removeCertification(userId: string, certificationId: string) {
+    const profile = await prisma.freelancerProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!profile) {
+      throw new NotFoundError('Freelancer profile not found');
+    }
+
+    const certification = await prisma.certification.findFirst({
+      where: {
+        id: certificationId,
+        freelancerProfileId: profile.id,
+      },
+    });
+
+    if (!certification) {
+      throw new NotFoundError('Certification not found');
+    }
+
+    await prisma.certification.delete({ where: { id: certification.id } });
+
+    const fileId = this.extractSecureFileId(certification.credentialUrl);
+    if (fileId) {
+      await prisma.secureFile.deleteMany({
+        where: {
+          id: fileId,
+          userId,
+        },
+      });
+    }
+
+    await this.updateProfileCompleteness(userId);
+    return { success: true };
+  }
   
   /**
    * Search freelancers
@@ -456,6 +496,12 @@ export class UserService {
         profileComplete: score >= 70,
       },
     });
+  }
+
+  private extractSecureFileId(url?: string | null) {
+    if (!url) return null;
+    const match = url.match(/\/uploads\/([^/?#]+)/i);
+    return match ? match[1] : null;
   }
 }
 

@@ -1,5 +1,27 @@
 import type { NextConfig } from 'next';
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const apiUploadPattern = (() => {
+  try {
+    const parsed = new URL(apiUrl);
+    const pathname = `${parsed.pathname.replace(/\/$/, '')}/uploads/**`;
+    return {
+      protocol: parsed.protocol.replace(':', ''),
+      hostname: parsed.hostname,
+      port: parsed.port || '',
+      pathname,
+    } as const;
+  } catch (error) {
+    console.warn('Invalid NEXT_PUBLIC_API_URL supplied, falling back to localhost:4000');
+    return {
+      protocol: 'http',
+      hostname: 'localhost',
+      port: '4000',
+      pathname: '/api/uploads/**',
+    } as const;
+  }
+})();
+
 const nextConfig: NextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
@@ -14,6 +36,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '**',
       },
+      apiUploadPattern,
     ],
   },
   

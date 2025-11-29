@@ -152,6 +152,9 @@ export const userApi = {
 
   removeEducation: (educationId: string) => 
     api.delete(`/users/me/education/${educationId}`),
+
+  removeCertification: (certificationId: string) =>
+    api.delete(`/users/me/certifications/${certificationId}`),
   
   // Client profile
   updateClientProfile: (data: Partial<Omit<ClientProfile, 'id'>>) => 
