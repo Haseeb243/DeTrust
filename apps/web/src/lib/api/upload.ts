@@ -24,6 +24,10 @@ export interface CertificationUploadForm {
   credentialId?: string;
 }
 
+export interface DeliverableUploadPayload extends UploadPayload {
+  deliverableUrl: string;
+}
+
 const uploadFormFile = <T extends UploadPayload>(endpoint: string, fieldName: string, file: File, extraFields?: Record<string, string>) => {
   const formData = new FormData();
   formData.append(fieldName, file);
@@ -44,6 +48,7 @@ export const uploadApi = {
     );
     return uploadFormFile<CertificationUploadPayload>('/uploads/certifications', 'document', file, filtered);
   },
+  uploadDeliverable: (file: File) => uploadFormFile<DeliverableUploadPayload>('/uploads/deliverable', 'document', file),
 };
 
 export default uploadApi;

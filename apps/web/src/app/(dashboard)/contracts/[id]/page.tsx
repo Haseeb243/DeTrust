@@ -14,15 +14,18 @@ import {
   FileCheck,
   FileUp,
   Flag,
+  Link2,
   Shield,
+  Upload,
   XCircle,
 } from 'lucide-react';
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { contractApi, type Contract, type ContractStatus, type MilestoneStatus } from '@/lib/api';
+import { contractApi, uploadApi, type Contract, type ContractStatus, type MilestoneStatus } from '@/lib/api';
 import { useAuthStore } from '@/store';
 import { useJobEscrow } from '@/hooks/use-job-escrow';
+import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
 import { cn } from '@/lib/utils';
 
 const CONTRACT_STATUS_COLORS: Record<ContractStatus, string> = {
@@ -62,10 +65,19 @@ export default function ContractDetailPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [submittingMilestone, setSubmittingMilestone] = useState<string | null>(null);
   const [deliverableUrl, setDeliverableUrl] = useState('');
+  const [deliverableFile, setDeliverableFile] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [submitMode, setSubmitMode] = useState<'url' | 'file'>('url');
 
   const isClient = user?.role === 'CLIENT';
   const isFreelancer = user?.role === 'FREELANCER';
   const isOwner = contract?.clientId === user?.id || contract?.freelancerId === user?.id;
+
+  // Get secure avatar URLs for both client and freelancer
+  const clientAvatarUrl = contract?.client?.avatarUrl;
+  const freelancerAvatarUrl = contract?.freelancer?.avatarUrl;
+  const { objectUrl: secureClientAvatar } = useSecureObjectUrl(clientAvatarUrl);
+  const { objectUrl: secureFreelancerAvatar } = useSecureObjectUrl(freelancerAvatarUrl);
 
   const fetchContract = useCallback(async () => {
     setLoading(true);
@@ -89,8 +101,30 @@ export default function ContractDetailPage() {
   }, [fetchContract]);
 
   const handleSubmitMilestone = async (milestoneId: string, index: number) => {
-    if (!deliverableUrl.trim()) {
-      toast.error('Please provide a deliverable URL');
+    let finalDeliverableUrl = deliverableUrl;
+
+    // Handle file upload if a file is selected
+    if (submitMode === 'file' && deliverableFile) {
+      setUploadingFile(true);
+      try {
+        const uploadResponse = await uploadApi.uploadDeliverable(deliverableFile);
+        if (uploadResponse.success && uploadResponse.data) {
+          finalDeliverableUrl = uploadResponse.data.url;
+        } else {
+          toast.error('Failed to upload file');
+          setUploadingFile(false);
+          return;
+        }
+      } catch (error) {
+        toast.error('Failed to upload file');
+        setUploadingFile(false);
+        return;
+      }
+      setUploadingFile(false);
+    }
+
+    if (!finalDeliverableUrl.trim()) {
+      toast.error('Please provide a deliverable URL or upload a file');
       return;
     }
 
@@ -98,19 +132,20 @@ export default function ContractDetailPage() {
     try {
       // Submit on blockchain if escrow is funded
       if (contract?.blockchainJobId) {
-        await submitOnChain(contract.id, index, deliverableUrl);
+        await submitOnChain(contract.id, index, finalDeliverableUrl);
       }
 
       const response = await contractApi.submitMilestone(contractId, milestoneId, {
-        deliverableUrl,
+        deliverableUrl: finalDeliverableUrl,
         // TODO: In production, compute a proper hash of the deliverable content
         // For now, using a simple hash of the URL as a placeholder
-        deliverableHash: btoa(deliverableUrl).slice(0, 32),
+        deliverableHash: btoa(finalDeliverableUrl).slice(0, 32),
       });
       if (response.success) {
         toast.success('Milestone submitted for review');
         setSubmittingMilestone(null);
         setDeliverableUrl('');
+        setDeliverableFile(null);
         fetchContract();
       } else {
         toast.error(response.error?.message || 'Failed to submit milestone');
@@ -189,13 +224,13 @@ export default function ContractDetailPage() {
   const otherParty = isClient
     ? {
         name: contract.freelancer?.name || 'Freelancer',
-        avatar: contract.freelancer?.avatarUrl,
+        avatar: secureFreelancerAvatar,
         subtitle: contract.freelancer?.freelancerProfile?.title || 'Freelancer',
         trustScore: contract.freelancer?.freelancerProfile?.trustScore || 0,
       }
     : {
         name: contract.client?.name || 'Client',
-        avatar: contract.client?.avatarUrl,
+        avatar: secureClientAvatar,
         subtitle: contract.client?.clientProfile?.companyName || 'Client',
         trustScore: contract.client?.clientProfile?.trustScore || 0,
       };
@@ -231,6 +266,7 @@ export default function ContractDetailPage() {
                         width={64}
                         height={64}
                         className="h-full w-full object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-slate-500">
@@ -363,28 +399,97 @@ export default function ContractDetailPage() {
                   {isFreelancer && milestone.status === 'PENDING' && (
                     <div className="mt-4">
                       {submittingMilestone === milestone.id ? (
-                        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
-                          <Input
-                            value={deliverableUrl}
-                            onChange={(e) => setDeliverableUrl(e.target.value)}
-                            placeholder="Enter deliverable URL (e.g., GitHub, Figma, Google Drive)"
-                            className="border-slate-200"
-                          />
+                        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+                          {/* Toggle between URL and File */}
+                          <div className="flex gap-2 border-b border-slate-100 pb-3">
+                            <button
+                              type="button"
+                              onClick={() => setSubmitMode('url')}
+                              className={cn(
+                                'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition',
+                                submitMode === 'url'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'text-slate-500 hover:bg-slate-100'
+                              )}
+                            >
+                              <Link2 className="h-4 w-4" />
+                              Link / URL
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSubmitMode('file')}
+                              className={cn(
+                                'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition',
+                                submitMode === 'file'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'text-slate-500 hover:bg-slate-100'
+                              )}
+                            >
+                              <Upload className="h-4 w-4" />
+                              Upload File
+                            </button>
+                          </div>
+
+                          {submitMode === 'url' ? (
+                            <Input
+                              value={deliverableUrl}
+                              onChange={(e) => setDeliverableUrl(e.target.value)}
+                              placeholder="Enter deliverable URL (e.g., GitHub, Figma, Google Drive)"
+                              className="border-slate-200"
+                            />
+                          ) : (
+                            <div className="space-y-2">
+                              <label
+                                htmlFor={`file-upload-${milestone.id}`}
+                                className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 p-6 transition hover:border-emerald-300 hover:bg-emerald-50"
+                              >
+                                <Upload className="h-8 w-8 text-slate-400" />
+                                <p className="mt-2 text-sm text-slate-600">
+                                  {deliverableFile ? deliverableFile.name : 'Click to upload or drag and drop'}
+                                </p>
+                                <p className="text-xs text-slate-400">PDF, ZIP, PNG, JPG up to 50MB</p>
+                                <input
+                                  id={`file-upload-${milestone.id}`}
+                                  type="file"
+                                  className="hidden"
+                                  onChange={(e) => setDeliverableFile(e.target.files?.[0] || null)}
+                                  accept=".pdf,.zip,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.fig,.sketch"
+                                />
+                              </label>
+                              {deliverableFile && (
+                                <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-sm">
+                                  <span className="text-emerald-700">{deliverableFile.name}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeliverableFile(null)}
+                                    className="text-slate-400 hover:text-red-500"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           <div className="flex gap-2">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setSubmittingMilestone(null)}
+                              onClick={() => {
+                                setSubmittingMilestone(null);
+                                setDeliverableUrl('');
+                                setDeliverableFile(null);
+                              }}
                             >
                               Cancel
                             </Button>
                             <Button
                               size="sm"
                               onClick={() => handleSubmitMilestone(milestone.id, index)}
-                              disabled={!!actionLoading}
+                              disabled={!!actionLoading || uploadingFile}
                               className="bg-emerald-500 text-white hover:bg-emerald-600"
                             >
-                              {actionLoading === milestone.id ? <Spinner size="sm" /> : 'Submit'}
+                              {actionLoading === milestone.id || uploadingFile ? <Spinner size="sm" /> : 'Submit'}
                             </Button>
                           </div>
                         </div>

@@ -13,9 +13,9 @@ import {
   FileText,
   Home,
   LogOut,
-  Menu,
   MessageSquare,
   PanelLeftClose,
+  PanelLeftOpen,
   PlusCircle,
   Search,
   Settings,
@@ -197,7 +197,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-emerald-200 hover:text-emerald-600"
               aria-label="Toggle sidebar"
             >
-              {isSidebarCollapsed ? <Menu className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+              {isSidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
             </button>
             <div className="relative w-[280px] md:w-[360px]">
               <input

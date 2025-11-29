@@ -19,7 +19,7 @@ export function BrandMark({ href = '/', showWordmark = true, className }: BrandM
       transition={{ duration: 0.35 }}
     >
       <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-lg">
-        <Image src="/images/detrust-mark.svg" alt="DeTrust glyph" width={38} height={38} priority />
+        <Image src="/images/logo.png" alt="DeTrust logo" width={48} height={48} className="h-10 w-10 rounded-xl object-contain" priority />
       </span>
       {showWordmark && (
         <span className="text-lg font-semibold tracking-tight text-slate-900">

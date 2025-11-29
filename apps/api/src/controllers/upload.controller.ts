@@ -213,6 +213,46 @@ export class UploadController {
     }
   }
 
+  async uploadDeliverable(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) {
+        throw new ValidationError('No document provided');
+      }
+
+      if (!req.userId) {
+        throw new ValidationError('Missing user context for deliverable upload');
+      }
+
+      const secureFile = await storageService.uploadSecureFile({
+        buffer: req.file.buffer,
+        filename: req.file.originalname || `deliverable-${Date.now()}`,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        userId: req.userId,
+        category: SecureFileCategory.CERTIFICATION, // Using CERTIFICATION as a general document category
+        visibility: SecureFileVisibility.AUTHENTICATED,
+        resourceType: SecureFileResourceType.USER,
+        resourceId: req.userId,
+      });
+
+      const { url } = this.resolveFileUrl(secureFile.id);
+
+      res.status(201).json({
+        success: true,
+        message: 'Deliverable uploaded',
+        data: {
+          url,
+          fileId: secureFile.id,
+          mimeType: secureFile.mimeType,
+          size: secureFile.size,
+          deliverableUrl: url,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async streamFile(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const secureFile = await storageService.getAccessibleFile(req.params.fileId, req.userId);
