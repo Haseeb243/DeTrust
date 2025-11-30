@@ -1,6 +1,6 @@
 # Chapter 4: Implementation
 
-This chapter discusses the implementation details of the DeTrust project. The documentation covers the core module functionalities using pseudocode, user interface details, security techniques, external APIs, and deployment specifications.
+This chapter presents the work completed during the initial 30% implementation phase of the DeTrust system. It outlines the core functionality developed at this stage and explains how these components were designed and integrated. The focus is on the essential logic that governs system behavior, particularly the mechanisms that enforce business rules and manage blockchain interactions. The chapter also describes the methodological steps followed and provides the key algorithms that support the implemented features.
 
 **Project:** DeTrust - Decentralized Trust & Capability Scoring System for Freelancers  
 **Institution:** COMSATS University, Islamabad, Pakistan  
@@ -14,7 +14,6 @@ This chapter discusses the implementation details of the DeTrust project. The do
 1. [4.1 Project Methodology & Algorithms](#41-project-methodology--algorithms)
    - [4.1.1 Project Methodology (Step-by-Step Approach)](#411-project-methodology-step-by-step-approach)
    - [4.1.2 Algorithms](#412-algorithms)
-   - [4.1.3 Guidelines Applied](#413-guidelines-applied)
 2. [4.2 Training Results & Model Evaluation](#42-training-results--model-evaluation)
 3. [4.3 Security Techniques](#43-security-techniques)
 4. [4.4 External APIs/SDKs](#44-external-apissdks)
@@ -25,1079 +24,491 @@ This chapter discusses the implementation details of the DeTrust project. The do
 
 ## 4.1 Project Methodology & Algorithms
 
-This section explains the methodology (step-by-step approach) and the core algorithms that power the DeTrust system. The focus is on methods and algorithms that enforce business rules, perform optimization, and implement intelligent features for the decentralized freelance marketplace.
+This section outlines the step-by-step approach used during implementation and highlights the key algorithms that drive the system's core functionality. The focus is on meaningful logic rather than basic operations, emphasizing the processes that enforce business rules, maintain secure and consistent workflows, and support the system's decision-making capabilities.
 
 ### 4.1.1 Project Methodology (Step-by-Step Approach)
 
-The implementation of DeTrust followed a systematic approach combining blockchain technology, traditional web development, and artificial intelligence components.
+The methodology for the implemented DeTrust system is given below:
 
-#### 1. Data Architecture Design
+#### 1. Data Collection
 
-**What:** Designed a comprehensive database schema to support the decentralized freelance marketplace, including user profiles (clients and freelancers), job postings, proposals, contracts, milestones, reviews, disputes, and skill verification systems.
+**What:**
+- User profile information was collected, including wallet address, display name, role, skills, bio, and portfolio links.
+- Job data was gathered, such as job ID, title, summary, required skills, budget, deadline, client wallet, and on-chain references.
+- Smart-contract events and transactions were captured, including `JobCreated`, `PaymentLocked`, and `JobStatusUpdated` with logs and timestamps.
+- Payment records were stored, covering amount, token type, transaction hash, payer wallet, and timestamp.
+- Application logs were maintained for authentication attempts, API requests, and system errors.
 
-**How:** Used PostgreSQL as the primary relational database with Prisma ORM for type-safe database access. The schema supports:
-- User authentication (wallet-based and email-based)
-- Dual profile system (FreelancerProfile and ClientProfile)
-- Job lifecycle management (Draft → Open → In Progress → Completed)
-- Milestone-based payment tracking
-- Trust score calculation attributes
-- Skill verification with proficiency levels
+**How:**
+- The frontend sends profile and job data as JSON over secure REST endpoints to the backend.
+- A backend event listener (using ethers.js) captures smart-contract events, processes them, and stores structured records in the database.
+- Transaction receipts are monitored until confirmed and then saved with their metadata.
+- All data is stored in PostgreSQL, with JSONB fields used for flexible job and event detail.
 
-**Why:** A robust data architecture is essential for maintaining user trust, tracking contract states, and enabling the transparent trust scoring system that differentiates DeTrust from centralized platforms.
+**Why:**
+- Profile and job data are essential for rendering the job board and enabling accurate searching and filtering.
+- On-chain events and receipts provide a verifiable audit trail and serve as the trusted source for job lifecycle and payments.
+- Application logs help in debugging, preventing replay attacks through nonce verification, and supporting basic analytics.
 
-#### 2. Smart Contract Development
+#### 2. Data Preprocessing
 
-**What:** Developed three core Solidity smart contracts to handle payment escrow, reputation recording, and dispute resolution on the Ethereum blockchain.
+**Missing Values:**
+- Required fields are validated at the API level, and submissions missing essentials are rejected.
+- Optional fields (e.g., portfolio links, secondary skills) are stored as null or empty arrays.
+- Missing numeric values are flagged and excluded from aggregated calculations.
 
-**How:** 
-- **JobEscrow.sol:** Implements milestone-based payment escrow with automatic fund release upon approval
-- **ReputationRegistry.sol:** Records immutable feedback hashes on-chain for transparency
-- **DisputeResolution.sol:** Manages decentralized arbitration with weighted juror voting
+**Duplicates:**
+- Each job is uniquely identified through its on-chain `jobId`, with checks on both `jobId` and transaction hash.
+- User profiles remain unique through the wallet address constraint.
 
-**Why:** Smart contracts eliminate the need for a trusted intermediary, ensuring payments are secure and reputation records are tamper-proof. This directly addresses the payment delay and opaque reputation problems identified in the SRS.
+**Normalization:**
+- Skill tags are standardized by trimming, lowercasing, and removing duplicates.
+- Dates are converted to ISO 8601 in UTC for consistency.
+- Monetary values are stored in the smallest unit to avoid precision issues.
+- Job summaries are trimmed for UI previews, with full versions saved in JSONB.
 
-#### 3. Backend API Development
+#### 3. Feature Extraction & Selection
 
-**What:** Built a comprehensive RESTful API using Node.js/Express.js to handle all business logic, user authentication, and database operations.
+**What:**
+- Profile features like skill count, portfolio items, profile completeness, and account age.
+- Job features including budget, number of required skills, deadline duration, and summary length.
+- Transaction features such as payment lock status, time to lock, and confirmation count.
+- Event-based features like status change counts, with placeholders for future dispute or response-time metrics.
 
-**How:** Implemented layered architecture with:
-- **Controllers:** Handle HTTP request/response
-- **Services:** Contain business logic (JobService, ContractService, ProposalService, etc.)
-- **Middleware:** Authentication (JWT + SIWE), validation (Zod schemas), error handling
-- **Routes:** RESTful endpoint definitions
+**How:**
+- A backend worker processes database records and generates feature values stored in a JSONB features table.
+- Counts, averages, and time differences are computed via SQL, while text-based measures are handled in the application logic.
+- Each feature set is saved with its `jobId` and timestamp for traceability.
 
-**Why:** The backend serves as the coordination layer between the frontend, database, and blockchain, handling complex operations like trust score calculations, proposal management, and notification dispatch.
+#### 4. Model Training
 
-#### 4. Frontend Application Development
+**Status:** *Not applicable at this stage.*
 
-**What:** Created a responsive web application using Next.js 15 with App Router, providing distinct interfaces for clients and freelancers.
+AI/ML model training is not implemented in the 30% milestone because the system has not yet generated enough user activity data to support model development. The full training process will be completed in later phases once adequate data is available.
 
-**How:** 
-- Server and client components for optimal performance
-- Wallet integration using wagmi v2 and RainbowKit for MetaMask/WalletConnect
-- State management with Zustand and TanStack Query
-- Tailwind CSS with shadcn/ui components for consistent design
-- Real-time updates using Socket.io client
+#### 5. Advanced Techniques
 
-**Why:** A polished, responsive frontend is critical for user adoption. The wallet-first authentication approach aligns with the decentralized nature of the platform while maintaining accessibility through optional email authentication.
+**NLP:**
+- Not used at this stage. Text fields are simply stored and cleaned so they can be processed by future NLP components if needed.
 
-#### 5. AI Capability Prediction System
+**Blockchain:**
+- Key job actions such as summary hashes, job IDs, and payment locks are recorded through smart-contract events, which act as the authoritative source of information. The backend updates its database based on these events, ensuring that all records remain immutable and fully auditable.
 
-**What:** Developed an AI service to analyze freelancer profiles and predict capability levels, solving the "cold-start problem" for newcomers.
+**Computer Vision:**
+- Not applicable at this stage. No image-based analysis is required for current functionality.
 
-**How:** 
-- Python FastAPI service for ML model serving
-- Feature extraction from profile data (skills, certifications, experience, portfolio)
-- Classification model to assign capability levels (Beginner/Intermediate/Advanced/Expert)
-- Skill verification through microtask testing
+#### 6. Deployment
 
-**Why:** New freelancers without platform history struggle to compete with established users. The AI capability system provides an objective, data-driven initial credibility score based on verifiable signals.
+**What:**
+- Frontend (Next.js/React) deployed to a staging environment (Vercel).
+- Backend APIs and worker processes deployed to a managed container environment (Render/Railway/Docker on cloud).
+- Smart contracts compiled and deployed to a public testnet (Polygon Mumbai) via Hardhat; verified where applicable.
 
-#### 6. Trust Scoring Implementation
+**How:**
+- CI pipeline builds frontend and backend on commit; test suite runs including Hardhat contract tests and API integration tests.
+- Backend service runs an event listener that subscribes to the blockchain provider (Infura/Alchemy or direct RPC) and reconciles events into PostgreSQL.
+- Environment variables (RPC URLs, private keys, DB credentials) are stored securely.
 
-**What:** Implemented transparent, rule-based trust scoring algorithms for both freelancers and clients.
-
-**How:** 
-- Weighted formula considering ratings, completion rates, dispute outcomes, and experience
-- Real-time recalculation after contract completion and review submission
-- Display of trust scores on profiles and dashboards
-- Blockchain recording of score-affecting events
-
-**Why:** Unlike opaque proprietary algorithms used by Upwork/Fiverr, DeTrust's trust scores are calculable and auditable, promoting transparency and fair treatment of all users.
-
-#### 7. Integration & Testing
-
-**What:** Connected all system components and validated functionality through unit tests and integration tests.
-
-**How:** 
-- Hardhat test suite for smart contract testing
-- Jest for backend API testing
-- Type-safe integration through shared TypeScript types package
-- Docker Compose for local development environment
-
-**Why:** Rigorous testing ensures the financial and reputational integrity of the platform, critical for a system handling real monetary transactions and career-affecting reputation scores.
-
-#### 8. Deployment Architecture
-
-**What:** Prepared deployment configurations for production environments.
-
-**How:** 
-- Vercel for frontend hosting (Next.js optimized)
-- Railway/Render for backend API
-- Polygon network for smart contract deployment (low fees)
-- Supabase for managed PostgreSQL
-- Upstash for Redis caching/queues
-- Pinata for IPFS file storage
-
-**Why:** A scalable, reliable deployment architecture ensures the platform can handle growth while maintaining performance and availability.
+**Why:**
+- Deploying to a testnet makes it possible to test wallet interactions and escrow functions end-to-end without any production risk.
+- The staging environment helps validate the user interface and gather early feedback, while still keeping all activity traceable through testnet transactions.
 
 ---
 
 ### 4.1.2 Algorithms
 
-This section documents the major algorithms that power the DeTrust system. These algorithms enforce business rules, perform optimization, and implement intelligent features.
+This section outlines the main algorithms implemented at this stage, focusing on those that enforce core business rules and support essential system operations. Each algorithm is described with its name, inputs, outputs, and pseudocode. The algorithms included here cover wallet authentication, job creation, escrow payment locking, blockchain event synchronization, and job filtering.
 
-#### Algorithm 1: Freelancer Trust Score Calculation (Business Rule)
-
-**Table 4.1: Freelancer Trust Score Algorithm**
-
-| Attribute | Details |
-|-----------|---------|
-| **Algorithm Name** | FreelancerTrustScoreCalculation |
-| **Input** | FreelancerProfile (averageRating, completionRate, disputeWinRate, yearsActive, totalJobs) |
-| **Output** | TrustScore (0-100) |
-| **Pseudocode** | See below |
-
-```
-1: procedure FreelancerTrustScoreCalculation(FreelancerProfile)
-2:   // Initialize weights for scoring components
-3:   W_RATING ← 0.40        // 40% weight for average rating
-4:   W_COMPLETION ← 0.30    // 30% weight for completion rate
-5:   W_DISPUTE ← 0.20       // 20% weight for dispute win rate
-6:   W_EXPERIENCE ← 0.10    // 10% weight for experience factor
-7:   
-8:   // Calculate normalized rating component (0-100 scale)
-9:   avgRating ← SUM(reviews.overallRating) / COUNT(reviews)
-10:  ratingScore ← (avgRating / 5) × 100
-11:  
-12:  // Calculate completion rate (percentage of completed jobs)
-13:  if totalJobs > 0 then
-14:    completionRate ← (completedJobs / totalJobs) × 100
-15:  else
-16:    completionRate ← 0
-17:  end if
-18:  
-19:  // Calculate dispute win rate
-20:  if totalDisputes > 0 then
-21:    disputeWinRate ← (disputesWon / totalDisputes) × 100
-22:  else
-23:    disputeWinRate ← 100  // No disputes is favorable
-24:  end if
-25:  
-26:  // Calculate experience factor (capped at 5 years)
-27:  experienceFactor ← MIN(yearsActive / 5, 1) × 100
-28:  
-29:  // Calculate final weighted trust score
-30:  TrustScore ← (W_RATING × ratingScore) +
-31:               (W_COMPLETION × completionRate) +
-32:               (W_DISPUTE × disputeWinRate) +
-33:               (W_EXPERIENCE × experienceFactor)
-34:  
-35:  // Ensure score is within bounds
-36:  TrustScore ← MAX(0, MIN(100, TrustScore))
-37:  
-38:  return TrustScore
-39: end procedure
-```
+**Table 4.1: Implemented Algorithms**
 
 ---
 
-#### Algorithm 2: Client Trust Score Calculation (Business Rule)
-
-**Table 4.2: Client Trust Score Algorithm**
+#### Algorithm 1: Wallet Authentication (Authentication Rule Enforcement)
 
 | Attribute | Details |
 |-----------|---------|
-| **Algorithm Name** | ClientTrustScoreCalculation |
-| **Input** | ClientProfile (averageRating, paymentPunctuality, hireRate, jobClarityRating) |
-| **Output** | TrustScore (0-100) |
-| **Pseudocode** | See below |
+| **Algorithm Name** | VerifyWalletSignature |
+| **Input** | walletAddress, signature |
+| **Output** | sessionToken or "Failure" |
+
+**Pseudocode:**
 
 ```
-1: procedure ClientTrustScoreCalculation(ClientProfile)
-2:   // Initialize weights for scoring components
-3:   W_RATING ← 0.40         // 40% weight for average rating from freelancers
-4:   W_PAYMENT ← 0.30        // 30% weight for payment punctuality
-5:   W_HIRE_RATE ← 0.20      // 20% weight for hire rate
-6:   W_CLARITY ← 0.10        // 10% weight for job clarity rating
-7:   
-8:   // Calculate rating score from freelancer reviews
-9:   avgRating ← SUM(freelancerReviews.rating) / COUNT(freelancerReviews)
-10:  ratingScore ← (avgRating / 5) × 100
-11:  
-12:  // Calculate payment punctuality (on-time milestone approvals)
-13:  if totalPayments > 0 then
-14:    paymentPunctuality ← (onTimePayments / totalPayments) × 100
-15:  else
-16:    paymentPunctuality ← 100  // No late payments yet
-17:  end if
-18:  
-19:  // Calculate hire rate (percentage of jobs with successful hires)
-20:  if totalJobsPosted > 0 then
-21:    hireRate ← (jobsWithHires / totalJobsPosted) × 100
-22:  else
-23:    hireRate ← 0
-24:  end if
-25:  
-26:  // Calculate job clarity score from freelancer feedback
-27:  if clarityReviews > 0 then
-28:    clarityScore ← (avgClarityRating / 5) × 100
-29:  else
-30:    clarityScore ← 50  // Neutral default
-31:  end if
-32:  
-33:  // Calculate final weighted trust score
-34:  TrustScore ← (W_RATING × ratingScore) +
-35:               (W_PAYMENT × paymentPunctuality) +
-36:               (W_HIRE_RATE × hireRate) +
-37:               (W_CLARITY × clarityScore)
-38:  
-39:  // Ensure score is within bounds
-40:  TrustScore ← MAX(0, MIN(100, TrustScore))
-41:  
-42:  return TrustScore
-43: end procedure
+1:  procedure VerifyWalletSignature(walletAddress, signature)
+2:      nonce <- GetStoredNonce(walletAddress)
+3:      if nonce is null then
+4:          return "Expired or missing nonce"
+5:      end if
+6:      expectedMessage <- "Login verification: " + nonce
+7:      signer <- RecoverSigner(expectedMessage, signature)
+8:      if signer == walletAddress then
+9:          DeleteNonce(walletAddress)
+10:         token <- GenerateUserSession(walletAddress)
+11:         return token
+12:     else
+13:         return "Invalid signature"
+14:     end if
+15: end procedure
 ```
+
+**Description:** This algorithm enforces wallet-based authentication by verifying that a user controls the claimed wallet address. The server generates a one-time nonce, which the user signs with their private key. The backend recovers the signer's address from the signature and compares it with the claimed wallet address. If they match, a session token is issued.
 
 ---
 
-#### Algorithm 3: Smart Contract Escrow Management (Blockchain/Optimization)
-
-**Table 4.3: Escrow Payment Release Algorithm**
+#### Algorithm 2: Job Creation (Business Rule Enforcement)
 
 | Attribute | Details |
 |-----------|---------|
-| **Algorithm Name** | EscrowPaymentRelease |
-| **Input** | JobId, MilestoneIndex, ClientSignature |
-| **Output** | PaymentConfirmation or Error |
-| **Pseudocode** | See below |
+| **Algorithm Name** | CreateJob |
+| **Input** | clientWallet, jobData |
+| **Output** | jobId |
+
+**Pseudocode:**
 
 ```
-1: procedure EscrowPaymentRelease(JobId, MilestoneIndex, ClientSignature)
-2:   // Verify the job exists and is in valid state
-3:   job ← getJob(JobId)
-4:   require(job.status == FUNDED OR job.status == IN_PROGRESS, "Job inactive")
-5:   
-6:   // Verify caller is the client
-7:   require(msg.sender == job.client, "Not authorized")
-8:   
-9:   // Get the milestone
-10:  milestone ← getMilestone(JobId, MilestoneIndex)
-11:  require(milestone.status == SUBMITTED, "Milestone not submitted")
-12:  
-13:  // Update milestone status
-14:  milestone.status ← APPROVED
-15:  milestone.approvedAt ← block.timestamp
-16:  
-17:  // Calculate payment amount
-18:  paymentAmount ← milestone.amount
-19:  
-20:  // Transfer funds to freelancer
-21:  milestone.status ← PAID
-22:  job.paidAmount ← job.paidAmount + paymentAmount
-23:  totalEscrowBalance ← totalEscrowBalance - paymentAmount
-24:  
-25:  // Execute transfer
-26:  transfer(job.freelancer, paymentAmount)
-27:  
-28:  // Emit payment event
-29:  emit PaymentReleased(JobId, MilestoneIndex, job.freelancer, paymentAmount)
-30:  
-31:  // Check if all milestones are paid
-32:  if allMilestonesPaid(JobId) then
-33:    job.status ← COMPLETED
-34:    emit JobCompleted(JobId)
-35:    
-36:    // Transfer platform fee
-37:    if job.platformFee > 0 then
-38:      transfer(feeRecipient, job.platformFee)
-39:      job.platformFee ← 0
-40:    end if
-41:  end if
-42:  
-43:  return PaymentConfirmation(JobId, MilestoneIndex, paymentAmount)
-44: end procedure
+1:  procedure CreateJob(clientWallet, jobData)
+2:      Validate(jobData)
+3:      summaryHash <- Hash(jobData.title + jobData.description)
+4:      tx <- SmartContract.CreateJob(summaryHash, jobData.budget)
+5:      jobId <- ExtractEvent(tx, "JobCreated")
+6:      SaveOffChain(jobId, jobData, "Open")
+7:      return jobId
+8:  end procedure
 ```
+
+**Description:** This algorithm handles the creation of new jobs on the platform. It validates the job data, creates a hash of the job summary for on-chain storage, invokes the smart contract to register the job, extracts the generated job ID from the emitted event, and saves the full job details off-chain in PostgreSQL.
 
 ---
 
-#### Algorithm 4: AI Capability Prediction (AI/Data Science)
-
-**Table 4.4: AI Capability Level Prediction Algorithm**
+#### Algorithm 3: Escrow Payment Lock (Business Rule Enforcement)
 
 | Attribute | Details |
 |-----------|---------|
-| **Algorithm Name** | CapabilityLevelPrediction |
-| **Input** | FreelancerProfile (skills, certifications, experience, portfolioItems, education) |
-| **Output** | CapabilityLevel (Beginner/Intermediate/Advanced/Expert), ConfidenceScore |
-| **Pseudocode** | See below |
+| **Algorithm Name** | LockJobPayment |
+| **Input** | jobId, amount |
+| **Output** | "Success" or "Failure" |
+
+**Pseudocode:**
 
 ```
-1: procedure CapabilityLevelPrediction(FreelancerProfile)
-2:   // Initialize feature vector
-3:   features ← empty vector
-4:   
-5:   // Extract skill features
-6:   skillCount ← COUNT(FreelancerProfile.skills)
-7:   verifiedSkillCount ← COUNT(skills WHERE verificationStatus == VERIFIED)
-8:   avgProficiency ← AVG(skills.proficiencyLevel)
-9:   
-10:  // Calculate skill score (0-25 points)
-11:  skillScore ← MIN(skillCount × 2, 10) +
-12:               MIN(verifiedSkillCount × 3, 10) +
-13:               (avgProficiency / 5) × 5
-14:  
-15:  // Extract certification features
-16:  certCount ← COUNT(FreelancerProfile.certifications)
-17:  validCerts ← COUNT(certifications WHERE expiryDate > NOW OR expiryDate IS NULL)
-18:  
-19:  // Calculate certification score (0-20 points)
-20:  certScore ← MIN(certCount × 4, 15) + MIN(validCerts × 2, 5)
-21:  
-22:  // Extract experience features
-23:  experienceYears ← FreelancerProfile.experienceYears
-24:  workEntries ← COUNT(FreelancerProfile.experience)
-25:  
-26:  // Calculate experience score (0-30 points)
-27:  experienceScore ← MIN(experienceYears × 3, 20) +
-28:                    MIN(workEntries × 2, 10)
-29:  
-30:  // Extract portfolio features
-31:  portfolioItems ← COUNT(FreelancerProfile.portfolioLinks)
-32:  hasGitHub ← FreelancerProfile.githubUrl IS NOT NULL
-33:  hasLinkedIn ← FreelancerProfile.linkedinUrl IS NOT NULL
-34:  
-35:  // Calculate portfolio score (0-15 points)
-36:  portfolioScore ← MIN(portfolioItems × 3, 10) +
-37:                   (hasGitHub ? 3 : 0) +
-38:                   (hasLinkedIn ? 2 : 0)
-39:  
-40:  // Extract education features
-41:  educationEntries ← COUNT(FreelancerProfile.education)
-42:  
-43:  // Calculate education score (0-10 points)
-44:  educationScore ← MIN(educationEntries × 5, 10)
-45:  
-46:  // Calculate overall capability score (0-100)
-47:  overallScore ← skillScore + certScore + experienceScore +
-48:                 portfolioScore + educationScore
-49:  
-50:  // Determine capability level based on score thresholds
-51:  if overallScore >= 75 then
-52:    capabilityLevel ← "Expert"
-53:    confidenceScore ← 0.85 + (overallScore - 75) × 0.006
-54:  else if overallScore >= 50 then
-55:    capabilityLevel ← "Advanced"
-56:    confidenceScore ← 0.70 + (overallScore - 50) × 0.006
-57:  else if overallScore >= 25 then
-58:    capabilityLevel ← "Intermediate"
-59:    confidenceScore ← 0.60 + (overallScore - 25) × 0.004
-60:  else
-61:    capabilityLevel ← "Beginner"
-62:    confidenceScore ← 0.50 + overallScore × 0.004
-63:  end if
-64:  
-65:  // Store results
-66:  FreelancerProfile.aiCapabilityScore ← overallScore
-67:  
-68:  return (capabilityLevel, MIN(confidenceScore, 0.95), overallScore)
-69: end procedure
+1:  procedure LockJobPayment(jobId, amount)
+2:      job <- FetchJob(jobId)
+3:      if job.status != "Open" then
+4:          return "Payment not allowed"
+5:      end if
+6:      tx <- SmartContract.LockPayment(jobId, amount)
+7:      if tx.success then
+8:          UpdateJobStatus(jobId, "In Progress")
+9:          return "Success"
+10:     else
+11:         return "Transaction failed"
+12:     end if
+13: end procedure
 ```
+
+**Description:** This algorithm manages the escrow payment locking mechanism. When a client decides to proceed with a freelancer, they lock the payment amount in the smart contract escrow. The algorithm verifies that the job is in "Open" status before allowing the payment lock, then updates the job status to "In Progress" upon successful transaction.
 
 ---
 
-#### Algorithm 5: Dispute Resolution Voting (Optimization/Business Rule)
-
-**Table 4.5: Weighted Dispute Resolution Algorithm**
+#### Algorithm 4: Blockchain Event Synchronization (Scheduling/State Maintenance)
 
 | Attribute | Details |
 |-----------|---------|
-| **Algorithm Name** | DisputeResolutionVoting |
-| **Input** | DisputeId, JurorVotes[], MinJurors |
-| **Output** | DisputeOutcome (CLIENT_WINS/FREELANCER_WINS/SPLIT) |
-| **Pseudocode** | See below |
+| **Algorithm Name** | ListenToContractEvents |
+| **Input** | contractEvents (stream) |
+| **Output** | Updated off-chain records |
+
+**Pseudocode:**
 
 ```
-1: procedure DisputeResolutionVoting(DisputeId, JurorVotes, MinJurors)
-2:   // Verify dispute is in voting phase
-3:   dispute ← getDispute(DisputeId)
-4:   require(dispute.status == VOTING, "Not in voting phase")
-5:   require(block.timestamp > dispute.votingDeadline, "Voting still active")
-6:   require(COUNT(JurorVotes) >= MinJurors, "Insufficient juror participation")
-7:   
-8:   // Initialize vote tallies
-9:   clientVotes ← 0
-10:  freelancerVotes ← 0
-11:  
-12:  // Process each vote with trust score weighting
-13:  for each vote in JurorVotes do
-14:    // Verify juror eligibility
-15:    jurorTrustScore ← getJurorTrustScore(vote.juror)
-16:    require(jurorTrustScore >= MIN_JUROR_TRUST_SCORE, "Low trust score")
-17:    require(vote.juror != dispute.client AND vote.juror != dispute.freelancer, "Party cannot vote")
-18:    
-19:    // Apply weighted voting
-20:    voteWeight ← jurorTrustScore
-21:    
-22:    if vote.decision == CLIENT_WINS then
-23:      clientVotes ← clientVotes + voteWeight
-24:    else if vote.decision == FREELANCER_WINS then
-25:      freelancerVotes ← freelancerVotes + voteWeight
-26:    end if
-27:    
-28:    // Record vote
-29:    emit VoteCast(DisputeId, vote.juror, vote.decision, voteWeight)
-30:  end for
-31:  
-32:  // Determine outcome based on weighted votes
-33:  if clientVotes > freelancerVotes then
-34:    dispute.outcome ← CLIENT_WINS
-35:    // Refund escrow to client
-36:  else if freelancerVotes > clientVotes then
-37:    dispute.outcome ← FREELANCER_WINS
-38:    // Release escrow to freelancer
-39:  else
-40:    dispute.outcome ← SPLIT
-41:    // Split escrow 50/50
-42:  end if
-43:  
-44:  // Update dispute status
-45:  dispute.status ← RESOLVED
-46:  dispute.resolvedAt ← block.timestamp
-47:  
-48:  emit DisputeResolved(DisputeId, dispute.outcome)
-49:  
-50:  return dispute.outcome
-51: end procedure
+1:  process ListenToContractEvents()
+2:      On Event JobCreated(jobId):
+3:          EnsureOffChainRecord(jobId)
+4:      On Event PaymentLocked(jobId):
+5:          UpdateJobStatus(jobId, "In Progress")
+6:      On Event JobStatusUpdated(jobId, newStatus):
+7:          UpdateJobStatus(jobId, newStatus)
+8:  end process
 ```
+
+**Description:** This background process maintains synchronization between the blockchain state and the off-chain database. It listens for smart contract events and updates the PostgreSQL database accordingly. This ensures that the application's state remains consistent with the immutable on-chain records.
 
 ---
 
-#### Algorithm 6: Job Proposal Matching (Optimization)
-
-**Table 4.6: Proposal Ranking Algorithm**
+#### Algorithm 5: Job Filtering (Optimization)
 
 | Attribute | Details |
 |-----------|---------|
-| **Algorithm Name** | ProposalRanking |
-| **Input** | JobId, Proposals[] |
-| **Output** | RankedProposals[] |
-| **Pseudocode** | See below |
+| **Algorithm Name** | FilterJobs |
+| **Input** | criteria (skills, budgetRange, status) |
+| **Output** | filteredJobList |
+
+**Pseudocode:**
 
 ```
-1: procedure ProposalRanking(JobId, Proposals)
-2:   // Get job requirements
-3:   job ← getJob(JobId)
-4:   requiredSkills ← job.skills
-5:   
-6:   // Initialize scored proposals
-7:   scoredProposals ← empty list
-8:   
-9:   for each proposal in Proposals do
-10:    freelancer ← getFreelancerProfile(proposal.freelancerId)
-11:    
-12:    // Calculate skill match score (0-40 points)
-13:    matchedSkills ← COUNT(freelancer.skills INTERSECT requiredSkills)
-14:    verifiedMatches ← COUNT(matchedSkills WHERE verificationStatus == VERIFIED)
-15:    skillMatchScore ← (matchedSkills / COUNT(requiredSkills)) × 30 +
-16:                      (verifiedMatches / matchedSkills) × 10
-17:    
-18:    // Calculate trust score component (0-25 points)
-19:    trustComponent ← (freelancer.trustScore / 100) × 25
-20:    
-21:    // Calculate AI capability component (0-15 points)
-22:    capabilityComponent ← (freelancer.aiCapabilityScore / 100) × 15
-23:    
-24:    // Calculate rate competitiveness (0-10 points)
-25:    if job.budget IS NOT NULL then
-26:      rateRatio ← proposal.proposedRate / job.budget
-27:      if rateRatio <= 1 then
-28:        rateScore ← 10 × (1 - (rateRatio - 0.5) × 2)
-29:      else
-30:        rateScore ← MAX(0, 10 - (rateRatio - 1) × 20)
-31:      end if
-32:    else
-33:      rateScore ← 5  // Neutral for hourly jobs
-34:    end if
-35:    
-36:    // Calculate recency bonus (0-10 points)
-37:    hoursSinceSubmission ← (NOW - proposal.createdAt) / 3600
-38:    recencyScore ← MAX(0, 10 - hoursSinceSubmission × 0.1)
-39:    
-40:    // Calculate total score
-41:    totalScore ← skillMatchScore + trustComponent + capabilityComponent +
-42:                 rateScore + recencyScore
-43:    
-44:    scoredProposals.add({
-45:      proposal: proposal,
-46:      score: totalScore,
-47:      breakdown: {skillMatch, trust, capability, rate, recency}
-48:    })
-49:  end for
-50:  
-51:  // Sort by total score descending
-52:  RankedProposals ← SORT(scoredProposals, BY score DESC)
-53:  
-54:  return RankedProposals
-55: end procedure
+1:  function FilterJobs(criteria)
+2:      results <- QueryJobs(criteria.budgetRange, criteria.status)
+3:      if criteria.skills is not empty then
+4:          results <- FilterBySkillMatch(results, criteria.skills)
+5:      end if
+6:      return results
+7:  end function
 ```
 
----
-
-### 4.1.3 Guidelines Applied
-
-The implementation followed these coding and design guidelines:
-
-1. **Modular Architecture:** Each module (authentication, jobs, contracts, reviews) is implemented as independent services with clear interfaces.
-
-2. **Type Safety:** TypeScript is used throughout the codebase with strict type checking. Shared types are maintained in the `packages/types` package.
-
-3. **Security First:** Smart contracts implement OpenZeppelin standards (Ownable, Pausable, ReentrancyGuard). All financial functions are protected against reentrancy attacks.
-
-4. **Transparent Algorithms:** Trust scoring formulas are documented and deterministic, allowing users to understand how their scores are calculated.
-
-5. **Gas Optimization:** Smart contracts store minimal data on-chain, using IPFS hashes for large content (reviews, evidence, deliverables).
+**Description:** This algorithm provides efficient job filtering for freelancers browsing the job board. It first narrows down jobs by budget range and status using indexed database queries, then applies skill matching as a secondary filter. This two-stage approach optimizes query performance while providing accurate results.
 
 ---
 
 ## 4.2 Training Results & Model Evaluation
 
-### AI Capability Prediction System
-
-#### Dataset Description
-
-| Attribute | Details |
-|-----------|---------|
-| **Source** | Synthetic dataset generated from freelancer profile patterns based on industry benchmarks |
-| **Size** | 5,000 synthetic freelancer profiles with varying completeness levels |
-| **Format** | JSON profile data with skills, certifications, experience, portfolio |
-| **Preprocessing** | Feature normalization (0-100 scaling), null value imputation (default values), skill category encoding |
-
-#### Training Setup
-
-| Attribute | Details |
-|-----------|---------|
-| **Platform** | Python 3.11+ with FastAPI |
-| **Framework** | scikit-learn for baseline comparison, rule-based classifier for production |
-| **Model Type** | Deterministic rule-based classifier with weighted feature scoring |
-| **Evaluation Method** | 5-fold cross-validation comparing rule-based predictions against expert-labeled ground truth |
-
-#### Model Performance Metrics
-
-The AI capability prediction system was evaluated against a ground truth dataset of 500 expert-labeled profiles:
-
-| Metric | Value | Description |
-|--------|-------|-------------|
-| **Accuracy** | 87.4% | Overall classification accuracy across all capability levels |
-| **Precision (Macro)** | 84.2% | Average precision across Beginner/Intermediate/Advanced/Expert classes |
-| **Recall (Macro)** | 83.8% | Average recall across all capability classes |
-| **F1-Score (Macro)** | 84.0% | Harmonic mean of precision and recall |
-
-#### Confusion Matrix Summary
-
-| Predicted \ Actual | Beginner | Intermediate | Advanced | Expert |
-|-------------------|----------|--------------|----------|--------|
-| **Beginner** | 92% | 6% | 2% | 0% |
-| **Intermediate** | 8% | 85% | 5% | 2% |
-| **Advanced** | 1% | 7% | 86% | 6% |
-| **Expert** | 0% | 2% | 9% | 89% |
-
-*Note: The rule-based system achieves consistent performance due to its deterministic nature. Classification errors primarily occur at boundary cases between adjacent capability levels.*
-
-#### Feature Extraction
-
-The AI capability system extracts the following features from freelancer profiles:
-
-1. **Skill Features:**
-   - Total skill count
-   - Verified skill count
-   - Average proficiency level (1-5)
-   - Skill category diversity
-
-2. **Certification Features:**
-   - Total certification count
-   - Valid (non-expired) certification count
-   - Certification issuer credibility
-
-3. **Experience Features:**
-   - Years of experience
-   - Number of work history entries
-   - Current employment status
-
-4. **Portfolio Features:**
-   - Portfolio link count
-   - GitHub presence
-   - LinkedIn profile
-   - Personal website
-
-5. **Education Features:**
-   - Education entry count
-   - Degree level
-
-#### Model Performance
-
-The capability prediction system produces the following outputs:
-
-| Output | Description |
-|--------|-------------|
-| **Capability Level** | Beginner, Intermediate, Advanced, or Expert |
-| **Confidence Score** | 0.50 - 0.95 based on profile completeness |
-| **Overall Score** | 0-100 numerical capability assessment |
-| **Recommendations** | Suggestions for profile improvement |
-
-#### Classification Thresholds
-
-| Score Range | Capability Level | Description |
-|-------------|------------------|-------------|
-| 0-24 | Beginner | New to freelancing, limited verifiable experience |
-| 25-49 | Intermediate | Some experience and skills, room for growth |
-| 50-74 | Advanced | Strong profile with verified skills |
-| 75-100 | Expert | Comprehensive profile with extensive credentials |
+**Status:** AI/ML training and evaluation are not part of the 30% milestone because the system has not yet generated enough user activity data to support model development. At this stage, no dataset has been compiled, no preprocessing steps have been carried out, and no models have been trained. The full training process, along with performance metrics and evaluation visuals, will be completed in later phases once adequate data is available.
 
 ---
 
 ## 4.3 Security Techniques
 
-### 4.3.1 Authentication Security
+This section describes the security measures implemented in the DeTrust system to protect user data, prevent common attacks, and ensure secure transactions.
 
-| Technique | Implementation | Purpose |
-|-----------|----------------|---------|
-| **JWT (JSON Web Tokens)** | 7-day expiry, RS256 signing | Stateless session management |
-| **SIWE (Sign-In with Ethereum)** | wagmi + viem integration | Wallet-based authentication |
-| **Password Hashing** | bcrypt with salt rounds | Secure password storage |
-| **2FA Support** | TOTP-based authenticator apps | Additional account security |
-| **Nonce-based Auth** | One-time nonces for wallet signing | Replay attack prevention |
+### 4.3.1 Authentication (Wallet-Based)
 
-### 4.3.2 Smart Contract Security
+A wallet-based authentication approach is implemented, where users verify their identity by signing a server-generated nonce instead of using traditional passwords. The backend checks this signature against the user's wallet address and, once validated, issues a secure session token. This method protects against credential theft, replay attacks, and unauthorized access.
 
-| Technique | Implementation | Purpose |
-|-----------|----------------|---------|
-| **ReentrancyGuard** | OpenZeppelin ReentrancyGuard | Prevent reentrancy attacks |
-| **Pausable** | OpenZeppelin Pausable | Emergency stop mechanism |
-| **Access Control** | Ownable + custom modifiers | Role-based permissions |
-| **Input Validation** | require() statements | Prevent invalid state changes |
-| **Safe Math** | Solidity 0.8+ built-in overflow checks | Arithmetic safety |
+**Implementation Details:**
+- Server generates a unique nonce for each login attempt
+- User signs the nonce message using their wallet's private key (via MetaMask or WalletConnect)
+- Backend uses ethers.js to recover the signer's address from the signature
+- One-time nonces are invalidated immediately after use
+- Session tokens are issued as JWT with configurable expiration
 
-### 4.3.3 API Security
+### 4.3.2 Encryption (HTTPS/TLS)
 
-| Technique | Implementation | Purpose |
-|-----------|----------------|---------|
-| **Rate Limiting** | Express rate limiter middleware | DoS prevention |
-| **Input Validation** | Zod schema validation | Injection prevention |
-| **CORS** | Configured allowed origins | Cross-origin protection |
-| **Helmet** | Security headers middleware | XSS/clickjacking prevention |
-| **TLS/HTTPS** | Enforced in production | Data encryption in transit |
+All communication between the frontend and backend is secured using HTTPS (TLS 1.2+), ensuring encrypted transfer of profile, job, and event data. Sensitive identifiers such as wallet addresses, transaction hashes, and session tokens are stored securely. Additional encryption layers are not required at this stage, as authentication already relies on the strong cryptographic signing provided by blockchain wallets (ECDSA).
 
-### 4.3.4 Data Security
+### 4.3.3 Attack Prevention
 
-| Technique | Implementation | Purpose |
-|-----------|----------------|---------|
-| **Non-Custodial** | User-controlled wallet keys | Private key protection |
-| **IPFS Hashing** | Content-addressed storage | Tamper detection |
-| **Encrypted Storage** | AES-256-GCM for sensitive files | Data at rest protection |
-| **Database Encryption** | PostgreSQL SSL connections | Database security |
+**SQL Injection Prevention:**
+- User inputs are handled through parameterized queries and ORM-level sanitization (Prisma ORM)
+- All database operations use prepared statements
+- Input validation rejects malformed data at the API boundary
+
+**XSS Prevention:**
+- All user-submitted text such as names, bios, job titles, and summaries is sanitized
+- Unsafe HTML is removed before being displayed in the interface
+- React's built-in escaping prevents injection in rendered components
+
+**Replay Attack Prevention:**
+- Each login request uses a one-time verification nonce that becomes invalid immediately after use
+- Nonces are stored with timestamps and automatically expire
+- Prevents attackers from reusing captured signatures
+
+**Rate Limiting and Input Validation:**
+- API endpoints enforce strict size limits and input type checks
+- Request rate caps protect against brute-force attempts and request flooding
+- Express middleware implements per-IP and per-endpoint rate limiting
+
+### 4.3.4 Intrusion/Anomaly Detection
+
+Intrusion detection mechanisms are not implemented at this stage because the system has not yet collected enough real user activity or behavioral patterns to support meaningful analysis. These capabilities will be introduced in later phases once sufficient logs and interaction data are available to train and validate anomaly-detection models.
 
 ---
 
 ## 4.4 External APIs/SDKs
 
-**Table 4.7: Details of APIs Used in the Project**
+**Table 4.2: Details of APIs/SDKs Used in the Project**
 
-| Name of API and Version | Description of API | Purpose of Usage | API Endpoint/Function/Class |
-|------------------------|-------------------|------------------|----------------------------|
-| **wagmi v2** | React Hooks for Ethereum | Wallet connection, transaction signing, balance queries | `useAccount`, `useBalance`, `useSignMessage`, `useWriteContract` |
-| **RainbowKit** | Wallet connection UI | MetaMask and WalletConnect modal | `ConnectButton`, `RainbowKitProvider` |
-| **viem** | TypeScript Ethereum library | Transaction encoding, address utilities | `parseEther`, `keccak256`, `toBytes` |
-| **Prisma ORM** | Type-safe database client | PostgreSQL database operations | `prisma.user.findUnique`, `prisma.job.create`, etc. |
-| **ethers.js v6** | Ethereum library (backend) | Smart contract interaction | `ethers.Contract`, `ethers.id`, `ethers.parseEther` |
-| **OpenZeppelin Contracts 5.x** | Audited smart contract library | Security patterns for Solidity | `Ownable`, `Pausable`, `ReentrancyGuard` |
-| **Socket.io** | Real-time communication | WebSocket events for notifications | `io.emit`, `socket.on` |
-| **BullMQ** | Job queue system | Background job processing | `Queue`, `Worker` |
-| **Pinata SDK** | IPFS pinning service | Decentralized file storage | `pinata.pinFileToIPFS`, `pinata.pinJSONToIPFS` |
-| **Zod** | TypeScript schema validation | Request body validation | `z.object`, `z.string`, `z.number` |
-| **React Hook Form** | Form state management | Form handling with validation | `useForm`, `Controller` |
-| **TanStack Query** | Server state management | API data fetching and caching | `useQuery`, `useMutation` |
-| **Zustand** | Client state management | Global application state | `create`, `useStore` |
-| **Tailwind CSS** | Utility-first CSS framework | UI styling | Utility classes |
-| **shadcn/ui** | React component library | Pre-built UI components | `Button`, `Card`, `Badge`, `Input` |
-| **Hardhat** | Ethereum development environment | Smart contract compilation, testing, deployment | `npx hardhat compile`, `npx hardhat test` |
-| **FastAPI** | Python web framework | AI service REST API | `@app.post`, `@app.get` |
-| **scikit-learn** | Machine learning library | Capability prediction model | Feature extraction, classification |
-| **Sonner** | Toast notification library | User feedback notifications | `toast.success`, `toast.error` |
-| **Framer Motion** | Animation library | UI animations | `motion.div`, `AnimatePresence` |
+| Name of API/SDK and Version | Description of API/SDK | Purpose of Usage | API Endpoint/Function/Class Used |
+|-----------------------------|------------------------|------------------|----------------------------------|
+| **MetaMask (v11+)** | Browser-based Ethereum wallet provider enabling account access and message signing | Used for wallet authentication and signing the one-time verification token | `window.ethereum.request({ method: "eth_requestAccounts" })`, `ethereum.request({ method: "personal_sign" })` |
+| **WalletConnect (v2.0)** | Cross-platform wallet connection protocol for mobile and desktop wallets | Provides alternative wallet login for users without MetaMask | `connect()` session initiation, `signMessage()` for authentication |
+| **Ethers.js (v6)** | JavaScript SDK for blockchain interaction (RPC calls, contract execution, event listening) | Calling smart contract functions for job creation, payment locking, and status updates | `contract.createJob()`, `contract.lockPayment()`, `provider.on("JobCreated", ...)` |
+| **Node.js Express (v4)** | Web API framework enabling REST endpoints and middleware support | Backend API handling for job posting, profile sync, verification, and event processing | `app.post("/api/job/create")`, `app.post("/api/auth/verify")` |
+| **PostgreSQL Client (pg v8)** | Database driver for interacting with PostgreSQL | Storing off-chain job metadata, user profiles, and event logs | `client.query()` (parameterized queries) |
+| **Prisma ORM (v5)** | Type-safe database client for PostgreSQL | Database operations with type safety and migrations | `prisma.user.create()`, `prisma.job.findMany()` |
+| **wagmi (v2)** | React Hooks library for Ethereum | Frontend wallet connection and blockchain interactions | `useAccount()`, `useSignMessage()`, `useConnect()` |
+| **RainbowKit** | Wallet connection UI library | User-friendly wallet connection modal | `ConnectButton`, `RainbowKitProvider` |
+| **Hardhat** | Ethereum development environment | Smart contract compilation, testing, and deployment | `npx hardhat compile`, `npx hardhat test` |
+| **OpenZeppelin Contracts (v5)** | Audited smart contract library | Security patterns for Solidity contracts | `Ownable`, `Pausable`, `ReentrancyGuard` |
+| **Zod** | TypeScript schema validation | API request validation | `z.object()`, `z.string()`, `schema.parse()` |
+| **JWT (jsonwebtoken)** | JSON Web Token library | Session token generation and validation | `jwt.sign()`, `jwt.verify()` |
 
 ---
 
 ## 4.5 User Interface
 
-This section details the user interfaces implemented for the DeTrust platform. The interfaces are organized by module and functionality.
+This section provides details about the user interfaces implemented in the DeTrust system. Each interface is described with its purpose and key features.
 
-### 4.5.1 Authentication Screens
+### 4.5.1 Login Screen
 
-#### Main Sign-In Page (M-A1)
+The login screen allows users to authenticate using their cryptocurrency wallet. Users connect their MetaMask or WalletConnect wallet and sign a verification message to prove ownership of their wallet address.
 
-The login screen provides dual-factor authentication combining wallet connection and email credentials.
-
-**Features:**
+**Key Features:**
 - Wallet connection button (MetaMask priority with WalletConnect fallback)
-- Email and password input fields
-- 2FA code input (when enabled)
-- Forgot password link
-- Register link for new users
+- Nonce-based signature verification
+- Clear status indicators for connection state
+- Optional email/password login for users who prefer traditional authentication
+- 2FA support for enhanced security
 
-**Implementation:** `apps/web/src/app/(auth)/login/page.tsx`
+**Figure 4.1: Login Screen**
 
-**Design Elements:**
-- Glass morphism card design
-- Emerald accent colors for security indicators
-- Clear wallet connection status display
-- Real-time form validation feedback
+*The login screen presents a clean interface where users can connect their wallet and sign a message to authenticate. The wallet address is displayed once connected, and users can proceed to sign the verification message.*
 
 ---
 
-#### User Registration Page (M-A2, M-C2)
+### 4.5.2 Dashboard Screen
 
-Multi-step registration flow with role selection.
+The dashboard serves as the main hub for both clients and freelancers, displaying relevant metrics and quick access to key features.
 
-**Step 1 - Role Selection:**
-- Visual cards for "Freelancer" and "Client" options
-- Feature highlights for each role
-- Animated selection feedback
+**For Freelancers:**
+- Trust score display with review count
+- Active contracts and completed jobs count
+- Proposal pipeline status
+- Wallet balance and escrow payout status
+- Notification center for action items
 
-**Step 2 - Account Setup:**
-- Wallet connection interface
-- Name, email, password fields
-- Password strength validation
-- Confirm password field
+**For Clients:**
+- Trust score with hire rate percentage
+- Active job postings count
+- Incoming proposals overview
+- Payment verification status
+- Quick links to post new jobs
 
-**Step 3 - Optional Compliance:**
-- KYC toggle for enterprise features
-- Document type, ID number, country fields
-- Terms and privacy policy agreement
+**Figure 4.2: Dashboard Screen**
 
-**Implementation:** `apps/web/src/app/(auth)/register/page.tsx`
-
----
-
-### 4.5.2 Dashboard Interfaces
-
-#### Freelancer Dashboard (M-C5)
-
-**Primary Metrics Display:**
-- Trust Score percentage with review count
-- AI Capability Score with signal indicators
-- Completed Jobs count with average rating
-
-**Active Workboard:**
-- Active contracts listing
-- Completed jobs counter
-- Direct links to job board
-
-**Proposal Pipeline:**
-- Submitted proposals status
-- Pipeline status indicator
-- Link to proposals page
-
-**Wallet & Token Balance:**
-- Live ETH/MATIC balance display
-- Connected wallet address (shortened)
-- Escrow payout readiness status
-
-**Notification Center:**
-- Action items for profile completion
-- Wallet connection reminders
-- Skill addition prompts
-
-**Implementation:** `apps/web/src/app/(dashboard)/dashboard/page.tsx`
+*The dashboard provides role-specific metrics and quick access to platform features. Users can see their trust scores, active work, and important notifications at a glance.*
 
 ---
 
-#### Client Dashboard (M-C4)
+### 4.5.3 Job Board Screen
 
-**Primary Metrics Display:**
-- Trust Score with client reviews
-- Hire Rate percentage
+The job board allows freelancers to browse and filter available jobs, while clients can view their posted jobs and incoming proposals.
+
+**Key Features:**
+- Search functionality with keyword matching
+- Filter by job type (Fixed Price / Hourly)
+- Filter by experience level (Entry / Intermediate / Expert)
+- Filter by required skills
+- Job cards showing title, budget, skills, and client trust score
+- Pagination for large result sets
+
+**Figure 4.3: Job Board Screen**
+
+*The job board displays available opportunities with filtering options. Each job card shows key information including budget, required skills, and the client's trust score.*
+
+---
+
+### 4.5.4 Job Creation Form
+
+Clients use this multi-step form to post new jobs on the platform.
+
+**Steps:**
+1. **Basic Information:** Title, category, description
+2. **Budget & Timeline:** Job type, budget amount, deadline
+3. **Requirements:** Required skills, experience level
+4. **Review & Publish:** Final review before publishing
+
+**Figure 4.4: Job Creation Form**
+
+*The job creation form guides clients through a step-by-step process to post new jobs with all necessary details.*
+
+---
+
+### 4.5.5 Profile Editor
+
+Users can manage their profile information, skills, and portfolio through this interface.
+
+**Freelancer Profile Sections:**
+- Avatar and display name
+- Professional title and bio
+- Hourly rate and availability
+- Skills with proficiency levels
+- Portfolio links (GitHub, LinkedIn, website)
+- Education and work experience
+
+**Client Profile Sections:**
+- Company name and description
+- Industry and company size
 - Payment verification status
 
-**Active Workboard:**
-- Active job postings
-- Total jobs posted
-- Link to post new job
+**Figure 4.5: Profile Editor**
 
-**Incoming Proposals:**
-- Proposal triage interface
-- Review proposals link
-
-**Implementation:** Same component with role-based rendering
-
----
-
-### 4.5.3 Job Board Interfaces
-
-#### Job Listing Page (M-J2)
-
-**Search and Filter Panel:**
-- Full-text search input
-- Job type filter (Fixed Price/Hourly)
-- Experience level filter (Entry/Intermediate/Expert)
-- Skills dropdown filter
-- Active filter indicator badge
-
-**Job Cards:**
-- Job title with type badge
-- Description preview (2-line clamp)
-- Required skills badges
-- Client company name
-- Client trust score indicator
-- Payment verified badge
-- Proposal count
-- Posted date
-- Budget/rate display
-
-**Pagination:**
-- Page navigation buttons
-- Total results count
-- Current page indicator
-
-**Implementation:** `apps/web/src/app/(dashboard)/jobs/page.tsx`
-
----
-
-#### Job Details Page (M-J3)
-
-**Job Information:**
-- Full job title and description
-- Required skills list
-- Budget/rate details
-- Deadline information
-- Experience level requirement
-
-**Client Information:**
-- Company name and logo
-- Client trust score
-- Total jobs posted
-- Hire rate
-- Payment verification status
-
-**Actions:**
-- Submit Proposal button (freelancers)
-- Edit Job button (client/owner)
-- Share job link
-
-**Implementation:** `apps/web/src/app/(dashboard)/jobs/[id]/page.tsx`
-
----
-
-#### Job Creation Form (M-J1)
-
-**Multi-Step Form:**
-1. Basic Information (title, category, description)
-2. Budget & Timeline (type, budget, deadline)
-3. Requirements (skills, experience level)
-4. Review & Publish
-
-**Implementation:** `apps/web/src/app/(dashboard)/jobs/new/page.tsx`
-
----
-
-### 4.5.4 Profile Interfaces
-
-#### Freelancer Profile Editor (M-C3)
-
-**Profile Sections:**
-- Avatar upload
-- Professional title
-- Biography text area
-- Hourly rate input
-- Availability status
-- Location and timezone
-- Languages selection
-
-**Skills Management:**
-- Skill search and add
-- Proficiency level selector
-- Verification status badges
-- Remove skill option
-
-**Portfolio Links:**
-- GitHub URL
-- LinkedIn URL
-- Website URL
-- Additional portfolio links
-
-**Education & Experience:**
-- Add education entry
-- Add work experience
-- Date range selectors
-
-**Implementation:** `apps/web/src/app/(dashboard)/profile/page.tsx`
-
----
-
-### 4.5.5 Contract & Payment Interfaces
-
-#### Contract Management Page
-
-**Contract Header:**
-- Contract title
-- Status badge (Pending/Active/Completed/Disputed)
-- Client and freelancer info
-- Total contract value
-
-**Milestones List:**
-- Milestone title and description
-- Amount and due date
-- Status indicator
-- Submit work button (freelancer)
-- Approve/Request revision buttons (client)
-
-**Implementation:** `apps/web/src/app/(dashboard)/contracts/page.tsx`
-
----
-
-### 4.5.6 Component Design System
-
-**Design Tokens:**
-- Primary: Emerald (emerald-500, emerald-600)
-- Neutral: Slate (slate-50 through slate-900)
-- Success: Green indicators
-- Warning: Amber/yellow indicators
-- Error: Red indicators
-
-**Typography:**
-- Headers: Font-semibold, slate-900
-- Body: Text-sm to text-base, slate-600
-- Labels: Text-xs uppercase tracking-wide
-
-**Components:**
-- Glass morphism cards with subtle shadows
-- Rounded corners (rounded-2xl, rounded-3xl)
-- Subtle border colors (border-slate-200)
-- Gradient overlays for hero sections
+*The profile editor allows users to manage their information and showcase their skills and experience to potential clients or freelancers.*
 
 ---
 
 ## 4.6 Deployment
 
+This section describes the deployment architecture and configuration for the DeTrust system.
+
 ### 4.6.1 Deployment Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           PRODUCTION ARCHITECTURE                            │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   ┌─────────────┐                      ┌─────────────────────────────────┐  │
-│   │   Vercel    │                      │         Railway / Render        │  │
-│   │  (Frontend) │                      │                                 │  │
-│   │             │                      │  ┌─────────┐  ┌─────────────┐  │  │
-│   │  Next.js 15 │───── API calls ────▶ │  │ Express │  │  FastAPI    │  │  │
-│   │  App Router │                      │  │   API   │  │ AI Service  │  │  │
-│   └──────┬──────┘                      │  └────┬────┘  └──────┬──────┘  │  │
-│          │                             │       │              │         │  │
-│          │ RPC                         └───────┼──────────────┼─────────┘  │
-│          ▼                                     │              │            │
-│   ┌─────────────┐                      ┌───────▼──────────────▼───────────┐│
-│   │   Polygon   │                      │       Managed Services           ││
-│   │   Mainnet   │                      │  ┌─────────┐  ┌─────────────┐   ││
-│   │             │                      │  │Supabase │  │   Upstash   │   ││
-│   │  Contracts  │                      │  │PostgreSQL│ │    Redis    │   ││
-│   └─────────────┘                      │  └─────────┘  └─────────────┘   ││
-│                                        │                                  ││
-│                                        │  ┌─────────┐                    ││
-│                                        │  │ Pinata  │                    ││
-│                                        │  │  IPFS   │                    ││
-│                                        │  └─────────┘                    ││
-│                                        └──────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                         STAGING/TESTNET ARCHITECTURE                         |
++-----------------------------------------------------------------------------+
+|                                                                             |
+|   +-------------+                      +---------------------------------+  |
+|   |   Vercel    |                      |       Render / Railway          |  |
+|   |  (Frontend) |                      |                                 |  |
+|   |             |                      |  +-------------------------+   |  |
+|   |  Next.js    |----- API calls ----> |  |   Express API Server    |   |  |
+|   |  React App  |                      |  |   + Event Listener      |   |  |
+|   +------+------+                      |  +-----------+-------------+   |  |
+|          |                             |              |                  |  |
+|          | RPC                         +--------------|------------------+  |
+|          v                                            |                     |
+|   +-------------+                      +--------------v------------------+  |
+|   |   Polygon   |                      |        Managed Services         |  |
+|   |   Mumbai    |                      |                                 |  |
+|   |  (Testnet)  |                      |  +-------------------------+   |  |
+|   |             |                      |  |   PostgreSQL (Supabase)  |   |  |
+|   |  Contracts  |                      |  +-------------------------+   |  |
+|   +-------------+                      |                                 |  |
+|                                        +---------------------------------+  |
+|                                                                             |
++-----------------------------------------------------------------------------+
 ```
 
 ### 4.6.2 Environment Configuration
 
-#### Frontend (apps/web)
+**Frontend (Next.js) Environment Variables:**
 
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_API_URL` | Backend API base URL |
-| `NEXT_PUBLIC_CHAIN_ID` | Target blockchain network ID (137 for Polygon) |
-| `NEXT_PUBLIC_RPC_URL` | Blockchain RPC endpoint |
-| `NEXT_PUBLIC_ESCROW_ADDRESS` | Deployed JobEscrow contract address |
-| `NEXT_PUBLIC_REPUTATION_ADDRESS` | Deployed ReputationRegistry contract address |
-| `NEXT_PUBLIC_DISPUTE_ADDRESS` | Deployed DisputeResolution contract address |
+| `NEXT_PUBLIC_CHAIN_ID` | Target blockchain network ID (80001 for Mumbai) |
+| `NEXT_PUBLIC_RPC_URL` | Blockchain RPC endpoint (Infura/Alchemy) |
+| `NEXT_PUBLIC_CONTRACT_ADDRESS` | Deployed smart contract address |
 | `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` | WalletConnect Cloud project ID |
-| `NEXT_PUBLIC_IPFS_GATEWAY` | IPFS gateway URL for content retrieval |
 
-#### Backend (apps/api)
+**Backend (Express) Environment Variables:**
 
 | Variable | Description |
 |----------|-------------|
-| `NODE_ENV` | Environment (development/production) |
 | `PORT` | Server port (default: 4000) |
 | `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Redis connection string |
 | `JWT_SECRET` | Secret key for JWT signing |
-| `JWT_EXPIRES_IN` | Token expiration time (default: 7d) |
 | `RPC_URL` | Blockchain RPC endpoint |
-| `ESCROW_ADDRESS` | JobEscrow contract address |
-| `REPUTATION_ADDRESS` | ReputationRegistry contract address |
-| `DISPUTE_ADDRESS` | DisputeResolution contract address |
-| `AI_SERVICE_URL` | AI service endpoint URL |
-| `PINATA_API_KEY` | Pinata IPFS API key |
-| `PINATA_SECRET_KEY` | Pinata IPFS secret key |
-
-#### AI Service (apps/ai-service)
-
-| Variable | Description |
-|----------|-------------|
-| `PORT` | Service port (default: 8000) |
-| `DEBUG` | Debug mode flag |
-| `REDIS_URL` | Redis connection for caching |
+| `CONTRACT_ADDRESS` | Deployed smart contract address |
+| `PRIVATE_KEY` | Server wallet private key (for event listening) |
 
 ### 4.6.3 Smart Contract Deployment
 
-**Local Development (Hardhat):**
+Smart contracts are deployed to Polygon Mumbai testnet using Hardhat:
+
 ```bash
-cd packages/contracts
-pnpm node          # Start local node
-pnpm deploy:local  # Deploy contracts
+# Compile contracts
+npx hardhat compile
+
+# Deploy to Mumbai testnet
+npx hardhat run scripts/deploy.ts --network mumbai
+
+# Verify on Polygonscan
+npx hardhat verify --network mumbai <CONTRACT_ADDRESS>
 ```
 
-**Production (Polygon Mainnet):**
-```bash
-cd packages/contracts
-PRIVATE_KEY=0x... npx hardhat run scripts/deploy.ts --network polygon
-npx hardhat verify --network polygon [CONTRACT_ADDRESS]
-```
+### 4.6.4 CI/CD Pipeline
 
-Contract addresses are saved to `packages/contracts/deployments/latest.json`.
-
-### 4.6.4 Database Setup
-
-**Schema Migration:**
-```bash
-cd packages/database
-DATABASE_URL="postgresql://..." npx prisma migrate deploy
-```
-
-**Seeding (Development):**
-```bash
-pnpm db:seed
-```
-
-### 4.6.5 Service URLs
-
-| Service | Development URL | Production URL |
-|---------|-----------------|----------------|
-| Frontend | http://localhost:3000 | https://detrust.io |
-| Backend API | http://localhost:4000 | https://api.detrust.io |
-| AI Service | http://localhost:8000 | https://ai.detrust.io |
-| Prisma Studio | http://localhost:5555 | N/A |
-| Hardhat Node | http://localhost:8545 | N/A |
-
-### 4.6.6 Cost Estimation
-
-| Service | Free Tier | Estimated Monthly Cost |
-|---------|-----------|------------------------|
-| Vercel (Frontend) | Yes | $0-20 |
-| Railway (Backend) | $5 credit | $5-20 |
-| Supabase (PostgreSQL) | 500MB free | $0-25 |
-| Upstash (Redis) | 10k/day free | $0-10 |
-| Pinata (IPFS) | 1GB free | $0-20 |
-| Alchemy/Infura (RPC) | 300M CU free | $0-49 |
-| **Total** | | **$5-144/month** |
-
-### 4.6.7 CI/CD Pipeline
-
-The project supports automated deployment via GitHub Actions:
+The project uses GitHub Actions for continuous integration and deployment:
 
 ```yaml
 name: Deploy
@@ -1106,64 +517,38 @@ on:
     branches: [main]
 
 jobs:
-  deploy-api:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Railway
-        uses: railwayapp/railway-action@v1
-        with:
-          service: api
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Run Tests
+        run: |
+          npm ci
+          npm run test
+          npx hardhat test
 
-  deploy-web:
+  deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Deploy to Vercel
+      - name: Deploy Frontend to Vercel
         uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+
+      - name: Deploy Backend to Railway
+        uses: railwayapp/railway-action@v1
 ```
 
-### 4.6.8 Monitoring & Health Checks
+### 4.6.5 Testnet Benefits
 
-**API Health Endpoint:**
-```bash
-curl https://api.detrust.io/api/health
-# Response: {"status":"ok","services":{"database":"connected","redis":"connected"}}
-```
+Deploying to a testnet provides the following advantages:
 
-**AI Service Health:**
-```bash
-curl https://ai.detrust.io/health
-# Response: {"status":"healthy","service":"ai-service"}
-```
+1. **Risk-Free Testing:** Wallet interactions and escrow functions can be tested end-to-end without any real financial risk.
+2. **User Feedback:** The staging environment enables early feedback collection while maintaining full traceability.
+3. **Event Verification:** All blockchain transactions are visible on the public testnet explorer.
+4. **Integration Testing:** Complete workflow testing from job creation to payment release.
 
 ---
 
-## Summary
-
-This chapter documented the implementation of DeTrust's core modules:
-
-1. **Module 1 (Client & Freelancer Web App):** Complete authentication flows, role-based dashboards, and profile management interfaces.
-
-2. **Module 2 (Smart Contract Job Board):** Job posting, browsing, proposal submission, and milestone-based contract management with blockchain escrow integration.
-
-The implementation leverages:
-- **Blockchain:** Solidity smart contracts with OpenZeppelin security patterns
-- **Backend:** Node.js/Express with Prisma ORM and comprehensive service layer
-- **Frontend:** Next.js 15 with wallet integration and responsive design
-- **AI:** Python FastAPI service for capability prediction
-
-All algorithms implement transparent, auditable business rules that align with DeTrust's mission to create a fair, decentralized freelance marketplace.
-
----
-
-**Document Version:** 1.0  
+**Document Version:** 1.0 (30% Implementation Phase)  
 **Last Updated:** November 2025  
 **Authors:** Haseeb Ahmad Khalil, Noor-Ul-Huda
