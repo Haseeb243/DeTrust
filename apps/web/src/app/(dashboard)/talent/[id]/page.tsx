@@ -25,6 +25,7 @@ import {
 import { SecureAvatar } from '@/components/secure-avatar';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
+import { ProfileReviewsSection } from '@/components/reviews';
 import { useUser } from '@/hooks/queries/use-user';
 import { openSecureFileInNewTab } from '@/lib/secure-files';
 import { api } from '@/lib/api/client';
@@ -470,6 +471,19 @@ export default function FreelancerProfilePage() {
           </Card>
         </div>
       </div>
+
+      {/* Reviews Section */}
+      <Card className="border-dt-border bg-dt-surface shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-lg text-dt-text">Reviews & Feedback</CardTitle>
+          <p className="text-sm text-dt-text-muted">
+            All reviews are immutably stored on the blockchain and cannot be altered
+          </p>
+        </CardHeader>
+        <CardContent>
+          <ProfileReviewsSection userId={freelancerId} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
