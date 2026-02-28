@@ -28,6 +28,7 @@
     "contracts:compile": "pnpm --filter @detrust/contracts compile",
     "contracts:test": "pnpm --filter @detrust/contracts test",
     "contracts:deploy:local": "pnpm --filter @detrust/contracts deploy:local",
+    "contracts:sync-env:local": "node scripts/sync-local-contract-env.mjs",
     "contracts:deploy:testnet": "pnpm --filter @detrust/contracts deploy:testnet",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
@@ -35,6 +36,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/node": "^22.10.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
@@ -50,5 +52,11 @@
     "*.{json,md,yaml,yml}": [
       "prettier --write"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "^19.2.0",
+      "react-dom": "^19.2.0"
+    }
   }
 }

@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { authenticator } from 'otplib';
@@ -288,9 +289,9 @@ export class AuthService {
     // Delete temporary secret
     await cacheDelete(`2fa:setup:${userId}`);
     
-    // Generate backup codes (simplified - in production, store these securely)
-    const backupCodes = Array.from({ length: 10 }, () => 
-      Math.random().toString(36).substring(2, 10).toUpperCase()
+    // Generate backup codes using cryptographic randomness
+    const backupCodes = Array.from({ length: 10 }, () =>
+      crypto.randomBytes(5).toString('hex').toUpperCase()
     );
     
     return { success: true, backupCodes };
@@ -378,6 +379,31 @@ export class AuthService {
     return { success: true };
   }
   
+  /**
+   * Refresh access token using refresh token
+   */
+  async refreshTokens(refreshTokenValue: string) {
+    const jwtSecret = config.jwt.secret as Secret;
+
+    let payload: { userId: string };
+    try {
+      payload = jwt.verify(refreshTokenValue, jwtSecret) as { userId: string };
+    } catch {
+      throw new UnauthorizedError('Invalid or expired refresh token');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      include: { freelancerProfile: true, clientProfile: true },
+    });
+
+    if (!user || user.status === 'SUSPENDED') {
+      throw new UnauthorizedError('User not found or suspended');
+    }
+
+    return this.generateTokens(user);
+  }
+
   /**
    * Generate JWT tokens
    */

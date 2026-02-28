@@ -2,14 +2,39 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi';
-import { parseEther, formatEther, keccak256, toHex, type Address, type Hash } from 'viem';
+import { formatUnits, keccak256, parseUnits, toHex, type Address, type Hash } from 'viem';
+
+const STABLE_TOKEN_DECIMALS = 6;
+
+const ERC20_ABI = [
+  {
+    name: 'approve',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    name: 'allowance',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
 
 // JobEscrow contract ABI (simplified for the functions we need)
 const JOB_ESCROW_ABI = [
   {
     name: 'createJob',
     type: 'function',
-    stateMutability: 'payable',
+    stateMutability: 'nonpayable',
     inputs: [
       { name: 'jobId', type: 'bytes32' },
       { name: 'freelancer', type: 'address' },
@@ -92,10 +117,25 @@ const JOB_ESCROW_ABI = [
 // WARNING: Production addresses (137, 80002) are placeholders - must be updated after deployment
 // Using these placeholder addresses will cause transactions to fail silently
 const CONTRACT_ADDRESSES: Record<number, Address> = {
-  31337: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0', // localhost (from deployments/localhost.json)
+  31337: '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82', // localhost (from deployments/latest.json)
   137: '0x0000000000000000000000000000000000000000', // polygon mainnet - UPDATE AFTER DEPLOYMENT
   80002: '0x0000000000000000000000000000000000000000', // polygon amoy - UPDATE AFTER DEPLOYMENT
 };
+
+const STABLE_TOKEN_ADDRESSES: Record<number, Address> = {
+  31337: '0x610178dA211FEF7D417bC0e6FeD39F05609AD788', // localhost (DeTrustUSD)
+  137: '0x0000000000000000000000000000000000000000',
+  80002: '0x0000000000000000000000000000000000000000',
+};
+
+const readAddressFromEnv = (value?: string): Address | null => {
+  if (!value) return null;
+  return /^0x[a-fA-F0-9]{40}$/.test(value) ? (value as Address) : null;
+};
+
+const configuredChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? '31337');
+const envEscrowAddress = readAddressFromEnv(process.env.NEXT_PUBLIC_ESCROW_ADDRESS);
+const envStableTokenAddress = readAddressFromEnv(process.env.NEXT_PUBLIC_STABLE_TOKEN_ADDRESS);
 
 export enum JobStatus {
   Created = 0,
@@ -142,7 +182,19 @@ export function useJobEscrow() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const contractAddress = useMemo(() => CONTRACT_ADDRESSES[chainId] || null, [chainId]);
+  const contractAddress = useMemo(() => {
+    if (chainId === configuredChainId && envEscrowAddress) {
+      return envEscrowAddress;
+    }
+    return CONTRACT_ADDRESSES[chainId] || null;
+  }, [chainId]);
+
+  const stableTokenAddress = useMemo(() => {
+    if (chainId === configuredChainId && envStableTokenAddress) {
+      return envStableTokenAddress;
+    }
+    return STABLE_TOKEN_ADDRESSES[chainId] || null;
+  }, [chainId]);
 
   // Convert database job ID to bytes32
   const toBytes32JobId = useCallback((jobId: string): `0x${string}` => {
@@ -169,11 +221,11 @@ export function useJobEscrow() {
   const calculateTotalWithFee = useCallback(
     async (totalAmount: number): Promise<{ total: bigint; fee: bigint }> => {
       const feePercent = await getPlatformFee();
-      const totalWei = parseEther(totalAmount.toString());
-      const feeWei = (totalWei * BigInt(feePercent)) / BigInt(100);
+      const totalUnits = parseUnits(totalAmount.toString(), STABLE_TOKEN_DECIMALS);
+      const feeUnits = (totalUnits * BigInt(feePercent)) / BigInt(100);
       return {
-        total: totalWei + feeWei,
-        fee: feeWei,
+        total: totalUnits + feeUnits,
+        fee: feeUnits,
       };
     },
     [getPlatformFee]
@@ -186,7 +238,7 @@ export function useJobEscrow() {
       freelancerAddress: Address,
       milestoneAmounts: number[]
     ): Promise<{ txHash: Hash; blockchainJobId: string }> => {
-      if (!walletClient || !address || !contractAddress) {
+      if (!walletClient || !address || !contractAddress || !stableTokenAddress) {
         throw new Error('Wallet not connected');
       }
 
@@ -195,16 +247,35 @@ export function useJobEscrow() {
 
       try {
         const blockchainJobId = toBytes32JobId(jobId);
-        const milestoneAmountsWei = milestoneAmounts.map((amt) => parseEther(amt.toString()));
+        const milestoneAmountsToken = milestoneAmounts.map((amt) => parseUnits(amt.toString(), STABLE_TOKEN_DECIMALS));
         const totalAmount = milestoneAmounts.reduce((a, b) => a + b, 0);
         const { total } = await calculateTotalWithFee(totalAmount);
+
+        const allowance = await publicClient?.readContract({
+          address: stableTokenAddress,
+          abi: ERC20_ABI,
+          functionName: 'allowance',
+          args: [address, contractAddress],
+        });
+
+        if ((allowance ?? BigInt(0)) < total) {
+          const approveHash = await walletClient.writeContract({
+            address: stableTokenAddress,
+            abi: ERC20_ABI,
+            functionName: 'approve',
+            args: [contractAddress, total],
+          });
+
+          if (publicClient) {
+            await publicClient.waitForTransactionReceipt({ hash: approveHash });
+          }
+        }
 
         const txHash = await walletClient.writeContract({
           address: contractAddress,
           abi: JOB_ESCROW_ABI,
           functionName: 'createJob',
-          args: [blockchainJobId, freelancerAddress, milestoneAmountsWei],
-          value: total,
+          args: [blockchainJobId, freelancerAddress, milestoneAmountsToken],
         });
 
         // Wait for transaction confirmation
@@ -221,7 +292,7 @@ export function useJobEscrow() {
         setLoading(false);
       }
     },
-    [walletClient, address, contractAddress, publicClient, toBytes32JobId, calculateTotalWithFee]
+    [walletClient, address, contractAddress, stableTokenAddress, publicClient, toBytes32JobId, calculateTotalWithFee]
   );
 
   // Get job from blockchain
@@ -402,7 +473,8 @@ export function useJobEscrow() {
     loading,
     error,
     contractAddress,
-    isConnected: Boolean(address && contractAddress),
+    stableTokenAddress,
+    isConnected: Boolean(address && contractAddress && stableTokenAddress),
     createJobEscrow,
     getJob,
     getMilestones,
@@ -410,7 +482,7 @@ export function useJobEscrow() {
     approveMilestone,
     raiseDispute,
     calculateTotalWithFee,
-    formatEther,
+    formatTokenUnits: (value: bigint) => formatUnits(value, STABLE_TOKEN_DECIMALS),
   };
 }
 

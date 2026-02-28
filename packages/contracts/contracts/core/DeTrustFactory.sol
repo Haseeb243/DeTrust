@@ -26,13 +26,14 @@ contract DeTrustFactory is Ownable {
 
 	constructor() Ownable(msg.sender) {}
 
-	function deployCoreContracts(address feeRecipient, address admin)
+	function deployCoreContracts(address paymentToken, address feeRecipient, address admin)
 		external
 		onlyOwner
 		returns (CoreDeployment memory deployment)
 	{
 		require(admin != address(0), "Invalid admin");
-		JobEscrow jobEscrow = new JobEscrow(feeRecipient);
+		require(paymentToken != address(0), "Invalid payment token");
+		JobEscrow jobEscrow = new JobEscrow(paymentToken, feeRecipient);
 		ReputationRegistry reputation = new ReputationRegistry();
 		DisputeResolution dispute = new DisputeResolution();
 

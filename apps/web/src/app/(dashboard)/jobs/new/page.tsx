@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { toast } from 'sonner';
-import { ArrowLeft, Briefcase, DollarSign, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Briefcase, DollarSign, X } from 'lucide-react';
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { jobApi, skillApi, type CreateJobInput, type SkillSummary } from '@/lib/api';
+import { type CreateJobInput, type SkillSummary } from '@/lib/api';
 import { useAuthStore } from '@/store';
+import { useSkills } from '@/hooks/queries/use-skills';
+import { useCreateJob, usePublishJob } from '@/hooks/queries/use-jobs';
 
 const JOB_CATEGORIES = [
   'Web Development',
@@ -35,8 +36,13 @@ export default function CreateJobPage() {
   const router = useRouter();
   const { user } = useAuthStore();
 
-  const [loading, setLoading] = useState(false);
-  const [skills, setSkills] = useState<SkillSummary[]>([]);
+  const { data: skillsData } = useSkills({ limit: 100 });
+  const skills = skillsData?.items ?? [];
+
+  const createJobMutation = useCreateJob();
+  const publishJobMutation = usePublishJob();
+  const loading = createJobMutation.isPending || publishJobMutation.isPending;
+
   const [skillSearch, setSkillSearch] = useState('');
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
 
@@ -58,21 +64,6 @@ export default function CreateJobPage() {
 
   const [selectedSkills, setSelectedSkills] = useState<SkillSummary[]>([]);
 
-  const fetchSkills = useCallback(async () => {
-    try {
-      const response = await skillApi.list({ limit: 100 });
-      if (response.success && response.data) {
-        setSkills(response.data.items || []);
-      }
-    } catch (error) {
-      console.error('Failed to load skills:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSkills();
-  }, [fetchSkills]);
-
   useEffect(() => {
     if (user?.role !== 'CLIENT') {
       toast.error('Only clients can post jobs');
@@ -80,13 +71,13 @@ export default function CreateJobPage() {
     }
   }, [user?.role, router]);
 
-  const filteredSkills = skills.filter(
+  const filteredSkills = useMemo(() => skills.filter(
     (skill) =>
       skill.name.toLowerCase().includes(skillSearch.toLowerCase()) &&
       !selectedSkills.find((s) => s.id === skill.id)
-  );
+  ), [skills, skillSearch, selectedSkills]);
 
-  const handleAddSkill = (skill: SkillSummary) => {
+  const handleAddSkill = useCallback((skill: SkillSummary) => {
     if (selectedSkills.length >= 10) {
       toast.error('Maximum 10 skills allowed');
       return;
@@ -98,17 +89,17 @@ export default function CreateJobPage() {
     }));
     setSkillSearch('');
     setShowSkillDropdown(false);
-  };
+  }, [selectedSkills]);
 
-  const handleRemoveSkill = (skillId: string) => {
+  const handleRemoveSkill = useCallback((skillId: string) => {
     setSelectedSkills(selectedSkills.filter((s) => s.id !== skillId));
     setFormData((prev) => ({
       ...prev,
       skillIds: prev.skillIds.filter((id) => id !== skillId),
     }));
-  };
+  }, []);
 
-  const handleSubmit = async (publish: boolean) => {
+  const handleSubmit = useCallback(async (publish: boolean) => {
     // Validation
     if (!formData.title.trim() || formData.title.length < 10) {
       toast.error('Title must be at least 10 characters');
@@ -145,12 +136,11 @@ export default function CreateJobPage() {
       }
     }
 
-    setLoading(true);
     try {
-      const response = await jobApi.createJob(formData);
+      const response = await createJobMutation.mutateAsync(formData);
       if (response.success && response.data) {
         if (publish) {
-          const publishResponse = await jobApi.publishJob(response.data.id);
+          const publishResponse = await publishJobMutation.mutateAsync(response.data.id);
           if (publishResponse.success) {
             toast.success('Job posted successfully!');
             router.push('/jobs/mine');
@@ -165,12 +155,10 @@ export default function CreateJobPage() {
       } else {
         toast.error(response.error?.message || 'Failed to create job');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to create job');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [formData, createJobMutation, publishJobMutation, router]);
 
   if (user?.role !== 'CLIENT') {
     return null;
@@ -183,20 +171,20 @@ export default function CreateJobPage() {
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="gap-2 text-slate-600 hover:text-slate-900"
+          className="gap-2 text-dt-text-muted hover:text-dt-text"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Post a New Job</h1>
-          <p className="text-slate-600">Fill in the details to find the perfect freelancer</p>
+          <h1 className="text-2xl font-semibold text-dt-text">Post a New Job</h1>
+          <p className="text-dt-text-muted">Fill in the details to find the perfect freelancer</p>
         </div>
       </div>
 
       {/* Form */}
-      <Card className="border-slate-200 bg-white shadow-lg">
+      <Card className="border-dt-border bg-dt-surface shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
+          <CardTitle className="flex items-center gap-2 text-lg text-dt-text">
             <Briefcase className="h-5 w-5 text-emerald-500" />
             Job Details
           </CardTitle>
@@ -204,29 +192,29 @@ export default function CreateJobPage() {
         <CardContent className="space-y-6">
           {/* Title */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-dt-text-muted">
               Job Title *
             </label>
             <Input
               value={formData.title}
               onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
               placeholder="e.g., Full Stack Developer for DeFi Project"
-              className="border-slate-200"
+              className="border-dt-border"
             />
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-dt-text-muted">
               {formData.title.length}/10 characters minimum
             </p>
           </div>
 
           {/* Category */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-dt-text-muted">
               Category *
             </label>
             <select
               value={formData.category}
               onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2"
+              className="w-full rounded-lg border border-dt-border px-3 py-2"
             >
               <option value="">Select a category</option>
               {JOB_CATEGORIES.map((cat) => (
@@ -239,7 +227,7 @@ export default function CreateJobPage() {
 
           {/* Description */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-dt-text-muted">
               Description *
             </label>
             <Textarea
@@ -247,16 +235,16 @@ export default function CreateJobPage() {
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               placeholder="Describe the job in detail. Include project goals, deliverables, timeline expectations..."
               rows={8}
-              className="border-slate-200"
+              className="border-dt-border"
             />
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-dt-text-muted">
               {formData.description.length}/100 characters minimum
             </p>
           </div>
 
           {/* Skills */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-dt-text-muted">
               Required Skills * (max 10)
             </label>
             <div className="relative">
@@ -268,19 +256,19 @@ export default function CreateJobPage() {
                 }}
                 onFocus={() => setShowSkillDropdown(true)}
                 placeholder="Search and add skills..."
-                className="border-slate-200"
+                className="border-dt-border"
               />
               {showSkillDropdown && skillSearch && filteredSkills.length > 0 && (
-                <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-dt-border bg-dt-surface shadow-lg">
                   {filteredSkills.slice(0, 10).map((skill) => (
                     <button
                       key={skill.id}
                       type="button"
                       onClick={() => handleAddSkill(skill)}
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-slate-50"
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-dt-surface-alt"
                     >
                       <span>{skill.name}</span>
-                      <span className="text-xs text-slate-400">{skill.category}</span>
+                      <span className="text-xs text-dt-text-muted">{skill.category}</span>
                     </button>
                   ))}
                 </div>
@@ -310,7 +298,7 @@ export default function CreateJobPage() {
 
           {/* Job Type */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-dt-text-muted">
               Job Type *
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -320,11 +308,11 @@ export default function CreateJobPage() {
                 className={`rounded-lg border p-4 text-left transition ${
                   formData.type === 'FIXED_PRICE'
                     ? 'border-emerald-500 bg-emerald-50'
-                    : 'border-slate-200 hover:border-slate-300'
+                    : 'border-dt-border hover:border-slate-300'
                 }`}
               >
-                <div className="font-medium text-slate-900">Fixed Price</div>
-                <div className="text-sm text-slate-500">Pay a fixed amount for the project</div>
+                <div className="font-medium text-dt-text">Fixed Price</div>
+                <div className="text-sm text-dt-text-muted">Pay a fixed amount for the project</div>
               </button>
               <button
                 type="button"
@@ -332,11 +320,11 @@ export default function CreateJobPage() {
                 className={`rounded-lg border p-4 text-left transition ${
                   formData.type === 'HOURLY'
                     ? 'border-emerald-500 bg-emerald-50'
-                    : 'border-slate-200 hover:border-slate-300'
+                    : 'border-dt-border hover:border-slate-300'
                 }`}
               >
-                <div className="font-medium text-slate-900">Hourly</div>
-                <div className="text-sm text-slate-500">Pay by the hour</div>
+                <div className="font-medium text-dt-text">Hourly</div>
+                <div className="text-sm text-dt-text-muted">Pay by the hour</div>
               </button>
             </div>
           </div>
@@ -344,11 +332,11 @@ export default function CreateJobPage() {
           {/* Budget / Rates */}
           {formData.type === 'FIXED_PRICE' ? (
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
+              <label className="mb-2 block text-sm font-medium text-dt-text-muted">
                 Budget (USD) *
               </label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dt-text-muted" />
                 <Input
                   type="number"
                   value={formData.budget || ''}
@@ -356,18 +344,18 @@ export default function CreateJobPage() {
                     setFormData((prev) => ({ ...prev, budget: Number(e.target.value) }))
                   }
                   placeholder="1000"
-                  className="border-slate-200 pl-9"
+                  className="border-dt-border pl-9"
                 />
               </div>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label className="mb-2 block text-sm font-medium text-dt-text-muted">
                   Min Hourly Rate (USD) *
                 </label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dt-text-muted" />
                   <Input
                     type="number"
                     value={formData.hourlyRateMin || ''}
@@ -375,16 +363,16 @@ export default function CreateJobPage() {
                       setFormData((prev) => ({ ...prev, hourlyRateMin: Number(e.target.value) }))
                     }
                     placeholder="25"
-                    className="border-slate-200 pl-9"
+                    className="border-dt-border pl-9"
                   />
                 </div>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label className="mb-2 block text-sm font-medium text-dt-text-muted">
                   Max Hourly Rate (USD) *
                 </label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dt-text-muted" />
                   <Input
                     type="number"
                     value={formData.hourlyRateMax || ''}
@@ -392,7 +380,7 @@ export default function CreateJobPage() {
                       setFormData((prev) => ({ ...prev, hourlyRateMax: Number(e.target.value) }))
                     }
                     placeholder="50"
-                    className="border-slate-200 pl-9"
+                    className="border-dt-border pl-9"
                   />
                 </div>
               </div>
@@ -401,7 +389,7 @@ export default function CreateJobPage() {
 
           {/* Experience Level */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-dt-text-muted">
               Experience Level
             </label>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -418,11 +406,11 @@ export default function CreateJobPage() {
                   className={`rounded-lg border p-3 text-left transition ${
                     formData.experienceLevel === level.value
                       ? 'border-emerald-500 bg-emerald-50'
-                      : 'border-slate-200 hover:border-slate-300'
+                      : 'border-dt-border hover:border-slate-300'
                   }`}
                 >
-                  <div className="text-sm font-medium text-slate-900">{level.label}</div>
-                  <div className="text-xs text-slate-500">{level.description}</div>
+                  <div className="text-sm font-medium text-dt-text">{level.label}</div>
+                  <div className="text-xs text-dt-text-muted">{level.description}</div>
                 </button>
               ))}
             </div>
@@ -430,7 +418,7 @@ export default function CreateJobPage() {
 
           {/* Deadline */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="mb-2 block text-sm font-medium text-dt-text-muted">
               Deadline (optional)
             </label>
             <Input
@@ -442,7 +430,7 @@ export default function CreateJobPage() {
                   deadline: e.target.value ? new Date(e.target.value).toISOString() : undefined,
                 }))
               }
-              className="border-slate-200"
+              className="border-dt-border"
               min={new Date().toISOString().split('T')[0]}
             />
           </div>
@@ -455,7 +443,7 @@ export default function CreateJobPage() {
           variant="outline"
           onClick={() => handleSubmit(false)}
           disabled={loading}
-          className="border-slate-200"
+          className="border-dt-border"
         >
           Save as Draft
         </Button>

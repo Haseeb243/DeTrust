@@ -112,9 +112,9 @@ export function FreelancerEducationCard({ education = [], onAdded, onRemoved, on
   };
 
   return (
-    <Card className="border-slate-200 bg-white shadow-sm">
+    <Card className="border-dt-border bg-dt-surface shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between text-base text-slate-900">
+        <CardTitle className="flex items-center justify-between text-base text-dt-text">
           <span className="flex items-center gap-2">
             <GraduationCap className="h-4 w-4 text-indigo-500" />
             Education timeline
@@ -126,17 +126,17 @@ export function FreelancerEducationCard({ education = [], onAdded, onRemoved, on
         <div className="space-y-4">
           {orderedEducation.length ? (
             orderedEducation.map((entry) => (
-              <div key={entry.id} className="relative rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div key={entry.id} className="relative rounded-2xl border border-dt-border bg-dt-surface-alt/80 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-base font-semibold text-slate-900">{entry.degree}</p>
-                    <p className="text-sm text-slate-600">{entry.institution}</p>
-                    <p className="text-xs text-slate-500">{formatRange(entry.startDate, entry.endDate)}</p>
+                    <p className="text-base font-semibold text-dt-text">{entry.degree}</p>
+                    <p className="text-sm text-dt-text-muted">{entry.institution}</p>
+                    <p className="text-xs text-dt-text-muted">{formatRange(entry.startDate, entry.endDate)}</p>
                     {entry.fieldOfStudy ? (
-                      <p className="mt-1 text-xs text-slate-500">Focus: {entry.fieldOfStudy}</p>
+                      <p className="mt-1 text-xs text-dt-text-muted">Focus: {entry.fieldOfStudy}</p>
                     ) : null}
                     {entry.description ? (
-                      <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{entry.description}</p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-dt-text-muted">{entry.description}</p>
                     ) : null}
                   </div>
                   <Button
@@ -147,50 +147,50 @@ export function FreelancerEducationCard({ education = [], onAdded, onRemoved, on
                     disabled={removingId === entry.id}
                     aria-label="Remove education entry"
                   >
-                    <Trash2 className={`h-4 w-4 ${removingId === entry.id ? 'animate-pulse text-amber-500' : 'text-slate-400'}`} />
+                    <Trash2 className={`h-4 w-4 ${removingId === entry.id ? 'animate-pulse text-amber-500' : 'text-dt-text-muted'}`} />
                   </Button>
                 </div>
               </div>
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+            <div className="rounded-2xl border border-dashed border-dt-border bg-dt-surface-alt p-6 text-center text-sm text-dt-text-muted">
               No education entries yet. Chronicle your alma mater or flagship bootcamp so AI capability scans have richer data.
             </div>
           )}
         </div>
 
-        <form className="space-y-4 rounded-2xl border border-slate-200 bg-white/80 p-4" onSubmit={handleSubmit(onSubmit)}>
+        <form className="space-y-4 rounded-2xl border border-dt-border bg-dt-surface/80 p-4" onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-sm text-slate-600">Institution</label>
+              <label className="text-sm text-dt-text-muted">Institution</label>
               <Input placeholder="MIT" className="mt-2" {...register('institution')} />
               {errors.institution ? <p className="mt-1 text-xs text-red-500">{errors.institution.message}</p> : null}
             </div>
             <div>
-              <label className="text-sm text-slate-600">Degree or program</label>
+              <label className="text-sm text-dt-text-muted">Degree or program</label>
               <Input placeholder="BSc Computer Science" className="mt-2" {...register('degree')} />
               {errors.degree ? <p className="mt-1 text-xs text-red-500">{errors.degree.message}</p> : null}
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="text-sm text-slate-600">Field of study</label>
+              <label className="text-sm text-dt-text-muted">Field of study</label>
               <Input placeholder="Distributed Systems" className="mt-2" {...register('fieldOfStudy')} />
               {errors.fieldOfStudy ? <p className="mt-1 text-xs text-red-500">{errors.fieldOfStudy.message}</p> : null}
             </div>
             <div>
-              <label className="text-sm text-slate-600">Start month</label>
+              <label className="text-sm text-dt-text-muted">Start month</label>
               <Input type="month" className="mt-2" {...register('startMonth')} />
               {errors.startMonth ? <p className="mt-1 text-xs text-red-500">{errors.startMonth.message}</p> : null}
             </div>
             <div>
-              <label className="text-sm text-slate-600">End month</label>
+              <label className="text-sm text-dt-text-muted">End month</label>
               <Input type="month" className="mt-2" {...register('endMonth')} />
               {errors.endMonth ? <p className="mt-1 text-xs text-red-500">{errors.endMonth.message}</p> : null}
             </div>
           </div>
           <div>
-            <label className="text-sm text-slate-600">Highlights</label>
+            <label className="text-sm text-dt-text-muted">Highlights</label>
             <Textarea rows={3} placeholder="Share notable research, leadership, or thesis work." className="mt-2" {...register('description')} />
             {errors.description ? <p className="mt-1 text-xs text-red-500">{errors.description.message}</p> : null}
           </div>

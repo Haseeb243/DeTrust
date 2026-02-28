@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 
 import { config } from '../config';
 import { prisma } from '../config/database';
+import { cacheGet, cacheSet } from '../config/redis';
 import { ApiErrorCode } from '@detrust/types';
 
 // Extend Express Request type
@@ -39,6 +40,20 @@ export interface TokenPayload {
 }
 
 /**
+ * Extract JWT token from request.
+ * Priority: httpOnly cookie > Authorization Bearer header.
+ */
+function extractToken(req: Request): string | undefined {
+  const cookieToken = req.cookies?.['detrust-auth-token'];
+  if (cookieToken) return cookieToken;
+
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) return authHeader.split(' ')[1];
+
+  return undefined;
+}
+
+/**
  * Authentication middleware
  * Verifies JWT token and attaches user to request
  */
@@ -48,9 +63,9 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = extractToken(req);
+
+    if (!token) {
       res.status(401).json({
         success: false,
         error: {
@@ -61,22 +76,29 @@ export const authenticate = async (
       return;
     }
     
-    const token = authHeader.split(' ')[1];
-    
     // Verify token
     const decoded = jwt.verify(token, config.jwt.secret) as TokenPayload;
-    
-    // Check if user exists and is active
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        role: true,
-        walletAddress: true,
-        email: true,
-        status: true,
-      },
-    });
+
+    // Check cache first, then DB
+    const cacheKey = `user:status:${decoded.userId}`;
+    let user = await cacheGet<{ id: string; role: string; walletAddress: string | null; email: string | null; status: string }>(cacheKey);
+
+    if (!user) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: {
+          id: true,
+          role: true,
+          walletAddress: true,
+          email: true,
+          status: true,
+        },
+      });
+      if (dbUser) {
+        user = dbUser;
+        await cacheSet(cacheKey, dbUser, 300); // 5 min TTL
+      }
+    }
     
     if (!user) {
       res.status(401).json({
@@ -152,14 +174,12 @@ export const optionalAuth = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = extractToken(req);
+
+    if (!token) {
       next();
       return;
     }
-    
-    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, config.jwt.secret) as TokenPayload;
     
     const user = await prisma.user.findUnique({

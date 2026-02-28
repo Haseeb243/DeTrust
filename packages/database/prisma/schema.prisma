@@ -121,6 +121,13 @@ enum SecureFileResourceType {
   CERTIFICATION
 }
 
+enum KycStatus {
+  NONE
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
 // =============================================================================
 // USER DOMAIN
 // =============================================================================
@@ -138,6 +145,10 @@ model User {
   twoFactorEnabled Boolean   @default(false)
   twoFactorSecret String?
   nonce           String?    // For SIWE authentication
+  kycStatus       KycStatus  @default(NONE)
+  kycDocumentType String?
+  kycIdNumber     String?
+  kycCountry      String?
   lastLoginAt     DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
@@ -241,7 +252,11 @@ model ClientProfile {
   avgRating       Decimal  @default(0) @db.Decimal(3, 2) // 0-5
   totalReviews    Int      @default(0)
   paymentVerified Boolean  @default(false)
-  
+
+  // Profile Completeness
+  profileComplete   Boolean  @default(false)
+  completenessScore Int      @default(0) // Percentage 0-100
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -462,6 +477,11 @@ model Contract {
   description         String?        @db.Text
   totalAmount         Decimal        @db.Decimal(18, 2)
   status              ContractStatus @default(PENDING)
+
+  // Billing
+  billingType         String         @default("FIXED") // "FIXED" | "HOURLY"
+  hourlyRate          Decimal?       @db.Decimal(10, 2)
+  weeklyHourLimit     Int?
   
   // Blockchain Data
   escrowAddress       String?        // Smart contract address
@@ -518,10 +538,26 @@ model Milestone {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
-  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  contract    Contract    @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  timeEntries TimeEntry[]
 
   @@index([contractId])
   @@index([status])
+}
+
+model TimeEntry {
+  id          String   @id @default(cuid())
+  milestoneId String
+  date        DateTime @db.Date
+  hours       Decimal  @db.Decimal(4, 2) // e.g. 7.50
+  description String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  milestone Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  @@unique([milestoneId, date])
+  @@index([milestoneId])
 }
 
 // =============================================================================

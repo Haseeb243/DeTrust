@@ -38,7 +38,7 @@ export interface SecureFileResponse {
 }
 
 interface FetchSecureFileOptions {
-  token: string;
+  token?: string;
   download?: boolean;
   signal?: AbortSignal;
   attachObjectUrl?: boolean;
@@ -46,16 +46,16 @@ interface FetchSecureFileOptions {
 
 export async function fetchSecureFile(targetUrl: string, options: FetchSecureFileOptions): Promise<SecureFileResponse> {
   const { token, download, signal, attachObjectUrl } = options;
-  if (!token) {
-    throw new Error('Missing session token for secure file request');
-  }
 
   const requestUrl = download ? appendQueryParam(targetUrl, 'download', '1') : targetUrl;
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(requestUrl, {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
     credentials: 'include',
     signal,
   });

@@ -1,31 +1,26 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { toast } from 'sonner';
 import { useAccount, useBalance } from 'wagmi';
+import { type Address } from 'viem';
 import {
   ArrowDownLeft,
   ArrowUpRight,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   DollarSign,
   ExternalLink,
-  Filter,
   Shield,
   Wallet,
   XCircle,
 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { contractApi, type Contract } from '@/lib/api';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
+import { useContracts } from '@/hooks/queries/use-contracts';
 
 type TransactionType = 'payment' | 'withdrawal' | 'deposit' | 'escrow';
 
@@ -65,92 +60,82 @@ const formatDate = (date: string) => {
 };
 
 export default function PaymentsPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const { address, isConnected } = useAccount();
-  const { data: ethBalance } = useBalance({ address });
+  const stableTokenAddress = process.env.NEXT_PUBLIC_STABLE_TOKEN_ADDRESS as Address | undefined;
+  const { data: nativeBalance } = useBalance({ address });
+  const { data: stableBalance } = useBalance({
+    address,
+    token: stableTokenAddress,
+    query: { enabled: Boolean(address && stableTokenAddress) },
+  });
 
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'incoming' | 'outgoing'>('all');
 
   const isClient = user?.role === 'CLIENT';
 
-  // Simulated transactions from contracts
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { data, isLoading } = useContracts({
+    role: isClient ? 'client' : 'freelancer',
+    limit: 50,
+  });
 
-  const fetchPaymentData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await contractApi.listContracts({
-        role: isClient ? 'client' : 'freelancer',
-        limit: 50,
+  const contracts = useMemo(() => data?.items ?? [], [data?.items]);
+
+  // Generate transactions from milestones
+  const transactions = useMemo<Transaction[]>(() => {
+    const txs: Transaction[] = [];
+    contracts.forEach((contract) => {
+      contract.milestones?.forEach((milestone) => {
+        if (milestone.status === 'PAID' || milestone.status === 'APPROVED') {
+          txs.push({
+            id: milestone.id,
+            type: isClient ? 'payment' : 'payment',
+            amount: Number(milestone.amount),
+            status: 'completed',
+            description: `${milestone.title} - ${contract.title}`,
+            contractId: contract.id,
+            contractTitle: contract.title,
+            createdAt: milestone.approvedAt || milestone.paidAt || contract.createdAt,
+          });
+        }
       });
 
-      if (response.success && response.data) {
-        setContracts(response.data.items);
-        
-        // Generate transactions from milestones
-        const txs: Transaction[] = [];
-        response.data.items.forEach((contract) => {
-          contract.milestones?.forEach((milestone) => {
-            if (milestone.status === 'PAID' || milestone.status === 'APPROVED') {
-              txs.push({
-                id: milestone.id,
-                type: isClient ? 'payment' : 'payment',
-                amount: milestone.amount,
-                status: 'completed',
-                description: `${milestone.title} - ${contract.title}`,
-                contractId: contract.id,
-                contractTitle: contract.title,
-                createdAt: milestone.approvedAt || milestone.paidAt || contract.createdAt,
-              });
-            }
-          });
-          
-          // Add escrow funding transaction if exists
-          if (contract.fundingTxHash) {
-            txs.push({
-              id: `escrow-${contract.id}`,
-              type: 'escrow',
-              amount: contract.totalAmount,
-              status: 'completed',
-              description: `Escrow funded for ${contract.title}`,
-              contractId: contract.id,
-              contractTitle: contract.title,
-              txHash: contract.fundingTxHash,
-              createdAt: contract.createdAt,
-            });
-          }
+      // Add escrow funding transaction if exists
+      if (contract.fundingTxHash) {
+        txs.push({
+          id: `escrow-${contract.id}`,
+          type: 'escrow',
+          amount: Number(contract.totalAmount),
+          status: 'completed',
+          description: `Escrow funded for ${contract.title}`,
+          contractId: contract.id,
+          contractTitle: contract.title,
+          txHash: contract.fundingTxHash,
+          createdAt: contract.createdAt,
         });
-        
-        // Sort by date
-        txs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setTransactions(txs);
       }
-    } catch (error) {
-      toast.error('Failed to load payment data');
-    } finally {
-      setLoading(false);
-    }
-  }, [isClient]);
+    });
 
-  useEffect(() => {
-    fetchPaymentData();
-  }, [fetchPaymentData]);
+    // Sort by date
+    txs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return txs;
+  }, [contracts, isClient]);
 
   // Calculate totals
   const totalEarned = transactions
     .filter((t) => t.type === 'payment' && t.status === 'completed')
-    .reduce((sum, t) => sum + t.amount, 0);
-  
-  const totalPending = contracts
-    .filter((c) => c.status === 'ACTIVE')
-    .reduce((sum, c) => sum + ((c.totalAmount || 0) - (c.paidAmount || 0)), 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const totalPending = contracts.reduce((sum, contract) => {
+    const pendingMilestoneAmount = (contract.milestones ?? [])
+      .filter((milestone) => milestone.status === 'SUBMITTED')
+      .reduce((milestoneSum, milestone) => milestoneSum + Number(milestone.amount || 0), 0);
+    return sum + pendingMilestoneAmount;
+  }, 0);
 
   const totalEscrow = contracts
-    .filter((c) => c.escrowAddress && c.status === 'ACTIVE')
-    .reduce((sum, c) => sum + (c.totalAmount || 0), 0);
+    .filter((c) => c.status === 'ACTIVE' && Boolean(c.fundingTxHash || c.escrowAddress))
+    .reduce((sum, c) => sum + Math.max(0, Number(c.totalAmount || 0) - Number(c.paidAmount || 0)), 0);
 
   const filteredTransactions = transactions.filter((t) => {
     if (activeTab === 'incoming') return t.type === 'payment' && !isClient;
@@ -163,8 +148,8 @@ export default function PaymentsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Payments</h1>
-          <p className="text-slate-600">
+          <h1 className="text-2xl font-semibold text-dt-text">Payments</h1>
+          <p className="text-dt-text-muted">
             {isClient ? 'Track payments to freelancers' : 'Track your earnings and withdrawals'}
           </p>
         </div>
@@ -173,14 +158,19 @@ export default function PaymentsPage() {
       {/* Wallet & Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         {/* Wallet Balance */}
-        <Card className="border-slate-200 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg">
+        <Card className="border-dt-border bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-emerald-100">Wallet Balance</p>
                 <p className="mt-1 text-3xl font-semibold">
-                  {isConnected && ethBalance
-                    ? `${Number(ethBalance.formatted).toFixed(4)} ${ethBalance.symbol}`
+                  {isConnected && stableBalance
+                    ? `${Number(stableBalance.formatted).toFixed(2)} ${stableBalance.symbol}`
+                    : '-- dUSD'}
+                </p>
+                <p className="mt-1 text-xs text-emerald-100">
+                  Gas: {isConnected && nativeBalance
+                    ? `${Number(nativeBalance.formatted).toFixed(4)} ${nativeBalance.symbol}`
                     : '-- ETH'}
                 </p>
                 {address && (
@@ -195,12 +185,12 @@ export default function PaymentsPage() {
         </Card>
 
         {/* Total Earned/Paid */}
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">{isClient ? 'Total Paid' : 'Total Earned'}</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">
+                <p className="text-sm text-dt-text-muted">{isClient ? 'Total Paid' : 'Total Earned'}</p>
+                <p className="mt-1 text-2xl font-semibold text-dt-text">
                   ${totalEarned.toLocaleString()}
                 </p>
               </div>
@@ -214,12 +204,12 @@ export default function PaymentsPage() {
         </Card>
 
         {/* Pending */}
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">Pending</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">
+                <p className="text-sm text-dt-text-muted">Pending</p>
+                <p className="mt-1 text-2xl font-semibold text-dt-text">
                   ${totalPending.toLocaleString()}
                 </p>
               </div>
@@ -229,12 +219,12 @@ export default function PaymentsPage() {
         </Card>
 
         {/* In Escrow */}
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">In Escrow</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">
+                <p className="text-sm text-dt-text-muted">In Escrow</p>
+                <p className="mt-1 text-2xl font-semibold text-dt-text">
                   ${totalEscrow.toLocaleString()}
                 </p>
               </div>
@@ -245,7 +235,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Transaction Tabs */}
-      <div className="flex gap-2 border-b border-slate-200 pb-2">
+      <div className="flex gap-2 border-b border-dt-border pb-2">
         {(['all', 'incoming', 'outgoing'] as const).map((tab) => (
           <button
             key={tab}
@@ -254,7 +244,7 @@ export default function PaymentsPage() {
               'rounded-lg px-4 py-2 text-sm font-medium capitalize transition',
               activeTab === tab
                 ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                : 'text-dt-text-muted hover:bg-dt-surface-alt'
             )}
           >
             {tab === 'all' ? 'All Transactions' : tab}
@@ -263,16 +253,16 @@ export default function PaymentsPage() {
       </div>
 
       {/* Transactions List */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex min-h-[300px] items-center justify-center">
           <Spinner size="lg" />
         </div>
       ) : filteredTransactions.length === 0 ? (
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <DollarSign className="h-12 w-12 text-slate-300" />
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">No transactions yet</h3>
-            <p className="mt-2 text-slate-600">
+            <h3 className="mt-4 text-lg font-semibold text-dt-text">No transactions yet</h3>
+            <p className="mt-2 text-dt-text-muted">
               {isClient
                 ? 'Payments will appear when you approve milestones'
                 : 'Earnings will appear when clients approve your work'}
@@ -280,13 +270,13 @@ export default function PaymentsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardContent className="p-0">
             <div className="divide-y divide-slate-100">
               {filteredTransactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="flex items-center justify-between p-4 hover:bg-slate-50"
+                  className="flex items-center justify-between p-4 hover:bg-dt-surface-alt"
                 >
                   <div className="flex items-center gap-4">
                     <div
@@ -312,8 +302,8 @@ export default function PaymentsPage() {
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900">{tx.description}</p>
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <p className="font-medium text-dt-text">{tx.description}</p>
+                      <div className="flex items-center gap-2 text-sm text-dt-text-muted">
                         {STATUS_ICONS[tx.status]}
                         <span>{formatDate(tx.createdAt)}</span>
                         {tx.txHash && (
@@ -337,7 +327,7 @@ export default function PaymentsPage() {
                           ? 'text-emerald-600'
                           : tx.type === 'payment' && isClient
                           ? 'text-red-600'
-                          : 'text-slate-900'
+                          : 'text-dt-text'
                       )}
                     >
                       {tx.type === 'payment' && !isClient ? '+' : tx.type === 'payment' && isClient ? '-' : ''}
@@ -354,9 +344,9 @@ export default function PaymentsPage() {
 
       {/* Active Contracts with Pending Payments */}
       {contracts.filter((c) => c.status === 'ACTIVE').length > 0 && (
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardHeader>
-            <CardTitle className="text-lg text-slate-900">
+            <CardTitle className="text-lg text-dt-text">
               Active Contracts with Pending Milestones
             </CardTitle>
           </CardHeader>
@@ -364,7 +354,7 @@ export default function PaymentsPage() {
             {contracts
               .filter((c) => c.status === 'ACTIVE')
               .map((contract) => {
-                const pendingAmount = (contract.totalAmount || 0) - (contract.paidAmount || 0);
+                const pendingAmount = Number(contract.totalAmount || 0) - Number(contract.paidAmount || 0);
                 const pendingMilestones = contract.milestones?.filter(
                   (m) => m.status !== 'PAID' && m.status !== 'APPROVED'
                 ).length || 0;
@@ -373,16 +363,16 @@ export default function PaymentsPage() {
                   <Link
                     key={contract.id}
                     href={`/contracts/${contract.id}`}
-                    className="flex items-center justify-between rounded-xl border border-slate-100 p-4 hover:bg-slate-50"
+                    className="flex items-center justify-between rounded-xl border border-slate-100 p-4 hover:bg-dt-surface-alt"
                   >
                     <div>
-                      <p className="font-medium text-slate-900">{contract.title}</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="font-medium text-dt-text">{contract.title}</p>
+                      <p className="text-sm text-dt-text-muted">
                         {pendingMilestones} milestone{pendingMilestones !== 1 ? 's' : ''} pending
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-slate-900">
+                      <p className="font-semibold text-dt-text">
                         ${pendingAmount.toLocaleString()} remaining
                       </p>
                       {contract.escrowAddress && (

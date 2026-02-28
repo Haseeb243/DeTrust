@@ -39,17 +39,27 @@ async function deployContract<T extends Contract = Contract>(name: string, args:
 }
 
 async function main() {
-	const [deployer] = await ethers.getSigners();
+	const signers = await ethers.getSigners();
+	const [deployer, ...others] = signers;
 	const feeRecipient = process.env.FEE_RECIPIENT ?? deployer.address;
 	const admin = process.env.CORE_OWNER ?? deployer.address;
 	const networkInfo = await deployer.provider!.getNetwork();
 
 	console.log(`\n🚀 Deploying contracts to ${network.name} (chainId ${networkInfo.chainId})`);
 	console.log(`Deployer: ${deployer.address}`);
+	const stablecoinInitialSupply = 1_000_000_000_000; // 1,000,000 dUSD with 6 decimals
+
+	const stablecoin = await deployContract("DeTrustUSD", [deployer.address, stablecoinInitialSupply]);
+	const stablecoinContract = stablecoin.contract.connect(deployer);
+	const localFaucetAmount = 100_000_000_000; // 100,000 dUSD with 6 decimals
+
+	for (const signer of others.slice(0, 5)) {
+		await (await stablecoinContract.getFunction("mint")(signer.address, localFaucetAmount)).wait();
+	}
 
 	const reputation = await deployContract("ReputationRegistry");
 	const dispute = await deployContract("DisputeResolution");
-	const jobEscrow = await deployContract("JobEscrow", [feeRecipient]);
+	const jobEscrow = await deployContract("JobEscrow", [stablecoin.address, feeRecipient]);
 
 	// Wire contracts together
 	const disputeContract = dispute.contract.connect(deployer);
@@ -70,6 +80,11 @@ async function main() {
 	}
 
 	const deploymentData: Record<string, DeploymentRecord> = {
+		DeTrustUSD: {
+			address: stablecoin.address,
+			blockNumber: stablecoin.blockNumber,
+			txHash: stablecoin.txHash,
+		},
 		JobEscrow: {
 			address: jobEscrow.address,
 			blockNumber: jobEscrow.blockNumber,

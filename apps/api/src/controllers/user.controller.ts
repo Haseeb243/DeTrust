@@ -53,6 +53,22 @@ export class UserController {
   }
 
   /**
+   * Get client public profile with work history
+   * GET /users/clients/:id/profile
+   */
+  async getClientProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await userService.getClientPublicProfile(req.params.id);
+      res.json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Update freelancer profile
    * PATCH /users/me/freelancer
    */
@@ -216,6 +232,23 @@ export class UserController {
       res.json({
         success: true,
         message: 'Role set successfully',
+        data: user,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Update KYC data
+   * PATCH /users/me/kyc
+   */
+  async updateKyc(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const user = await userService.updateKyc(req.userId!, req.body);
+      res.json({
+        success: true,
+        message: 'KYC data updated',
         data: user,
       });
     } catch (error) {

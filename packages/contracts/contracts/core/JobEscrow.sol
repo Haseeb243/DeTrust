@@ -4,15 +4,17 @@ pragma solidity ^0.8.24;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
-	using Address for address payable;
+	using SafeERC20 for IERC20;
 
 	uint256 public constant MAX_PLATFORM_FEE = 10; // 10%
 
 	uint256 public platformFeePercent = 3;
 	address public feeRecipient;
+	IERC20 public immutable paymentToken;
 
 	enum JobStatus {
 		Created,
@@ -64,13 +66,14 @@ contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
 	event JobCompleted(bytes32 indexed jobId);
 	event JobCancelled(bytes32 indexed jobId, address cancelledBy);
 
-	constructor(address initialFeeRecipient) Ownable(msg.sender) {
+	constructor(address paymentTokenAddress, address initialFeeRecipient) Ownable(msg.sender) {
+		require(paymentTokenAddress != address(0), "Invalid payment token");
+		paymentToken = IERC20(paymentTokenAddress);
 		feeRecipient = initialFeeRecipient != address(0) ? initialFeeRecipient : msg.sender;
 	}
 
 	function createJob(bytes32 jobId, address freelancer, uint256[] calldata milestoneAmounts)
 		external
-		payable
 		whenNotPaused
 		nonReentrant
 	{
@@ -90,8 +93,9 @@ contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
 		require(totalAmount > 0, "Invalid total");
 
 		uint256 platformFee = (totalAmount * platformFeePercent) / 100;
-		uint256 requiredValue = totalAmount + platformFee;
-		require(msg.value >= requiredValue, "Insufficient funding");
+		uint256 requiredAmount = totalAmount + platformFee;
+
+		paymentToken.safeTransferFrom(_msgSender(), address(this), requiredAmount);
 
 		job.client = _msgSender();
 		job.freelancer = freelancer;
@@ -118,11 +122,6 @@ contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
 
 		emit JobCreated(jobId, job.client, freelancer, totalAmount);
 		emit JobFunded(jobId, totalAmount);
-
-		uint256 refund = msg.value - requiredValue;
-		if (refund > 0) {
-			payable(_msgSender()).sendValue(refund);
-		}
 	}
 
 	function submitMilestone(bytes32 jobId, uint256 milestoneIndex, string calldata deliverableHash) external {
@@ -153,10 +152,19 @@ contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
 		require(job.status == JobStatus.InProgress || job.status == JobStatus.Funded, "Job inactivity");
 
 		Milestone storage milestone = _getMilestone(jobId, milestoneIndex);
-		require(milestone.status == MilestoneStatus.Submitted, "Not submitted");
+		require(
+			milestone.status == MilestoneStatus.Submitted ||
+			milestone.status == MilestoneStatus.Pending ||
+			milestone.status == MilestoneStatus.InProgress,
+			"Milestone not releasable"
+		);
 
 		milestone.status = MilestoneStatus.Approved;
 		milestone.approvedAt = block.timestamp;
+
+		if (job.status == JobStatus.Funded) {
+			job.status = JobStatus.InProgress;
+		}
 
 		emit MilestoneApproved(jobId, milestoneIndex);
 
@@ -165,7 +173,7 @@ contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
 		job.paidAmount += amount;
 		totalEscrowBalance -= amount;
 
-		payable(job.freelancer).sendValue(amount);
+		paymentToken.safeTransfer(job.freelancer, amount);
 		emit PaymentReleased(jobId, milestoneIndex, job.freelancer, amount);
 
 		if (_allMilestonesPaid(jobId)) {
@@ -234,7 +242,7 @@ contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
 		}
 
 		job.status = JobStatus.Cancelled;
-		payable(recipient).sendValue(amount + job.platformFee);
+		paymentToken.safeTransfer(recipient, amount + job.platformFee);
 		job.platformFee = 0;
 		emit JobCancelled(jobId, _msgSender());
 	}
@@ -271,6 +279,6 @@ contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
 		}
 
 		jobs[jobId].platformFee = 0;
-		payable(feeRecipient).sendValue(feeAmount);
+		paymentToken.safeTransfer(feeRecipient, feeAmount);
 	}
 }

@@ -13,7 +13,7 @@ export const corsConfig = {
     'Accept',
     'Origin',
   ],
-  exposedHeaders: ['X-Total-Count', 'X-Page', 'X-Limit'],
+  exposedHeaders: ['X-Total-Count', 'X-Page', 'X-Limit', 'Content-Disposition'],
   maxAge: 86400, // 24 hours
 };
 

@@ -84,7 +84,11 @@ export interface ClientProfile {
   avgRating: number;
   totalReviews: number;
   paymentVerified: boolean;
-  
+
+  // Completeness
+  profileComplete: boolean;
+  completenessScore: number;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -192,5 +196,7 @@ export interface PublicClientProfile extends PublicUser {
     avgRating: number;
     totalReviews: number;
     paymentVerified: boolean;
+    profileComplete: boolean;
+    completenessScore: number;
   };
 }

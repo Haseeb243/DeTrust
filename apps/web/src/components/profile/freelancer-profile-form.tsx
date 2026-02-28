@@ -155,11 +155,11 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
   };
 
   return (
-    <Card className="border-slate-200 bg-white shadow-sm">
+    <Card className="border-dt-border bg-dt-surface shadow-sm">
       <CardHeader className="flex flex-col gap-2">
-        <CardTitle className="text-xl text-slate-900">Freelancer profile</CardTitle>
-        <div className="flex items-center gap-3 text-sm text-slate-500">
-          <Badge variant="secondary" className="bg-emerald-50 text-emerald-600">
+        <CardTitle className="text-xl text-dt-text">Freelancer profile</CardTitle>
+        <div className="flex items-center gap-3 text-sm text-dt-text-muted">
+          <Badge variant="secondary" className="bg-emerald-50 dark:bg-emerald-950 text-emerald-600">
             {completenessScore}% complete
           </Badge>
           <span>Trust score {profile?.trustScore ?? 0}%</span>
@@ -169,13 +169,13 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
       <CardContent>
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div>
-            <label className="text-sm text-slate-600">Headline</label>
+            <label className="text-sm text-dt-text-muted">Headline</label>
             <Input placeholder="Lead Solidity Engineer" className="mt-2" {...register('title')} />
             {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>}
           </div>
 
           <div>
-            <div className="flex items-center justify-between text-sm text-slate-600">
+            <div className="flex items-center justify-between text-sm text-dt-text-muted">
               <label>Bio</label>
               <span className="text-xs text-slate-400">Share ~100 words on what you deliver (FR-C3.1)</span>
             </div>
@@ -190,14 +190,14 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
 
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="text-sm text-slate-600">Hourly rate (USD)</label>
+              <label className="text-sm text-dt-text-muted">Hourly rate (USD)</label>
               <Input type="number" step="1" min="1" placeholder="150" className="mt-2" {...register('hourlyRate', { valueAsNumber: true })} />
               {errors.hourlyRate && <p className="mt-1 text-sm text-red-500">{errors.hourlyRate.message as string}</p>}
             </div>
             <div>
-              <label className="text-sm text-slate-600">Availability</label>
+              <label className="text-sm text-dt-text-muted">Availability</label>
               <select
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none"
+                className="mt-2 w-full rounded-xl border border-dt-border bg-dt-input-bg px-3 py-2 text-sm text-dt-text-muted focus:border-emerald-400 focus:outline-none"
                 {...register('availability')}
               >
                 <option value="">Select availability</option>
@@ -210,7 +210,7 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
               {errors.availability && <p className="mt-1 text-sm text-red-500">{errors.availability.message as string}</p>}
             </div>
             <div>
-              <label className="text-sm text-slate-600">Timezone</label>
+              <label className="text-sm text-dt-text-muted">Timezone</label>
               <Input placeholder="UTC+1" className="mt-2" {...register('timezone')} />
               {errors.timezone && <p className="mt-1 text-sm text-red-500">{errors.timezone.message as string}</p>}
             </div>
@@ -218,12 +218,12 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-sm text-slate-600">Location</label>
+              <label className="text-sm text-dt-text-muted">Location</label>
               <Input placeholder="Lisbon, PT" className="mt-2" {...register('location')} />
               {errors.location && <p className="mt-1 text-sm text-red-500">{errors.location.message as string}</p>}
             </div>
             <div>
-              <label className="text-sm text-slate-600">Languages</label>
+              <label className="text-sm text-dt-text-muted">Languages</label>
               <div className="space-y-3">
                 {languagesArray.fields.map((field, index) => (
                   <div key={field.id} className="space-y-1">
@@ -248,7 +248,7 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
           </div>
 
           <div>
-            <label className="text-sm text-slate-600">Portfolio links</label>
+            <label className="text-sm text-dt-text-muted">Portfolio links</label>
             <div className="space-y-3">
               {linksArray.fields.map((field, index) => (
                 <div key={field.id} className="space-y-1">

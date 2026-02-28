@@ -10,6 +10,7 @@ Use this guide when running the full stack against the built-in Hardhat node (ch
 | `NEXT_PUBLIC_CHAIN_ID` | `31337` | Ensures wagmi/RainbowKit targets the Hardhat chain. |
 | `NEXT_PUBLIC_RPC_URL` | `http://127.0.0.1:8545` | Direct JSON-RPC endpoint for wallet reads. |
 | `NEXT_PUBLIC_ESCROW_ADDRESS` | `0x...` | Address from `packages/contracts/deployments/latest.json`. |
+| `NEXT_PUBLIC_STABLE_TOKEN_ADDRESS` | `0x...` | Local dUSD token address from deployment JSON. |
 | `NEXT_PUBLIC_REPUTATION_ADDRESS` | `0x...` | Same as above. |
 | `NEXT_PUBLIC_DISPUTE_ADDRESS` | `0x...` | Same as above. |
 | `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` | `<your_cloud_id>` | Enables RainbowKit connectors (MetaMask, WalletConnect). |
@@ -48,16 +49,15 @@ Use this guide when running the full stack against the built-in Hardhat node (ch
 ### How to propagate contract addresses
 1. Start the Hardhat node: `cd packages/contracts && pnpm node`.
 2. Deploy: `pnpm contracts:deploy:local` (writes `deployments/latest.json`).
-3. Manually copy the `JobEscrow`, `ReputationRegistry`, and `DisputeResolution` addresses into both `apps/web/.env.local` and `apps/api/.env` using the variables listed above.
-
-> **Why manual copying?** The deployment JSON contains multiple network entries, and the frontend/backend use slightly different env formats. Automating the sync right now would require extra tooling (scripts + cross-platform path handling) and secrets management. Keeping it manual avoids accidental overwrites during concurrent dev sessions. We can revisit automation once the contract interfaces stabilize.
+3. Sync env files automatically: `pnpm contracts:sync-env:local`.
+4. This command updates `apps/web/.env.local` and `apps/api/.env` with local `JobEscrow`, `DeTrustUSD`, `ReputationRegistry`, and `DisputeResolution` addresses.
 
 ### Minimal startup sequence
 1. `docker-compose up -d postgres redis`
 2. `pnpm db:generate && pnpm db:push`
 3. `cd packages/contracts && pnpm node` (leave running)
 4. In a new terminal: `pnpm contracts:deploy:local`
-5. Update the env files using the tables above.
+5. `pnpm contracts:sync-env:local`
 6. `pnpm dev` (or start `apps/api` and `apps/web` separately)
 
 With these values in place, MetaMask (configured to the “Localhost 8545” network) connects directly, wallet logins hit the SIWE endpoints, and dashboards can pull against live—non-mock—data.

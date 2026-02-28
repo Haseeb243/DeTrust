@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
-  Briefcase,
   Building2,
   Calendar,
   CheckCircle2,
@@ -20,9 +19,10 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge, Button, Card, CardContent } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { proposalApi, type Proposal, type GetProposalsParams, type ProposalStatus } from '@/lib/api';
+import { useMyProposals, useWithdrawProposal } from '@/hooks/queries/use-proposals';
+import { type GetProposalsParams, type ProposalStatus } from '@/lib/api';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
 
@@ -31,7 +31,7 @@ const STATUS_COLORS: Record<ProposalStatus, string> = {
   SHORTLISTED: 'bg-blue-100 text-blue-700',
   ACCEPTED: 'bg-emerald-100 text-emerald-700',
   REJECTED: 'bg-red-100 text-red-700',
-  WITHDRAWN: 'bg-slate-100 text-slate-700',
+  WITHDRAWN: 'bg-dt-surface-alt text-dt-text-muted',
 };
 
 const STATUS_ICONS: Record<ProposalStatus, React.ReactNode> = {
@@ -67,73 +67,46 @@ export default function MyProposalsPage() {
   const router = useRouter();
   const { user } = useAuthStore();
 
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ProposalStatus | ''>('');
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: 1,
-    totalPages: 1,
-    hasNext: false,
-    hasPrev: false,
-  });
+  const [page, setPage] = useState(1);
 
-  const fetchProposals = useCallback(async (page = 1) => {
-    setLoading(true);
-    try {
-      const params: GetProposalsParams = {
-        page,
-        limit: 10,
-        sort: 'createdAt',
-        order: 'desc',
-      };
-      if (activeTab) {
-        params.status = activeTab;
-      }
+  const params: GetProposalsParams = {
+    page,
+    limit: 10,
+    sort: 'createdAt',
+    order: 'desc',
+    ...(activeTab ? { status: activeTab } : {}),
+  };
 
-      const response = await proposalApi.getMyProposals(params);
+  const { data, isLoading } = useMyProposals(params);
+  const withdrawMutation = useWithdrawProposal();
 
-      if (response.success && response.data) {
-        setProposals(response.data.items);
-        setPagination({
-          total: response.data.total,
-          page: response.data.page,
-          totalPages: response.data.totalPages,
-          hasNext: response.data.hasNext,
-          hasPrev: response.data.hasPrev,
-        });
-      }
-    } catch (error) {
-      toast.error('Failed to load proposals');
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab]);
+  const proposals = data?.items ?? [];
+  const pagination = useMemo(() => ({
+    total: data?.total ?? 0,
+    page: data?.page ?? 1,
+    totalPages: data?.totalPages ?? 1,
+    hasNext: data?.hasNext ?? false,
+    hasPrev: data?.hasPrev ?? false,
+  }), [data]);
 
   useEffect(() => {
     if (user?.role !== 'FREELANCER') {
       toast.error('Only freelancers can access this page');
       router.push('/dashboard');
-      return;
     }
-    fetchProposals();
-  }, [user?.role, router, fetchProposals]);
+  }, [user?.role, router]);
 
-  const handleWithdraw = async (proposalId: string) => {
+  const handleWithdraw = useCallback(async (proposalId: string) => {
     if (!confirm('Are you sure you want to withdraw this proposal?')) return;
 
     try {
-      const response = await proposalApi.withdrawProposal(proposalId);
-      if (response.success) {
-        toast.success('Proposal withdrawn');
-        fetchProposals(pagination.page);
-      } else {
-        toast.error(response.error?.message || 'Failed to withdraw proposal');
-      }
-    } catch (error) {
+      await withdrawMutation.mutateAsync(proposalId);
+      toast.success('Proposal withdrawn');
+    } catch {
       toast.error('Failed to withdraw proposal');
     }
-  };
+  }, [withdrawMutation]);
 
   if (user?.role !== 'FREELANCER') {
     return null;
@@ -144,8 +117,8 @@ export default function MyProposalsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">My Proposals</h1>
-          <p className="text-slate-600">Track your submitted proposals and their status</p>
+          <h1 className="text-2xl font-semibold text-dt-text">My Proposals</h1>
+          <p className="text-dt-text-muted">Track your submitted proposals and their status</p>
         </div>
         <Button asChild className="bg-emerald-500 text-white hover:bg-emerald-600">
           <Link href="/jobs">Find Jobs</Link>
@@ -153,19 +126,19 @@ export default function MyProposalsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-2">
+      <div className="flex gap-2 overflow-x-auto border-b border-dt-border pb-2">
         {TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => {
               setActiveTab(tab.value);
-              setPagination((prev) => ({ ...prev, page: 1 }));
+              setPage(1);
             }}
             className={cn(
               'whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition',
               activeTab === tab.value
                 ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                : 'text-dt-text-muted hover:bg-dt-surface-alt'
             )}
           >
             {tab.label}
@@ -174,18 +147,18 @@ export default function MyProposalsPage() {
       </div>
 
       {/* Proposals List */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex min-h-[300px] items-center justify-center">
           <Spinner size="lg" />
         </div>
       ) : proposals.length === 0 ? (
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <FileText className="h-12 w-12 text-slate-300" />
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">
+            <h3 className="mt-4 text-lg font-semibold text-dt-text">
               {activeTab ? `No ${activeTab.toLowerCase()} proposals` : 'No proposals yet'}
             </h3>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 text-dt-text-muted">
               Browse available jobs and submit your first proposal
             </p>
             <Button asChild className="mt-4 bg-emerald-500 text-white hover:bg-emerald-600">
@@ -196,7 +169,7 @@ export default function MyProposalsPage() {
       ) : (
         <div className="space-y-4">
           {proposals.map((proposal) => (
-            <Card key={proposal.id} className="border-slate-200 bg-white shadow-md">
+            <Card key={proposal.id} className="border-dt-border bg-dt-surface shadow-md">
               <CardContent className="p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex-1 space-y-3">
@@ -204,7 +177,7 @@ export default function MyProposalsPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
                         href={`/jobs/${proposal.jobId}`}
-                        className="text-lg font-semibold text-slate-900 hover:text-emerald-600"
+                        className="text-lg font-semibold text-dt-text hover:text-emerald-600"
                       >
                         {proposal.job?.title || 'Job Title'}
                       </Link>
@@ -216,7 +189,7 @@ export default function MyProposalsPage() {
 
                     {/* Client Info */}
                     {proposal.job?.client && (
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-dt-text-muted">
                         {proposal.job.client.clientProfile?.companyName && (
                           <span className="flex items-center gap-1">
                             <Building2 className="h-4 w-4" />
@@ -239,7 +212,7 @@ export default function MyProposalsPage() {
                     )}
 
                     {/* Proposal Summary */}
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-dt-text-muted">
                       <span className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
                         ${proposal.proposedRate}
@@ -258,7 +231,7 @@ export default function MyProposalsPage() {
                     </div>
 
                     {/* Cover Letter Preview */}
-                    <p className="line-clamp-2 text-sm text-slate-600">{proposal.coverLetter}</p>
+                    <p className="line-clamp-2 text-sm text-dt-text-muted">{proposal.coverLetter}</p>
 
                     {/* Skills */}
                     {proposal.job?.skills && proposal.job.skills.length > 0 && (
@@ -267,13 +240,13 @@ export default function MyProposalsPage() {
                           <Badge
                             key={js.id}
                             variant="secondary"
-                            className="bg-slate-100 text-xs text-slate-600"
+                            className="bg-dt-surface-alt text-xs text-dt-text-muted"
                           >
                             {js.skill.name}
                           </Badge>
                         ))}
                         {proposal.job.skills.length > 4 && (
-                          <Badge variant="secondary" className="bg-slate-100 text-xs text-slate-500">
+                          <Badge variant="secondary" className="bg-dt-surface-alt text-xs text-dt-text-muted">
                             +{proposal.job.skills.length - 4}
                           </Badge>
                         )}
@@ -294,7 +267,7 @@ export default function MyProposalsPage() {
                       size="sm"
                       variant="outline"
                       asChild
-                      className="gap-1 border-slate-200"
+                      className="gap-1 border-dt-border"
                     >
                       <Link href={`/jobs/${proposal.jobId}`}>
                         <Eye className="h-3 w-3" />
@@ -330,7 +303,7 @@ export default function MyProposalsPage() {
           {/* Pagination */}
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between pt-4">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-dt-text-muted">
                 Showing {(pagination.page - 1) * 10 + 1} to{' '}
                 {Math.min(pagination.page * 10, pagination.total)} of {pagination.total} proposals
               </p>
@@ -339,8 +312,8 @@ export default function MyProposalsPage() {
                   variant="outline"
                   size="sm"
                   disabled={!pagination.hasPrev}
-                  onClick={() => fetchProposals(pagination.page - 1)}
-                  className="border-slate-200"
+                  onClick={() => setPage((p) => p - 1)}
+                  className="border-dt-border"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
@@ -349,8 +322,8 @@ export default function MyProposalsPage() {
                   variant="outline"
                   size="sm"
                   disabled={!pagination.hasNext}
-                  onClick={() => fetchProposals(pagination.page + 1)}
-                  className="border-slate-200"
+                  onClick={() => setPage((p) => p + 1)}
+                  className="border-dt-border"
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />

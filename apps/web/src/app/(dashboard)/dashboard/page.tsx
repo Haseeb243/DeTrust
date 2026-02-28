@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useAccount, useBalance } from 'wagmi';
 import {
   ArrowUpRight,
@@ -19,9 +19,12 @@ import { useAuthStore } from '@/store';
 import { ProfileProgressRing } from '@/components/profile/profile-progress-ring';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
+import { userApi } from '@/lib/api';
 
-const ratingLabel = (value?: number | null) =>
-  typeof value === 'number' ? `${value.toFixed(1)} ★ avg` : 'No reviews yet';
+const ratingLabel = (value?: number | string | null) => {
+  const num = value != null ? Number(value) : NaN;
+  return !isNaN(num) && num > 0 ? `${num.toFixed(1)} ★ avg` : 'No reviews yet';
+};
 
 const toneClasses: Record<'success' | 'warning' | 'info', string> = {
   success: 'border-emerald-100 bg-emerald-50 text-emerald-900',
@@ -30,7 +33,7 @@ const toneClasses: Record<'success' | 'warning' | 'info', string> = {
 };
 
 export default function DashboardPage() {
-  const { user, isNewUser } = useAuthStore();
+  const { user, isNewUser, setUser } = useAuthStore();
   const { address, isConnected } = useAccount();
   const { data: balanceData } = useBalance({
     address,
@@ -40,11 +43,22 @@ export default function DashboardPage() {
     },
   });
 
+  // Auto-sync wallet address to backend when connected but not saved
+  useEffect(() => {
+    if (!isConnected || !address || !user) return;
+    if (user.walletAddress === address) return;
+    userApi.updateMe({ walletAddress: address }).then((res) => {
+      if (res.success && res.data) {
+        setUser(res.data);
+      }
+    }).catch(() => { /* silent */ });
+  }, [isConnected, address, user, setUser]);
+
   const isFreelancer = user?.role === 'FREELANCER';
   const completion = computeProfileCompletion(user);
   const freelancerProfile = user?.freelancerProfile;
   const clientProfile = user?.clientProfile;
-  const heroStats = isFreelancer
+  const heroStats = useMemo(() => isFreelancer
     ? [
         {
           label: 'Trust score',
@@ -78,7 +92,7 @@ export default function DashboardPage() {
           value: clientProfile?.paymentVerified ? 'Verified' : 'Pending',
           helper: clientProfile?.paymentVerified ? 'Escrow ready' : 'Fund your first escrow',
         },
-      ];
+      ], [isFreelancer, freelancerProfile, clientProfile]);
 
   const notifications = useMemo(() => {
     const entries: Array<{
@@ -137,7 +151,7 @@ export default function DashboardPage() {
     return entries;
   }, [clientProfile, completion, freelancerProfile, isFreelancer, isNewUser, user?.walletAddress]);
 
-  const workMetrics = isFreelancer
+  const workMetrics = useMemo(() => isFreelancer
     ? [
         {
           label: 'Active contracts',
@@ -163,9 +177,9 @@ export default function DashboardPage() {
           value: `${clientProfile?.jobsPosted ?? 0}`,
           helper: `${clientProfile?.totalReviews ?? 0} feedback cycles`,
         },
-      ];
+      ], [isFreelancer, freelancerProfile, clientProfile]);
 
-  const proposalsCopy = isFreelancer
+  const proposalsCopy = useMemo(() => isFreelancer
     ? {
         title: 'Proposal pipeline',
         explainer: 'Your submitted proposals will surface here once sent.',
@@ -175,17 +189,17 @@ export default function DashboardPage() {
         title: 'Incoming proposals',
         explainer: 'When freelancers respond, you can triage them here.',
         action: { label: 'Review proposals', href: '/jobs/mine' },
-      };
+      }, [isFreelancer]);
 
-  const tokenBalance = balanceData
+  const tokenBalance = useMemo(() => balanceData
     ? `${Number(balanceData.formatted).toFixed(4)} ${balanceData.symbol}`
     : isConnected
     ? '0.0000'
-    : '—';
+    : '—', [balanceData, isConnected]);
 
   if (!user) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 text-slate-500 shadow-xl">
+      <div className="rounded-3xl border border-dt-border bg-dt-surface p-8 text-dt-text-muted shadow-xl">
         We&apos;re syncing your workspace…
       </div>
     );
@@ -193,46 +207,46 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-8 shadow-[0_35px_80px_-40px_rgba(15,23,42,0.7)]">
+      <section className="relative overflow-hidden rounded-[32px] border border-dt-border bg-dt-surface p-8 shadow-[0_35px_80px_-40px_rgba(15,23,42,0.7)]">
         <div className="pointer-events-none absolute inset-0 opacity-70 [background:radial-gradient(circle_at_top,_rgba(16,185,129,0.18),_transparent_60%),radial-gradient(circle_at_20%_20%,_rgba(59,130,246,0.14),_transparent_45%)]" />
         <div className="relative z-10 grid gap-8 lg:grid-cols-[1.6fr,auto]">
           <div>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-dt-text-muted">
               <Badge
                 variant="secondary"
                 className="border border-emerald-200 bg-emerald-50 text-emerald-700"
               >
                 Module 1
               </Badge>
-              <span className="text-slate-400">{new Date(user.createdAt).toLocaleDateString()}</span>
+              <span className="text-dt-text-muted">{new Date(user.createdAt).toLocaleDateString()}</span>
             </div>
-            <h1 className="mt-4 text-3xl font-semibold text-slate-900">
+            <h1 className="mt-4 text-3xl font-semibold text-dt-text">
               {isFreelancer ? 'Ship trustworthy freelance work.' : 'Run verifiable hiring on autopilot.'}
             </h1>
-            <p className="mt-3 max-w-2xl text-lg text-slate-600">
+            <p className="mt-3 max-w-2xl text-lg text-dt-text-muted">
               {isFreelancer
                 ? 'Smart escrow, AI capability scans, and transparent trust scores help you land contracts without cold starts.'
                 : 'Publish roles with embedded escrow, verify payments, and evaluate proposals with transparent trust data.'}
             </p>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               {heroStats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
-                  <p className="text-xs uppercase tracking-[0.4em] text-slate-400">{stat.label}</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">{stat.value}</p>
-                  <p className="text-sm text-slate-500">{stat.helper}</p>
+                <div key={stat.label} className="rounded-2xl border border-dt-border bg-dt-surface/90 p-4 shadow-sm">
+                  <p className="text-xs uppercase tracking-[0.4em] text-dt-text-muted">{stat.label}</p>
+                  <p className="mt-2 text-2xl font-semibold text-dt-text">{stat.value}</p>
+                  <p className="text-sm text-dt-text-muted">{stat.helper}</p>
                 </div>
               ))}
             </div>
           </div>
-          <Card className="border border-slate-200 bg-white/90 text-slate-900 shadow-xl">
+          <Card className="border border-dt-border bg-dt-surface/90 text-dt-text shadow-xl">
             <CardHeader>
-              <CardTitle className="text-base text-slate-900">Profile progress</CardTitle>
+              <CardTitle className="text-base text-dt-text">Profile progress</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
               <ProfileProgressRing value={completion} caption="Reach 70%+ to unlock escrow workflows" />
               <Link
                 href="/profile"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dt-border bg-dt-surface px-6 py-3 text-sm font-semibold text-dt-text transition hover:bg-dt-surface-alt"
               >
                 <ListChecks className="h-4 w-4 text-emerald-500" /> Edit profile
               </Link>
@@ -242,33 +256,33 @@ export default function DashboardPage() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 border border-slate-200 bg-white/90 shadow-xl">
+        <Card className="lg:col-span-2 border border-dt-border bg-dt-surface/90 shadow-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-slate-900">
+            <CardTitle className="flex items-center gap-2 text-base text-dt-text">
               <Briefcase className="h-4 w-4 text-emerald-500" /> Active workboard
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             {workMetrics.map((metric) => (
-              <div key={metric.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="text-xs uppercase tracking-[0.3em] text-slate-400">{metric.label}</div>
+              <div key={metric.label} className="rounded-2xl border border-dt-border bg-dt-surface p-5 shadow-sm">
+                <div className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">{metric.label}</div>
                 <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-3xl font-semibold text-slate-900">{metric.value}</span>
+                  <span className="text-3xl font-semibold text-dt-text">{metric.value}</span>
                   {metric.action ? (
                     <Link href={metric.action.href} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
                       {metric.action.label} →
                     </Link>
                   ) : null}
                 </div>
-                <p className="text-sm text-slate-500">{metric.helper}</p>
+                <p className="text-sm text-dt-text-muted">{metric.helper}</p>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 bg-white/90 shadow-xl">
+        <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-slate-900">
+            <CardTitle className="flex items-center gap-2 text-base text-dt-text">
               <BellRing className="h-4 w-4 text-amber-400" /> Notification center
             </CardTitle>
           </CardHeader>
@@ -282,11 +296,11 @@ export default function DashboardPage() {
                   <p className="font-semibold">{notification.title}</p>
                   {notification.tone === 'success' ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : null}
                 </div>
-                <p className="text-xs text-slate-600">{notification.detail}</p>
+                <p className="text-xs text-dt-text-muted">{notification.detail}</p>
                 {notification.action ? (
                   <Link
                     href={notification.action.href}
-                    className="mt-2 inline-flex items-center text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-slate-700"
+                    className="mt-2 inline-flex items-center text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-dt-text-muted"
                   >
                     {notification.action.label}
                     <ArrowUpRight className="ml-1 h-3 w-3" />
@@ -299,20 +313,20 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="border border-slate-200 bg-white/90 shadow-xl">
+        <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-slate-900">
+            <CardTitle className="flex items-center gap-2 text-base text-dt-text">
               <Inbox className="h-4 w-4 text-cyan-500" /> {proposalsCopy.title}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-slate-600">{proposalsCopy.explainer}</p>
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-xs uppercase tracking-[0.3em] text-slate-500">
+            <p className="text-sm text-dt-text-muted">{proposalsCopy.explainer}</p>
+            <div className="rounded-2xl border border-dashed border-dt-border bg-dt-surface-alt p-4 text-center text-xs uppercase tracking-[0.3em] text-dt-text-muted">
               Pipeline idle
             </div>
             <Link
               href={proposalsCopy.action.href}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dt-border bg-dt-surface px-6 py-3 text-sm font-semibold text-dt-text transition hover:bg-dt-surface-alt"
             >
               {proposalsCopy.action.label}
               <ArrowUpRight className="h-4 w-4 text-emerald-500" />
@@ -320,25 +334,25 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 bg-white/90 shadow-xl">
+        <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-slate-900">
+            <CardTitle className="flex items-center gap-2 text-base text-dt-text">
               <Wallet2 className="h-4 w-4 text-emerald-500" /> Wallet & token balance
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-slate-600">
+          <CardContent className="space-y-4 text-dt-text-muted">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Balance</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-900">{tokenBalance}</p>
-              <p className="text-sm text-slate-500">
+              <p className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Balance</p>
+              <p className="mt-2 text-3xl font-semibold text-dt-text">{tokenBalance}</p>
+              <p className="text-sm text-dt-text-muted">
                 {isConnected ? 'Live balance from connected wallet' : 'Connect a wallet to preview on-chain funds.'}
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
-              <div className="text-xs uppercase tracking-[0.3em] text-slate-400">Wallet</div>
-              <div className="font-mono text-base text-slate-900">{shortWallet(user.walletAddress || address)}</div>
+            <div className="rounded-2xl border border-dt-border bg-dt-surface p-4 text-sm shadow-sm">
+              <div className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Wallet</div>
+              <div className="font-mono text-base text-dt-text">{shortWallet(user.walletAddress || address)}</div>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-emerald-50/80 p-4 text-sm text-emerald-900">
+            <div className="rounded-2xl border border-dt-border bg-emerald-50/80 p-4 text-sm text-emerald-900">
               <div className="text-xs uppercase tracking-[0.3em] text-emerald-500">Status</div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-emerald-500" />
@@ -348,28 +362,28 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 bg-white/90 shadow-xl">
+        <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-slate-900">
+            <CardTitle className="flex items-center gap-2 text-base text-dt-text">
               <Sparkles className="h-4 w-4 text-fuchsia-500" /> Rituals checklist
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-slate-600">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="font-medium text-slate-900">Review trust signals weekly</p>
-              <p className="text-xs text-slate-500">Boost your score by reflecting new deliverables.</p>
+          <CardContent className="space-y-3 text-sm text-dt-text-muted">
+            <div className="rounded-2xl border border-dt-border bg-dt-surface p-4 shadow-sm">
+              <p className="font-medium text-dt-text">Review trust signals weekly</p>
+              <p className="text-xs text-dt-text-muted">Boost your score by reflecting new deliverables.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="font-medium text-slate-900">{isFreelancer ? 'Take a capability microtask' : 'Share milestone proofs'}</p>
-              <p className="text-xs text-slate-500">
+            <div className="rounded-2xl border border-dt-border bg-dt-surface p-4 shadow-sm">
+              <p className="font-medium text-dt-text">{isFreelancer ? 'Take a capability microtask' : 'Share milestone proofs'}</p>
+              <p className="text-xs text-dt-text-muted">
                 {isFreelancer
                   ? 'Re-run AI capability scans when you add evidence.'
                   : 'Keep talent updated with escrow-backed status updates.'}
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="font-medium text-slate-900">Monitor notifications</p>
-              <p className="text-xs text-slate-500">Critical alerts appear in the center above—stay responsive.</p>
+            <div className="rounded-2xl border border-dt-border bg-dt-surface p-4 shadow-sm">
+              <p className="font-medium text-dt-text">Monitor notifications</p>
+              <p className="text-xs text-dt-text-muted">Critical alerts appear in the center above—stay responsive.</p>
             </div>
           </CardContent>
         </Card>

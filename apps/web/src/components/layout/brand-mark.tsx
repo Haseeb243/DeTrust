@@ -21,7 +21,7 @@ export function BrandMark({ href = '/', showWordmark = true, className, contentC
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
     >
-      <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-lg ring-1 ring-emerald-100">
+      <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-dt-surface shadow-lg ring-1 ring-dt-border">
         <Image
           src="/images/detrust-mark.svg"
           alt="DeTrust mark"
@@ -33,7 +33,7 @@ export function BrandMark({ href = '/', showWordmark = true, className, contentC
       </span>
       {showWordmark && (
         <span className="text-lg font-semibold tracking-tight">
-          <span className="text-slate-900">De</span>
+          <span className="text-dt-text">De</span>
           <span className="text-emerald-500">Trust</span>
         </span>
       )}

@@ -1,13 +1,17 @@
 import { z } from 'zod';
 
+// Strip HTML tags to prevent stored XSS (defense-in-depth; React JSX already escapes)
+const stripHtml = (val: string) => val.replace(/<[^>]*>/g, '').trim();
+const safeText = (schema: z.ZodString) => schema.transform(stripHtml);
+
 // =============================================================================
 // JOB CREATION & UPDATE
 // =============================================================================
 
 export const createJobSchema = z.object({
-  title: z.string().min(10, 'Title must be at least 10 characters').max(100, 'Title must be at most 100 characters'),
-  description: z.string().min(100, 'Description must be at least 100 characters').max(5000),
-  category: z.string().min(1, 'Category is required').max(100),
+  title: safeText(z.string().min(10, 'Title must be at least 10 characters').max(100, 'Title must be at most 100 characters')),
+  description: safeText(z.string().min(100, 'Description must be at least 100 characters').max(5000)),
+  category: safeText(z.string().min(1, 'Category is required').max(100)),
   type: z.enum(['FIXED_PRICE', 'HOURLY']),
   budget: z.number().positive('Budget must be positive').optional(),
   hourlyRateMin: z.number().positive().optional(),
@@ -28,9 +32,9 @@ export const createJobSchema = z.object({
 });
 
 export const updateJobSchema = z.object({
-  title: z.string().min(10).max(100).optional(),
-  description: z.string().min(100).max(5000).optional(),
-  category: z.string().min(1).max(100).optional(),
+  title: safeText(z.string().min(10).max(100)).optional(),
+  description: safeText(z.string().min(100).max(5000)).optional(),
+  category: safeText(z.string().min(1).max(100)).optional(),
   type: z.enum(['FIXED_PRICE', 'HOURLY']).optional(),
   budget: z.number().positive().optional(),
   hourlyRateMin: z.number().positive().optional(),
@@ -52,7 +56,7 @@ export const publishJobSchema = z.object({
 });
 
 export const cancelJobSchema = z.object({
-  reason: z.string().max(500).optional(),
+  reason: safeText(z.string().max(500)).optional(),
 });
 
 // =============================================================================

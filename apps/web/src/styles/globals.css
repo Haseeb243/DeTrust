@@ -15,8 +15,29 @@
     --border-subtle: 213 27% 87%;
     --text-strong: 222 47% 10%;
     --text-soft: 219 14% 46%;
+    --input-bg: 210 40% 96%;
+    --accent-soft: 152 81% 96%;
+    --accent-border: 149 80% 90%;
     --grid-color: rgba(15, 23, 42, 0.04);
     --card-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+  }
+
+  .dark {
+    --brand-primary: 164 64% 48%;
+    --brand-secondary: 276 70% 62%;
+    --brand-iris: 214 95% 65%;
+    --brand-sun: 38 92% 58%;
+    --base: 222 47% 6%;
+    --base-soft: 220 30% 8%;
+    --base-contrast: 220 25% 14%;
+    --border-subtle: 220 20% 18%;
+    --text-strong: 210 40% 96%;
+    --text-soft: 215 20% 65%;
+    --input-bg: 220 25% 14%;
+    --accent-soft: 164 65% 8%;
+    --accent-border: 164 30% 20%;
+    --grid-color: rgba(255, 255, 255, 0.04);
+    --card-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
   }
 
   * {
@@ -33,6 +54,12 @@
       radial-gradient(circle at 80% 0%, rgba(243, 233, 255, 0.6), transparent 55%),
       hsl(var(--base));
     color: hsl(var(--text-strong));
+  }
+
+  .dark body {
+    background: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.08), transparent 60%),
+      radial-gradient(circle at 80% 0%, rgba(139, 92, 246, 0.06), transparent 55%),
+      hsl(var(--base));
   }
 
   ::-webkit-scrollbar {
@@ -82,6 +109,10 @@
     background: #ffffff;
   }
 
+  .dark .btn-secondary {
+    background: hsl(var(--base-soft));
+  }
+
   .btn-secondary:hover {
     background: hsl(var(--base-contrast));
   }
@@ -108,14 +139,27 @@
     transition: border-color 200ms ease, box-shadow 200ms ease;
   }
 
+  .dark .input-glass {
+    background: hsl(var(--base-soft));
+    border-color: hsl(var(--border-subtle));
+  }
+
   .input-glass::placeholder {
     color: rgba(15, 23, 42, 0.35);
+  }
+
+  .dark .input-glass::placeholder {
+    color: hsl(var(--text-soft));
   }
 
   .input-glass:focus {
     border-color: hsl(var(--brand-primary));
     outline: none;
     box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.25);
+  }
+
+  .dark .input-glass:focus {
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
   }
 
   .glass-card {
@@ -125,10 +169,19 @@
     box-shadow: var(--card-shadow);
   }
 
+  .dark .glass-card {
+    background: hsl(var(--base-soft));
+    border-color: hsl(var(--border-subtle));
+  }
+
   .gradient-border {
     position: relative;
     border-radius: 24px;
     background: #ffffff;
+  }
+
+  .dark .gradient-border {
+    background: hsl(var(--base-soft));
   }
 
   .gradient-border::before {

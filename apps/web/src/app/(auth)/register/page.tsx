@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -11,6 +11,7 @@ import { Check, Wallet } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import { isWalletConnectConfigured } from '@/lib/env';
 import { MetaMaskPriorityConnect } from '@/components/wallet/meta-mask-priority';
+import { userApi } from '@/lib/api';
 
 type Role = 'FREELANCER' | 'CLIENT';
 
@@ -21,6 +22,14 @@ const STEPS = [
 ];
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[300px] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" /></div>}>
+      <RegisterPageContent />
+    </Suspense>
+  );
+}
+
+function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialRole = searchParams.get('role')?.toUpperCase() as Role | null;
@@ -69,14 +78,16 @@ export default function RegisterPage() {
       errors.email = 'Please enter a valid email';
     }
     
-    if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
+    if (formData.password.length < 12) {
+      errors.password = 'Password must be at least 12 characters';
     } else if (!/[A-Z]/.test(formData.password)) {
       errors.password = 'Password must contain an uppercase letter';
     } else if (!/[a-z]/.test(formData.password)) {
       errors.password = 'Password must contain a lowercase letter';
     } else if (!/[0-9]/.test(formData.password)) {
       errors.password = 'Password must contain a number';
+    } else if (!/[^A-Za-z0-9]/.test(formData.password)) {
+      errors.password = 'Password must contain a special character';
     }
     
     if (formData.password !== formData.confirmPassword) {
@@ -94,6 +105,11 @@ export default function RegisterPage() {
   };
 
   const handleEmailRegister = async () => {
+    if (!isConnected || !address) {
+      toast.error('Please connect your wallet before creating a workspace');
+      return;
+    }
+
     if (!validateForm()) {
       if (currentStep !== 1) {
         setCurrentStep(1);
@@ -104,6 +120,14 @@ export default function RegisterPage() {
     const success = await register(formData.email, formData.password, formData.name, selectedRole);
 
     if (success) {
+      // Submit KYC data if user opted in
+      if (kycEnabled && kycData.idNumber && kycData.country) {
+        await userApi.updateKyc({
+          documentType: kycData.documentType || 'Passport',
+          idNumber: kycData.idNumber,
+          country: kycData.country,
+        });
+      }
       toast.success('Workspace created!');
       router.push('/profile');
     }
@@ -118,8 +142,12 @@ export default function RegisterPage() {
     const success = await loginWithWallet(address, async (message) => {
       return signMessageAsync({ message });
     });
-    
+
     if (success) {
+      // Set the role the user picked in step 0 (backend defaults to FREELANCER)
+      if (selectedRole !== 'FREELANCER') {
+        await userApi.setRole(selectedRole);
+      }
       toast.success('Wallet connected!');
       router.push('/profile');
     }
@@ -130,8 +158,8 @@ export default function RegisterPage() {
     <div className="space-y-6">
       <div className="text-center">
         <p className="text-xs uppercase tracking-[0.4em] text-emerald-600">Module 1</p>
-        <h1 className="mt-2 text-3xl font-semibold text-slate-900">Choose your workspace type</h1>
-        <p className="text-slate-600">Same polished UI regardless of role.</p>
+        <h1 className="mt-2 text-3xl font-semibold text-dt-text">Choose your workspace type</h1>
+        <p className="text-dt-text-muted">Same polished UI regardless of role.</p>
       </div>
       <div className="grid gap-6 md:grid-cols-2">
         {[
@@ -153,8 +181,8 @@ export default function RegisterPage() {
             className="glass-card flex h-full flex-col rounded-3xl p-6 text-left"
           >
             <span className="text-sm uppercase tracking-[0.4em] text-emerald-600">{card.role}</span>
-            <h3 className="mt-3 text-2xl font-semibold text-slate-900">{card.title}</h3>
-            <ul className="mt-4 space-y-2 text-sm text-slate-600">
+            <h3 className="mt-3 text-2xl font-semibold text-dt-text">{card.title}</h3>
+            <ul className="mt-4 space-y-2 text-sm text-dt-text-muted">
               {card.points.map((point) => (
                 <li key={point} className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-500" /> {point}
@@ -164,7 +192,7 @@ export default function RegisterPage() {
           </motion.button>
         ))}
       </div>
-      <p className="text-center text-sm text-slate-600">
+      <p className="text-center text-sm text-dt-text-muted">
         Already with us? <Link href="/login" className="font-semibold text-emerald-600">Sign in</Link>
       </p>
     </div>
@@ -174,10 +202,10 @@ export default function RegisterPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-slate-900">Set up your workspace</h2>
-          <p className="text-sm text-slate-600">Wallet-first, email-enhanced.</p>
+          <h2 className="text-2xl font-semibold text-dt-text">Set up your workspace</h2>
+          <p className="text-sm text-dt-text-muted">Wallet-first, email-enhanced.</p>
         </div>
-        <button className="text-sm text-slate-500 underline" onClick={() => setCurrentStep(0)}>
+        <button className="text-sm text-dt-text-muted underline" onClick={() => setCurrentStep(0)}>
           Change role
         </button>
       </div>
@@ -187,12 +215,12 @@ export default function RegisterPage() {
         Wallet login is primary. Emails simply keep notifications flowing.
       </div>
 
-      <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50/80 p-4 text-center">
+      <div className="space-y-4 rounded-3xl border border-dt-border bg-dt-surface-alt/80 p-4 text-center">
         {!walletReady && (
           <div className="space-y-2 text-left text-sm text-amber-900">
             <p className="font-semibold text-amber-700">WalletConnect project ID recommended</p>
             <p className="text-amber-700/90">
-              Add your WalletConnect Cloud project ID to <code className="text-slate-900">apps/web/.env.local</code> so mobile wallets can pair. MetaMask desktop still launches instantly.
+              Add your WalletConnect Cloud project ID to <code className="text-dt-text">apps/web/.env.local</code> so mobile wallets can pair. MetaMask desktop still launches instantly.
             </p>
           </div>
         )}
@@ -208,23 +236,23 @@ export default function RegisterPage() {
 
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-slate-700">Full Name</label>
+          <label className="text-sm font-medium text-dt-text-muted">Full Name</label>
           <input name="name" value={formData.name} onChange={handleInputChange} className="input-glass mt-2" placeholder="Avery Collins" />
           {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
         </div>
         <div>
-          <label className="text-sm font-medium text-slate-700">Email</label>
+          <label className="text-sm font-medium text-dt-text-muted">Email</label>
           <input name="email" type="email" value={formData.email} onChange={handleInputChange} className="input-glass mt-2" placeholder="team@studio.xyz" />
           {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="text-sm font-medium text-slate-700">Password</label>
+            <label className="text-sm font-medium text-dt-text-muted">Password</label>
             <input name="password" type="password" value={formData.password} onChange={handleInputChange} className="input-glass mt-2" placeholder="••••••••" />
             {formErrors.password && <p className="text-sm text-red-500">{formErrors.password}</p>}
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700">Confirm</label>
+            <label className="text-sm font-medium text-dt-text-muted">Confirm</label>
             <input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleInputChange} className="input-glass mt-2" placeholder="••••••••" />
             {formErrors.confirmPassword && <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>}
           </div>
@@ -242,32 +270,32 @@ export default function RegisterPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-slate-900">Optional compliance</h2>
-          <p className="text-sm text-slate-600">Toggle KYC when enterprise buyers need it.</p>
+          <h2 className="text-2xl font-semibold text-dt-text">Optional compliance</h2>
+          <p className="text-sm text-dt-text-muted">Toggle KYC when enterprise buyers need it.</p>
         </div>
-        <button className="text-sm text-slate-500 underline" onClick={() => setCurrentStep(1)}>
+        <button className="text-sm text-dt-text-muted underline" onClick={() => setCurrentStep(1)}>
           Edit account info
         </button>
       </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-6 text-sm text-slate-600">
+      <div className="rounded-3xl border border-dt-border bg-dt-surface-alt/80 p-6 text-sm text-dt-text-muted">
         <p>KYC unlocks higher-value contracts (≥ $25k) and curated talent pools. Completely optional otherwise.</p>
         <label className="mt-4 flex items-center justify-between">
-          <span className="font-medium text-slate-900">Enable KYC now?</span>
+          <span className="font-medium text-dt-text">Enable KYC now?</span>
           <input type="checkbox" checked={kycEnabled} onChange={(e) => setKycEnabled(e.target.checked)} className="h-5 w-5" />
         </label>
         {kycEnabled && (
           <div className="mt-4 space-y-3">
             <div>
-              <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Document</label>
+              <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Document</label>
               <input value={kycData.documentType} onChange={(e) => setKycData((prev) => ({ ...prev, documentType: e.target.value }))} className="input-glass mt-2" placeholder="Passport" />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-[0.3em] text-slate-500">ID Number</label>
+              <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">ID Number</label>
               <input value={kycData.idNumber} onChange={(e) => setKycData((prev) => ({ ...prev, idNumber: e.target.value }))} className="input-glass mt-2" placeholder="SAMPLE12345" />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Country</label>
+              <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Country</label>
               <input value={kycData.country} onChange={(e) => setKycData((prev) => ({ ...prev, country: e.target.value }))} className="input-glass mt-2" placeholder="Singapore" />
             </div>
           </div>
@@ -283,7 +311,7 @@ export default function RegisterPage() {
         </button>
       </div>
 
-      <p className="text-center text-xs text-slate-500">
+      <p className="text-center text-xs text-dt-text-muted">
         By continuing you accept our <Link href="/terms" className="underline">Terms</Link> & <Link href="/privacy" className="underline">Privacy</Link>.
       </p>
     </div>
@@ -292,25 +320,25 @@ export default function RegisterPage() {
   const stepContent = [renderRoleStep(), renderAccountStep(), renderComplianceStep()];
 
   return (
-    <div className="space-y-8 text-slate-900">
-      <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 text-sm shadow-lg">
+    <div className="space-y-8 text-dt-text">
+      <div className="rounded-3xl border border-dt-border bg-dt-surface/90 p-4 text-sm shadow-lg">
         <div className="grid gap-4 md:grid-cols-3">
           {STEPS.map((step, index) => (
             <div
               key={step.id}
               className={`rounded-2xl p-4 ${
-                index === currentStep ? 'bg-emerald-50 border border-emerald-100' : 'bg-slate-50'
+                index === currentStep ? 'bg-emerald-50 border border-emerald-100' : 'bg-dt-surface-alt'
               }`}
             >
               <p className="text-xs uppercase tracking-[0.4em] text-emerald-600">Step {index + 1}</p>
-              <p className="font-semibold text-slate-900">{step.label}</p>
-              <p className="text-slate-600">{step.description}</p>
+              <p className="font-semibold text-dt-text">{step.label}</p>
+              <p className="text-dt-text-muted">{step.description}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="rounded-[32px] border border-slate-200 bg-white/95 p-6 shadow-2xl">
+      <div className="rounded-[32px] border border-dt-border bg-dt-surface/95 p-6 shadow-2xl">
         {stepContent[currentStep]}
       </div>
     </div>

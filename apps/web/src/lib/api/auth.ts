@@ -72,8 +72,14 @@ export const authApi = {
     api.post<{ success: boolean; backupCodes: string[] }>('/auth/2fa/verify', { code }),
   
   // Session
-  getMe: () => 
+  getMe: () =>
     api.get<{ userId: string; userRole: string; email?: string; walletAddress?: string }>('/auth/me'),
+
+  refresh: () =>
+    api.post<{ token: string; expiresAt: string }>('/auth/refresh'),
+
+  logout: () =>
+    api.post('/auth/logout'),
 };
 
 export default authApi;

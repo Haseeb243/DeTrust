@@ -128,7 +128,7 @@ export const userApi = {
     api.get<User>('/users/me'),
   
   // Update current user
-  updateMe: (data: { name?: string; avatarUrl?: string }) => 
+  updateMe: (data: { name?: string; avatarUrl?: string; walletAddress?: string | null }) =>
     api.patch<User>('/users/me', data),
   
   // Set role (onboarding)
@@ -159,9 +159,13 @@ export const userApi = {
     api.delete(`/users/me/certifications/${certificationId}`),
   
   // Client profile
-  updateClientProfile: (data: Partial<Omit<ClientProfile, 'id'>>) => 
+  updateClientProfile: (data: Partial<Omit<ClientProfile, 'id'>>) =>
     api.patch<ClientProfile>('/users/me/client', data),
-  
+
+  // KYC
+  updateKyc: (data: { documentType: string; idNumber: string; country: string }) =>
+    api.patch('/users/me/kyc', data),
+
   // Search
   searchFreelancers: (params?: FreelancerSearchParams) => {
     const searchParams = new URLSearchParams();

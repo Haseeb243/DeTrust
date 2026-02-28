@@ -112,16 +112,16 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
   };
 
   return (
-    <Card className="border-slate-200 bg-white shadow-sm">
+    <Card className="border-dt-border bg-dt-surface shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl text-slate-900">Account basics</CardTitle>
+        <CardTitle className="text-xl text-dt-text">Account basics</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <label className="text-sm text-slate-600">Profile image</label>
+            <label className="text-sm text-dt-text-muted">Profile image</label>
             <div className="mt-3 flex flex-wrap items-center gap-4">
-              <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+              <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-dt-border bg-dt-surface-alt">
                 {secureAvatarUrl ? (
                   <Image src={secureAvatarUrl} alt={user?.name || 'Avatar'} fill className="object-cover" sizes="80px" unoptimized />
                 ) : secureAvatarLoading && previewUrl ? (
@@ -129,13 +129,13 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
                     <Spinner size="sm" />
                   </div>
                 ) : previewUrl ? (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">Secure preview unavailable</div>
+                  <div className="flex h-full w-full items-center justify-center text-xs text-dt-text-muted">Secure preview unavailable</div>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-2xl">🪪</div>
                 )}
               </div>
-              <div className="space-y-2 text-sm text-slate-600">
-                <p className="text-xs text-slate-500">Square images work best. We cap uploads at 4&nbsp;MB per FR-C3.1.</p>
+              <div className="space-y-2 text-sm text-dt-text-muted">
+                <p className="text-xs text-dt-text-muted">Square images work best. We cap uploads at 4&nbsp;MB per FR-C3.1.</p>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" onClick={openFileDialog} disabled={isUploading}>
                     {isUploading ? 'Uploading…' : 'Upload photo'}
@@ -151,16 +151,16 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
             </div>
           </div>
           <div>
-            <label className="text-sm text-slate-600">Display name</label>
+            <label className="text-sm text-dt-text-muted">Display name</label>
             <Input placeholder="Add your preferred name" {...register('name')} className="mt-2" />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-sm text-slate-600">Email</label>
+              <label className="text-sm text-dt-text-muted">Email</label>
               <Input value={user?.email || '—'} disabled className="mt-2" />
             </div>
             <div>
-              <label className="text-sm text-slate-600">Wallet</label>
+              <label className="text-sm text-dt-text-muted">Wallet</label>
               <div className="mt-2 flex items-center gap-2">
                 <Input value={user?.walletAddress || 'Not paired yet'} disabled />
                 {user?.walletAddress && (

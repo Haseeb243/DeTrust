@@ -1,24 +1,29 @@
 {
   "network": "localhost",
   "chainId": 31337,
-  "timestamp": 1764348633,
+  "timestamp": 1772237700,
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
   "feeRecipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
   "contracts": {
+    "DeTrustUSD": {
+      "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+      "blockNumber": 6,
+      "txHash": "0x56b26db8d179c8fa4be0cca86b8f26aaf56e3e875ccbb6102846992c25201e44"
+    },
     "JobEscrow": {
-      "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-      "blockNumber": 3,
-      "txHash": "0xd8c8546dc59cfb0fb02c908bed9cf12face9fbc160dfdc6fd20409a14e9c20e4"
+      "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+      "blockNumber": 9,
+      "txHash": "0xacf208772609e4936855692526c78daa2ba731a14824795886f3c4e872dc9dc4"
     },
     "ReputationRegistry": {
-      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-      "blockNumber": 1,
-      "txHash": "0x540629799745aca0f20a8f3e0dfc438ca2f3b5270f91ddb9379cf3cbf11f321b"
+      "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+      "blockNumber": 7,
+      "txHash": "0x571b59ed4b5e04aeda5b7f4c66c4512efcbe09f45d973232293d37eae53707c2"
     },
     "DisputeResolution": {
-      "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-      "blockNumber": 2,
-      "txHash": "0x84b14a0a84cd3c9c5fb53868b7e13721d2e11888264cccd6e8a960cd8abcbb0f"
+      "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "blockNumber": 8,
+      "txHash": "0x317f265c1b847b33bd73158972f9df1b6a1e9536ba286df4f42c4f455fdb244a"
     }
   }
 }

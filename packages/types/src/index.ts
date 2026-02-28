@@ -10,6 +10,7 @@ export * from './job';
 export * from './proposal';
 export * from './contract';
 export * from './milestone';
+export * from './timeEntry';
 export * from './review';
 export * from './dispute';
 

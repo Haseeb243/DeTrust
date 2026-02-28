@@ -1,8 +1,10 @@
 'use client';
 
 import { ReactNode, useEffect } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Web3Provider } from '@/lib/wagmi';
-import { useAuthStore } from '@/store';
+import { useAuthStore, useThemeStore } from '@/store';
+import { queryClient } from '@/lib/query-client';
 import { Toaster } from 'sonner';
 
 interface ProvidersProps {
@@ -10,30 +12,42 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-  const { fetchUser, token } = useAuthStore();
+  const fetchUser = useAuthStore((s) => s.fetchUser);
+  const theme = useThemeStore((s) => s.theme);
 
-  // Restore user session on mount
+  // Restore user session on mount (cookies carry the auth token)
   useEffect(() => {
-    if (token) {
-      fetchUser();
-    }
-  }, [token, fetchUser]);
+    fetchUser();
+  }, [fetchUser]);
+
+  // Listen for system color-scheme changes when theme is 'system'
+  useEffect(() => {
+    if (theme !== 'system') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => {
+      document.documentElement.classList.toggle('dark', e.matches);
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [theme]);
+
+  const resolvedTheme =
+    theme === 'system'
+      ? typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+      : theme;
 
   return (
-    <Web3Provider>
-      {children}
-      <Toaster
-        theme="light"
-        position="top-right"
-        richColors
-        toastOptions={{
-          style: {
-            background: '#ffffff',
-            border: '1px solid rgba(15, 23, 42, 0.08)',
-            boxShadow: '0 20px 70px rgba(15, 23, 42, 0.08)',
-          },
-        }}
-      />
-    </Web3Provider>
+    <QueryClientProvider client={queryClient}>
+      <Web3Provider>
+        {children}
+        <Toaster
+          theme={resolvedTheme}
+          position="top-right"
+          richColors
+        />
+      </Web3Provider>
+    </QueryClientProvider>
   );
 }

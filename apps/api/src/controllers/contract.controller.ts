@@ -129,7 +129,7 @@ export const fundEscrow = async (
       escrowAddress,
       blockchainJobId,
     });
-    res.json({ success: true, data: contract });
+    res.json({ success: true, data: contract, message: 'Escrow funded successfully' });
   } catch (error) {
     next(error);
   }
@@ -150,7 +150,7 @@ export const completeContract = async (
     const { contractId } = req.params;
 
     const contract = await contractService.completeContract(contractId, userId);
-    res.json({ success: true, data: contract });
+    res.json({ success: true, data: contract, message: 'Contract completed successfully' });
   } catch (error) {
     next(error);
   }
@@ -169,14 +169,14 @@ export const raiseDispute = async (
     const authReq = req as AuthenticatedRequest;
     const userId = authReq.userId!;
     const { contractId } = req.params;
-    const { reason } = req.body;
+    const { reason, evidence } = req.body;
 
     if (!reason) {
       throw new ValidationError('Dispute reason is required');
     }
 
-    const contract = await contractService.raiseDispute(contractId, userId, reason);
-    res.json({ success: true, data: contract });
+    const contract = await contractService.raiseDispute(contractId, userId, reason, evidence);
+    res.json({ success: true, data: contract, message: 'Dispute raised successfully' });
   } catch (error) {
     next(error);
   }
@@ -207,7 +207,7 @@ export const submitMilestone = async (
       deliverableHash,
       deliverableNote,
     });
-    res.json({ success: true, data: milestone });
+    res.json({ success: true, data: milestone, message: 'Milestone submitted successfully' });
   } catch (error) {
     next(error);
   }
@@ -233,7 +233,7 @@ export const approveMilestone = async (
     }
 
     const milestone = await contractService.approveMilestone(contractId, milestoneId, clientId);
-    res.json({ success: true, data: milestone });
+    res.json({ success: true, data: milestone, message: 'Milestone approved successfully' });
   } catch (error) {
     next(error);
   }
@@ -264,7 +264,7 @@ export const requestRevision = async (
     }
 
     const milestone = await contractService.requestRevision(contractId, milestoneId, clientId, reason);
-    res.json({ success: true, data: milestone });
+    res.json({ success: true, data: milestone, message: 'Revision requested successfully' });
   } catch (error) {
     next(error);
   }

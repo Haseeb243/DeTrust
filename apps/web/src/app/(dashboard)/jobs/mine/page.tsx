@@ -1,18 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   Briefcase,
-  Calendar,
   ChevronLeft,
   ChevronRight,
   Clock,
   DollarSign,
   Eye,
-  MoreVertical,
   PenLine,
   Plus,
   Send,
@@ -21,14 +19,15 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge, Button, Card, CardContent } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { jobApi, type Job, type GetJobsParams, type JobStatus } from '@/lib/api';
+import { type Job, type GetJobsParams, type JobStatus } from '@/lib/api';
+import { useMyJobs, usePublishJob, useCancelJob, useDeleteJob } from '@/hooks/queries';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
 
 const STATUS_COLORS: Record<JobStatus, string> = {
-  DRAFT: 'bg-slate-100 text-slate-700',
+  DRAFT: 'bg-dt-surface-alt text-dt-text-muted',
   OPEN: 'bg-emerald-100 text-emerald-700',
   IN_PROGRESS: 'bg-blue-100 text-blue-700',
   COMPLETED: 'bg-green-100 text-green-700',
@@ -38,10 +37,10 @@ const STATUS_COLORS: Record<JobStatus, string> = {
 
 const formatBudget = (job: Job) => {
   if (job.type === 'FIXED_PRICE') {
-    return job.budget ? `$${job.budget.toLocaleString()}` : 'Budget TBD';
+    return job.budget ? `$${Number(job.budget).toLocaleString()}` : 'Budget TBD';
   }
   if (job.hourlyRateMin && job.hourlyRateMax) {
-    return `$${job.hourlyRateMin} - $${job.hourlyRateMax}/hr`;
+    return `$${Number(job.hourlyRateMin)} - $${Number(job.hourlyRateMax)}/hr`;
   }
   return 'Rate TBD';
 };
@@ -71,103 +70,69 @@ export default function MyJobsPage() {
   const router = useRouter();
   const { user } = useAuthStore();
 
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<JobStatus | ''>('');
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: 1,
-    totalPages: 1,
-    hasNext: false,
-    hasPrev: false,
-  });
+  const [page, setPage] = useState(1);
 
-  const fetchJobs = useCallback(async (page = 1) => {
-    setLoading(true);
-    try {
-      const params: GetJobsParams = {
-        page,
-        limit: 10,
-        sort: 'createdAt',
-        order: 'desc',
-      };
-      if (activeTab) {
-        params.status = activeTab;
-      }
+  const params: GetJobsParams = {
+    page,
+    limit: 10,
+    sort: 'createdAt',
+    order: 'desc',
+    ...(activeTab ? { status: activeTab } : {}),
+  };
 
-      const response = await jobApi.getMyJobs(params);
+  const { data, isLoading } = useMyJobs(params);
 
-      if (response.success && response.data) {
-        setJobs(response.data.items);
-        setPagination({
-          total: response.data.total,
-          page: response.data.page,
-          totalPages: response.data.totalPages,
-          hasNext: response.data.hasNext,
-          hasPrev: response.data.hasPrev,
-        });
-      }
-    } catch (error) {
-      toast.error('Failed to load jobs');
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab]);
+  const jobs = data?.items ?? [];
+  const pagination = useMemo(() => ({
+    total: data?.total ?? 0,
+    page: data?.page ?? 1,
+    totalPages: data?.totalPages ?? 1,
+    hasNext: data?.hasNext ?? false,
+    hasPrev: data?.hasPrev ?? false,
+  }), [data]);
+
+  const publishJob = usePublishJob();
+  const cancelJob = useCancelJob();
+  const deleteJob = useDeleteJob();
 
   useEffect(() => {
     if (user?.role !== 'CLIENT') {
       toast.error('Only clients can access this page');
       router.push('/dashboard');
-      return;
     }
-    fetchJobs();
-  }, [user?.role, router, fetchJobs]);
+  }, [user?.role, router]);
 
-  const handlePublish = async (jobId: string) => {
+  const handlePublish = useCallback(async (jobId: string) => {
     try {
-      const response = await jobApi.publishJob(jobId);
-      if (response.success) {
-        toast.success('Job published successfully!');
-        fetchJobs(pagination.page);
-      } else {
-        toast.error(response.error?.message || 'Failed to publish job');
-      }
-    } catch (error) {
+      await publishJob.mutateAsync(jobId);
+      toast.success('Job published successfully!');
+    } catch {
       toast.error('Failed to publish job');
     }
-  };
+  }, [publishJob]);
 
-  const handleCancel = async (jobId: string) => {
+  const handleCancel = useCallback(async (jobId: string) => {
     if (!confirm('Are you sure you want to cancel this job?')) return;
 
     try {
-      const response = await jobApi.cancelJob(jobId);
-      if (response.success) {
-        toast.success('Job cancelled');
-        fetchJobs(pagination.page);
-      } else {
-        toast.error(response.error?.message || 'Failed to cancel job');
-      }
-    } catch (error) {
+      await cancelJob.mutateAsync(jobId);
+      toast.success('Job cancelled');
+    } catch {
       toast.error('Failed to cancel job');
     }
-  };
+  }, [cancelJob]);
 
-  const handleDelete = async (jobId: string) => {
+  const handleDelete = useCallback(async (jobId: string) => {
     if (!confirm('Are you sure you want to delete this draft?')) return;
 
     try {
-      const response = await jobApi.deleteJob(jobId);
-      if (response.success) {
-        toast.success('Draft deleted');
-        fetchJobs(pagination.page);
-      } else {
-        toast.error(response.error?.message || 'Failed to delete draft');
-      }
-    } catch (error) {
+      await deleteJob.mutateAsync(jobId);
+      toast.success('Draft deleted');
+    } catch {
       toast.error('Failed to delete draft');
     }
-  };
+  }, [deleteJob]);
 
   if (user?.role !== 'CLIENT') {
     return null;
@@ -178,8 +143,8 @@ export default function MyJobsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">My Jobs</h1>
-          <p className="text-slate-600">Manage your job postings and review proposals</p>
+          <h1 className="text-2xl font-semibold text-dt-text">My Jobs</h1>
+          <p className="text-dt-text-muted">Manage your job postings and review proposals</p>
         </div>
         <Button asChild className="gap-2 bg-emerald-500 text-white hover:bg-emerald-600">
           <Link href="/jobs/new">
@@ -190,19 +155,19 @@ export default function MyJobsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-2">
+      <div className="flex gap-2 overflow-x-auto border-b border-dt-border pb-2">
         {TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => {
               setActiveTab(tab.value);
-              setPagination((prev) => ({ ...prev, page: 1 }));
+              setPage(1);
             }}
             className={cn(
               'whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition',
               activeTab === tab.value
                 ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                : 'text-dt-text-muted hover:bg-dt-surface-alt'
             )}
           >
             {tab.label}
@@ -211,18 +176,18 @@ export default function MyJobsPage() {
       </div>
 
       {/* Job Listings */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex min-h-[300px] items-center justify-center">
           <Spinner size="lg" />
         </div>
       ) : jobs.length === 0 ? (
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Briefcase className="h-12 w-12 text-slate-300" />
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">
+            <h3 className="mt-4 text-lg font-semibold text-dt-text">
               {activeTab ? `No ${activeTab.toLowerCase().replace('_', ' ')} jobs` : 'No jobs yet'}
             </h3>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 text-dt-text-muted">
               {activeTab === 'DRAFT'
                 ? 'You have no draft jobs'
                 : 'Post your first job to start finding talent'}
@@ -235,7 +200,7 @@ export default function MyJobsPage() {
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => (
-            <Card key={job.id} className="border-slate-200 bg-white shadow-md">
+            <Card key={job.id} className="border-dt-border bg-dt-surface shadow-md">
               <CardContent className="p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
@@ -243,7 +208,7 @@ export default function MyJobsPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
                         href={`/jobs/${job.id}`}
-                        className="text-lg font-semibold text-slate-900 hover:text-emerald-600"
+                        className="text-lg font-semibold text-dt-text hover:text-emerald-600"
                       >
                         {job.title}
                       </Link>
@@ -264,7 +229,7 @@ export default function MyJobsPage() {
                     </div>
 
                     {/* Meta Info */}
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-dt-text-muted">
                       <span className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
                         {formatBudget(job)}
@@ -289,13 +254,13 @@ export default function MyJobsPage() {
                         <Badge
                           key={js.id}
                           variant="secondary"
-                          className="bg-slate-100 text-xs text-slate-600"
+                          className="bg-dt-surface-alt text-xs text-dt-text-muted"
                         >
                           {js.skill.name}
                         </Badge>
                       ))}
                       {job.skills.length > 4 && (
-                        <Badge variant="secondary" className="bg-slate-100 text-xs text-slate-500">
+                        <Badge variant="secondary" className="bg-dt-surface-alt text-xs text-dt-text-muted">
                           +{job.skills.length - 4}
                         </Badge>
                       )}
@@ -318,7 +283,7 @@ export default function MyJobsPage() {
                           size="sm"
                           variant="outline"
                           asChild
-                          className="gap-1 border-slate-200"
+                          className="gap-1 border-dt-border"
                         >
                           <Link href={`/jobs/${job.id}/edit`}>
                             <PenLine className="h-3 w-3" />
@@ -371,7 +336,7 @@ export default function MyJobsPage() {
                       size="sm"
                       variant="ghost"
                       asChild
-                      className="text-slate-500"
+                      className="text-dt-text-muted"
                     >
                       <Link href={`/jobs/${job.id}`}>
                         <Eye className="h-4 w-4" />
@@ -386,7 +351,7 @@ export default function MyJobsPage() {
           {/* Pagination */}
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between pt-4">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-dt-text-muted">
                 Showing {(pagination.page - 1) * 10 + 1} to{' '}
                 {Math.min(pagination.page * 10, pagination.total)} of {pagination.total} jobs
               </p>
@@ -395,8 +360,8 @@ export default function MyJobsPage() {
                   variant="outline"
                   size="sm"
                   disabled={!pagination.hasPrev}
-                  onClick={() => fetchJobs(pagination.page - 1)}
-                  className="border-slate-200"
+                  onClick={() => setPage(page - 1)}
+                  className="border-dt-border"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
@@ -405,8 +370,8 @@ export default function MyJobsPage() {
                   variant="outline"
                   size="sm"
                   disabled={!pagination.hasNext}
-                  onClick={() => fetchJobs(pagination.page + 1)}
-                  className="border-slate-200"
+                  onClick={() => setPage(page + 1)}
+                  className="border-dt-border"
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />

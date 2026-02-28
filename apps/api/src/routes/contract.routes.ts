@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware';
 import { contractController } from '../controllers/contract.controller';
+import { timeEntryController } from '../controllers/timeEntry.controller';
 
 const router: Router = Router();
 
@@ -37,5 +38,21 @@ router.post('/:contractId/milestones/:milestoneId/approve', authenticate, contra
 
 // Request revision (client only)
 router.post('/:contractId/milestones/:milestoneId/revision', authenticate, contractController.requestRevision);
+
+// =============================================================================
+// TIME ENTRY ROUTES (hourly contracts)
+// =============================================================================
+
+// List time entries for a milestone
+router.get('/:contractId/milestones/:milestoneId/time-entries', authenticate, timeEntryController.listTimeEntries);
+
+// Create a time entry (freelancer only)
+router.post('/:contractId/milestones/:milestoneId/time-entries', authenticate, timeEntryController.createTimeEntry);
+
+// Update a time entry (freelancer only)
+router.put('/:contractId/milestones/:milestoneId/time-entries/:entryId', authenticate, timeEntryController.updateTimeEntry);
+
+// Delete a time entry (freelancer only)
+router.delete('/:contractId/milestones/:milestoneId/time-entries/:entryId', authenticate, timeEntryController.deleteTimeEntry);
 
 export default router;

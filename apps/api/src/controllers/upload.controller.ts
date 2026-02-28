@@ -126,7 +126,7 @@ export class UploadController {
         size: req.file.size,
         userId: req.userId,
         category: SecureFileCategory.RESUME,
-        visibility: SecureFileVisibility.PRIVATE,
+        visibility: SecureFileVisibility.AUTHENTICATED,
         resourceType: SecureFileResourceType.FREELANCER_PROFILE,
         resourceId: profileId,
       });
@@ -178,7 +178,7 @@ export class UploadController {
         size: req.file.size,
         userId: req.userId,
         category: SecureFileCategory.CERTIFICATION,
-        visibility: SecureFileVisibility.PRIVATE,
+        visibility: SecureFileVisibility.AUTHENTICATED,
         resourceType: SecureFileResourceType.FREELANCER_PROFILE,
         resourceId: profileId,
         metadata: metadataForStorage,

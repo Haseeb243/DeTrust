@@ -142,4 +142,18 @@ router.post(
  */
 router.get('/me', authenticate, authController.me);
 
+/**
+ * @route   POST /auth/logout
+ * @desc    Clear auth cookies and end session
+ * @access  Public
+ */
+router.post('/logout', authController.logout);
+
+/**
+ * @route   POST /auth/refresh
+ * @desc    Refresh access token using refresh cookie
+ * @access  Public
+ */
+router.post('/refresh', authLimiter, authController.refresh);
+
 export default router;

@@ -25,7 +25,7 @@ export function ProfileProgressRing({
   const progressOffset = circumference - (clamped / 100) * circumference;
 
   return (
-    <div className={cn('relative inline-flex flex-col items-center text-slate-500', className)}>
+    <div className={cn('relative inline-flex flex-col items-center text-dt-text-muted', className)}>
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size}>
           <defs>
@@ -57,11 +57,11 @@ export function ProfileProgressRing({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-4xl font-semibold text-slate-900">{Math.round(clamped)}%</span>
+          <span className="text-4xl font-semibold text-dt-text">{Math.round(clamped)}%</span>
           <span className="text-[0.65rem] uppercase tracking-[0.4em] text-slate-400">{label}</span>
         </div>
       </div>
-      {caption ? <p className="mt-3 text-xs text-slate-500">{caption}</p> : null}
+      {caption ? <p className="mt-3 text-xs text-dt-text-muted">{caption}</p> : null}
     </div>
   );
 }

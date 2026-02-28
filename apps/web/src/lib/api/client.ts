@@ -23,6 +23,7 @@ interface RequestOptions {
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
+  private refreshPromise: Promise<boolean> | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -34,6 +35,18 @@ class ApiClient {
 
   getToken() {
     return this.token;
+  }
+
+  private async attemptRefresh(): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.baseUrl}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 
   private async request<T>(
@@ -53,7 +66,7 @@ class ApiClient {
       requestHeaders['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const config: RequestInit = {
+    const fetchConfig: RequestInit = {
       method,
       headers: requestHeaders,
       credentials,
@@ -62,14 +75,28 @@ class ApiClient {
     if (body && method !== 'GET') {
       if (isFormData) {
         delete requestHeaders['Content-Type'];
-        config.body = body as FormData;
+        fetchConfig.body = body as FormData;
       } else {
-        config.body = JSON.stringify(body);
+        fetchConfig.body = JSON.stringify(body);
       }
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, config);
+      let response = await fetch(`${this.baseUrl}${endpoint}`, fetchConfig);
+
+      // Auto-refresh on 401 (skip for auth endpoints to avoid loops)
+      if (response.status === 401 && !endpoint.startsWith('/auth/')) {
+        if (!this.refreshPromise) {
+          this.refreshPromise = this.attemptRefresh().finally(() => {
+            this.refreshPromise = null;
+          });
+        }
+        const refreshed = await this.refreshPromise;
+        if (refreshed) {
+          response = await fetch(`${this.baseUrl}${endpoint}`, fetchConfig);
+        }
+      }
+
       const data = await response.json();
 
       if (!response.ok) {

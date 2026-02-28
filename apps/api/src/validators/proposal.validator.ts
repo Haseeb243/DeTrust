@@ -1,16 +1,23 @@
 import { z } from 'zod';
 
+// Strip HTML tags to prevent stored XSS (defense-in-depth; React JSX already escapes)
+const stripHtml = (val: string) => val.replace(/<[^>]*>/g, '').trim();
+const safeText = (schema: z.ZodString) => schema.transform(stripHtml);
+
 // =============================================================================
 // PROPOSAL CREATION & UPDATE
 // =============================================================================
 
 export const createProposalSchema = z.object({
-  coverLetter: z.string().min(50, 'Cover letter must be at least 50 characters').max(3000),
+  coverLetter: safeText(z.string().min(1).max(3000)).refine(
+    (val) => val.trim().split(/\s+/).filter(Boolean).length >= 50,
+    { message: 'Cover letter must contain at least 50 words' },
+  ),
   proposedRate: z.number().positive('Proposed rate must be positive'),
-  estimatedDuration: z.string().max(100).optional(),
+  estimatedDuration: safeText(z.string().max(100)).optional(),
   milestones: z.array(z.object({
-    title: z.string().min(1).max(200),
-    description: z.string().max(1000).optional(),
+    title: safeText(z.string().min(1).max(200)),
+    description: safeText(z.string().max(1000)).optional(),
     amount: z.number().positive(),
     dueDate: z.string().datetime().optional(),
   })).optional(),
@@ -18,12 +25,15 @@ export const createProposalSchema = z.object({
 });
 
 export const updateProposalSchema = z.object({
-  coverLetter: z.string().min(50).max(3000).optional(),
+  coverLetter: safeText(z.string().min(1).max(3000)).refine(
+    (val) => val.trim().split(/\s+/).filter(Boolean).length >= 50,
+    { message: 'Cover letter must contain at least 50 words' },
+  ).optional(),
   proposedRate: z.number().positive().optional(),
-  estimatedDuration: z.string().max(100).optional(),
+  estimatedDuration: safeText(z.string().max(100)).optional(),
   milestones: z.array(z.object({
-    title: z.string().min(1).max(200),
-    description: z.string().max(1000).optional(),
+    title: safeText(z.string().min(1).max(200)),
+    description: safeText(z.string().max(1000)).optional(),
     amount: z.number().positive(),
     dueDate: z.string().datetime().optional(),
   })).optional(),
@@ -38,16 +48,20 @@ export const acceptProposalSchema = z.object({
   // Additional fields for contract creation
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
+  // For fixed-price jobs: client-defined milestones
   milestones: z.array(z.object({
-    title: z.string().min(1).max(200),
-    description: z.string().max(1000).optional(),
+    title: safeText(z.string().min(1).max(200)),
+    description: safeText(z.string().max(1000)).optional(),
     amount: z.number().positive(),
     dueDate: z.string().datetime().optional(),
-  })).min(1, 'At least one milestone is required'),
+  })).default([]),
+  // For hourly jobs: weekly billing configuration
+  weeklyHourLimit: z.number().int().min(1).max(168).optional(),
+  durationWeeks: z.number().int().min(1).max(52).optional(),
 });
 
 export const rejectProposalSchema = z.object({
-  reason: z.string().max(500).optional(),
+  reason: safeText(z.string().max(500)).optional(),
 });
 
 // =============================================================================

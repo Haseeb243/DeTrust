@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fetchSecureFile, releaseObjectUrl } from '@/lib/secure-files';
+import { api } from '@/lib/api';
 import { useAuthStore } from '@/store';
 
 export function useSecureObjectUrl(sourceUrl?: string | null) {
-  const token = useAuthStore((state) => state.token);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const cacheRef = useRef<string | null>(null);
@@ -18,7 +19,7 @@ export function useSecureObjectUrl(sourceUrl?: string | null) {
   }, []);
 
   useEffect(() => {
-    if (!sourceUrl || !token) {
+    if (!sourceUrl || !isAuthenticated) {
       updateObjectUrl(null);
       return undefined;
     }
@@ -30,7 +31,7 @@ export function useSecureObjectUrl(sourceUrl?: string | null) {
       setIsLoading(true);
       try {
         const file = await fetchSecureFile(sourceUrl, {
-          token,
+          token: api.getToken() ?? undefined,
           signal: controller.signal,
           attachObjectUrl: true,
         });
@@ -56,7 +57,7 @@ export function useSecureObjectUrl(sourceUrl?: string | null) {
       cancelled = true;
       controller.abort();
     };
-  }, [sourceUrl, token, updateObjectUrl]);
+  }, [sourceUrl, isAuthenticated, updateObjectUrl]);
 
   useEffect(() => () => {
     if (cacheRef.current) {
@@ -65,5 +66,5 @@ export function useSecureObjectUrl(sourceUrl?: string | null) {
     }
   }, []);
 
-  return { objectUrl, isLoading: isLoading && Boolean(sourceUrl && token) };
+  return { objectUrl, isLoading: isLoading && Boolean(sourceUrl && isAuthenticated) };
 }

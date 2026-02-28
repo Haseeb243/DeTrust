@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import {
   ArrowLeft,
   Award,
   Briefcase,
   Clock3,
   ExternalLink,
+  FileText,
   GraduationCap,
   Layers,
   Mail,
@@ -25,7 +25,10 @@ import {
 import { SecureAvatar } from '@/components/secure-avatar';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { userApi, type User } from '@/lib/api';
+import { useUser } from '@/hooks/queries/use-user';
+import { openSecureFileInNewTab } from '@/lib/secure-files';
+import { api } from '@/lib/api/client';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 
 export default function FreelancerProfilePage() {
@@ -33,29 +36,8 @@ export default function FreelancerProfilePage() {
   const router = useRouter();
   const freelancerId = params.id as string;
 
-  const [freelancer, setFreelancer] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchFreelancer = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await userApi.getUser(freelancerId);
-      if (response.success && response.data) {
-        setFreelancer(response.data);
-      } else {
-        toast.error('Freelancer not found');
-        router.push('/talent');
-      }
-    } catch (error) {
-      toast.error('Failed to load profile');
-    } finally {
-      setLoading(false);
-    }
-  }, [freelancerId, router]);
-
-  useEffect(() => {
-    fetchFreelancer();
-  }, [fetchFreelancer]);
+  const { data: freelancer, isLoading: loading } = useUser(freelancerId);
+  const { isAuthenticated } = useAuthStore();
 
   const profile = freelancer?.freelancerProfile;
   const languages = (profile?.languages ?? []).join(' · ');
@@ -122,12 +104,12 @@ export default function FreelancerProfilePage() {
       .slice(0, 4);
   }, [profile?.education]);
 
-  const formatEducationRange = useCallback((start?: Date | string | null, end?: Date | string | null) => {
+  const formatEducationRange = (start?: Date | string | null, end?: Date | string | null) => {
     if (!start && !end) return 'Dates not provided';
     const startYear = start ? new Date(start).getFullYear() : '—';
     const endYear = end ? new Date(end).getFullYear() : 'Present';
     return `${startYear} – ${endYear}`;
-  }, []);
+  };
 
   if (loading) {
     return (
@@ -141,7 +123,7 @@ export default function FreelancerProfilePage() {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center">
         <XCircle className="h-12 w-12 text-slate-300" />
-        <h3 className="mt-4 text-lg font-semibold text-slate-900">Profile not found</h3>
+        <h3 className="mt-4 text-lg font-semibold text-dt-text">Profile not found</h3>
         <Button asChild variant="outline" className="mt-4">
           <Link href="/talent">Back to Talent</Link>
         </Button>
@@ -154,7 +136,7 @@ export default function FreelancerProfilePage() {
     try {
       const url = new URL(value);
       return url.hostname.replace(/^www\./, '');
-    } catch (error) {
+    } catch {
       return value;
     }
   };
@@ -164,7 +146,7 @@ export default function FreelancerProfilePage() {
       <Button
         variant="ghost"
         onClick={() => router.back()}
-        className="gap-2 text-slate-500 hover:text-slate-900"
+        className="gap-2 text-dt-text-muted hover:text-dt-text"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to talent
@@ -177,7 +159,7 @@ export default function FreelancerProfilePage() {
         </div>
         <div className="relative z-10 flex flex-wrap items-start gap-8">
           <div className="flex items-start gap-6">
-            <div className="group relative h-28 w-28 rounded-3xl border border-white/60 bg-white p-1 shadow-2xl">
+            <div className="group relative h-28 w-28 rounded-3xl border border-white/60 bg-dt-surface p-1 shadow-2xl">
               <SecureAvatar
                 src={freelancer.avatarUrl}
                 alt={freelancer.name || 'Freelancer avatar'}
@@ -188,10 +170,10 @@ export default function FreelancerProfilePage() {
               <div className="absolute inset-0 rounded-3xl border border-emerald-300/50 opacity-0 transition group-hover:opacity-100" />
             </div>
             <div className="space-y-3">
-              <div className="text-xs uppercase tracking-[0.4em] text-slate-500">Freelancer dossier</div>
-              <h1 className="text-3xl font-semibold text-slate-900">{freelancer.name || 'Anonymous talent'}</h1>
-              <p className="text-lg text-slate-600">{profile?.title || 'Independent builder'}</p>
-              <div className="flex flex-wrap gap-3 text-sm text-slate-600">
+              <div className="text-xs uppercase tracking-[0.4em] text-dt-text-muted">Freelancer dossier</div>
+              <h1 className="text-3xl font-semibold text-dt-text">{freelancer.name || 'Anonymous talent'}</h1>
+              <p className="text-lg text-dt-text-muted">{profile?.title || 'Independent builder'}</p>
+              <div className="flex flex-wrap gap-3 text-sm text-dt-text-muted">
                 <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-emerald-400" /> {profile?.location || 'Location TBD'}</span>
                 {profile?.timezone && <span>UTC {profile.timezone}</span>}
                 {languages && <span>{languages}</span>}
@@ -202,17 +184,17 @@ export default function FreelancerProfilePage() {
                   className={cn(
                     'border-emerald-200 bg-emerald-50 text-emerald-700',
                     profile?.availability === 'Part-time' && 'bg-cyan-50 text-cyan-700',
-                    !profile?.availability && 'bg-slate-100 text-slate-600'
+                    !profile?.availability && 'bg-dt-surface-alt text-dt-text-muted'
                   )}
                 >
                   {profile?.availability || 'Availability pending'}
                 </Badge>
                 {profile?.hourlyRate ? (
-                  <Badge variant="outline" className="border-slate-200 text-slate-700">
+                  <Badge variant="outline" className="border-dt-border text-dt-text-muted">
                     ${profile.hourlyRate}/hr
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="border-slate-200 text-slate-600">
+                  <Badge variant="outline" className="border-dt-border text-dt-text-muted">
                     Rate on request
                   </Badge>
                 )}
@@ -220,17 +202,17 @@ export default function FreelancerProfilePage() {
             </div>
           </div>
           <div className="ml-auto flex flex-col items-end gap-3 text-right">
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Signals</p>
-            <p className="text-sm text-slate-500">Profile completion helps prioritize outreach.</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-dt-text-muted">Signals</p>
+            <p className="text-sm text-dt-text-muted">Profile completion helps prioritize outreach.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               {highlightStats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-white/40 bg-white/70 p-4 text-left shadow-inner">
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-slate-400">
+                <div key={stat.label} className="rounded-2xl border border-white/40 bg-dt-surface/70 p-4 text-left shadow-inner">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-dt-text-muted">
                     {stat.icon}
                     <span>{stat.label}</span>
                   </div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900">{stat.value}</div>
-                  <p className="text-xs text-slate-500">{stat.detail}</p>
+                  <div className="mt-2 text-2xl font-semibold text-dt-text">{stat.value}</div>
+                  <p className="text-xs text-dt-text-muted">{stat.detail}</p>
                 </div>
               ))}
             </div>
@@ -239,17 +221,17 @@ export default function FreelancerProfilePage() {
       </section>
 
       {profile?.bio ? (
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardHeader>
-            <CardTitle className="text-lg text-slate-900">About</CardTitle>
+            <CardTitle className="text-lg text-dt-text">About</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-wrap text-base leading-relaxed text-slate-700">{profile.bio}</p>
+            <p className="whitespace-pre-wrap text-base leading-relaxed text-dt-text-muted">{profile.bio}</p>
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-slate-200 bg-white shadow-lg">
-          <CardContent className="py-6 text-sm text-slate-500">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
+          <CardContent className="py-6 text-sm text-dt-text-muted">
             This talent hasn’t written a long-form narrative yet. Start a conversation to understand their craft and recent wins.
           </CardContent>
         </Card>
@@ -257,13 +239,13 @@ export default function FreelancerProfilePage() {
 
       <div className="grid gap-6 lg:grid-cols-[1.65fr,1fr]">
         <div className="space-y-6">
-          <Card className="border-slate-200 bg-white text-slate-800 shadow-xl">
+          <Card className="border-dt-border bg-dt-surface text-dt-text shadow-xl">
             <CardHeader className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.45em] text-slate-400">Professional dossier</p>
-              <CardTitle className="flex flex-wrap items-center gap-3 text-2xl text-slate-900">
+              <p className="text-xs uppercase tracking-[0.45em] text-dt-text-muted">Professional dossier</p>
+              <CardTitle className="flex flex-wrap items-center gap-3 text-2xl text-dt-text">
                 <Layers className="h-6 w-6 text-emerald-500" /> Proof that travels well
               </CardTitle>
-              <p className="text-sm text-slate-500">Signal-rich resumes, verified skills, and recent study help triage the best collaborator for a mission.</p>
+              <p className="text-sm text-dt-text-muted">Signal-rich resumes, verified skills, and recent study help triage the best collaborator for a mission.</p>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
@@ -271,26 +253,36 @@ export default function FreelancerProfilePage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.35em] text-emerald-500">Resume signal</p>
-                      <p className="text-lg font-semibold text-slate-900">{resumeUploaded ? 'Encrypted resume on file' : 'No resume uploaded yet'}</p>
-                      <p className="text-sm text-slate-500">{resumeUploaded ? 'Available after mutual interest with a secure share link.' : 'Invite them to upload a PDF to unlock deeper screening.'}</p>
+                      <p className="text-lg font-semibold text-dt-text">{resumeUploaded ? 'Resume on file' : 'No resume uploaded yet'}</p>
+                      <p className="text-sm text-dt-text-muted">{resumeUploaded ? 'View the resume to evaluate qualifications.' : 'Invite them to upload a PDF to unlock deeper screening.'}</p>
                     </div>
                     <ScrollText className="h-8 w-8 text-emerald-400" />
                   </div>
                   <div className="mt-5 flex flex-wrap gap-3">
-                    <Button asChild variant="outline" className="border-emerald-200 text-emerald-700">
-                      <Link href={`/messages?to=${freelancer.id}`} className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" /> Request resume
-                      </Link>
-                    </Button>
-                    {resumeUploaded && <Badge variant="secondary" className="bg-white/70 text-emerald-600">Private copy ready</Badge>}
+                    {resumeUploaded && isAuthenticated ? (
+                      <Button
+                        variant="outline"
+                        className="border-emerald-200 text-emerald-700"
+                        onClick={() => openSecureFileInNewTab(profile!.resumeUrl!, { token: api.getToken() ?? undefined })}
+                      >
+                        <FileText className="mr-2 h-4 w-4" /> View Resume
+                      </Button>
+                    ) : (
+                      <Button asChild variant="outline" className="border-emerald-200 text-emerald-700">
+                        <Link href={`/messages?to=${freelancer.id}`} className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" /> Request resume
+                        </Link>
+                      </Button>
+                    )}
+                    {resumeUploaded && <Badge variant="secondary" className="bg-dt-surface/70 text-emerald-600">Available to view</Badge>}
                   </div>
                 </div>
 
                 <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 via-white to-white p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Core stack</p>
-                      <p className="text-lg font-semibold text-slate-900">{topSkills.length ? 'Featured skills' : 'Awaiting entries'}</p>
+                      <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Core stack</p>
+                      <p className="text-lg font-semibold text-dt-text">{topSkills.length ? 'Featured skills' : 'Awaiting entries'}</p>
                     </div>
                     <Sparkles className="h-6 w-6 text-emerald-400" />
                   </div>
@@ -299,7 +291,7 @@ export default function FreelancerProfilePage() {
                       {topSkills.map((skill) => (
                         <div
                           key={skill.id ?? skill.skillId}
-                          className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700"
+                          className="group inline-flex items-center gap-2 rounded-full border border-dt-border bg-dt-surface px-3 py-1 text-sm font-medium text-dt-text-muted"
                         >
                           <span>{skill.skill?.name ?? 'Unnamed skill'}</span>
                           <span className="text-xs uppercase tracking-wide text-emerald-500">
@@ -309,40 +301,40 @@ export default function FreelancerProfilePage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white/70 p-4 text-sm text-slate-500">Skills will appear here as soon as they are documented inside their editor.</p>
+                    <p className="mt-4 rounded-2xl border border-dashed border-dt-border bg-dt-surface/70 p-4 text-sm text-dt-text-muted">Skills will appear here as soon as they are documented inside their editor.</p>
                   )}
                 </div>
 
                 <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/60 via-white to-white p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Education & study</p>
-                      <p className="text-lg font-semibold text-slate-900">{educationEntries.length ? 'Recent learning' : 'No entries yet'}</p>
+                      <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Education & study</p>
+                      <p className="text-lg font-semibold text-dt-text">{educationEntries.length ? 'Recent learning' : 'No entries yet'}</p>
                     </div>
-                    <GraduationCap className="h-6 w-6 text-slate-400" />
+                    <GraduationCap className="h-6 w-6 text-dt-text-muted" />
                   </div>
                   {educationEntries.length ? (
                     <div className="mt-4 space-y-3">
                       {educationEntries.map((entry) => (
-                        <div key={entry.id} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3">
-                          <p className="text-sm font-semibold text-slate-900">{entry.degree || 'Program'} · {entry.institution}</p>
-                          <p className="text-xs text-slate-500">{formatEducationRange(entry.startDate, entry.endDate)}</p>
-                          {entry.fieldOfStudy ? <p className="text-xs text-slate-500">{entry.fieldOfStudy}</p> : null}
+                        <div key={entry.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/70 p-3">
+                          <p className="text-sm font-semibold text-dt-text">{entry.degree || 'Program'} · {entry.institution}</p>
+                          <p className="text-xs text-dt-text-muted">{formatEducationRange(entry.startDate, entry.endDate)}</p>
+                          {entry.fieldOfStudy ? <p className="text-xs text-dt-text-muted">{entry.fieldOfStudy}</p> : null}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-500">Once the talent logs universities, bootcamps, or certifications, they will appear here.</p>
+                    <p className="mt-4 rounded-2xl border border-dashed border-dt-border bg-dt-surface-alt/70 p-4 text-sm text-dt-text-muted">Once the talent logs universities, bootcamps, or certifications, they will appear here.</p>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 bg-white text-slate-800 shadow-xl">
+          <Card className="border-dt-border bg-dt-surface text-dt-text shadow-xl">
             <CardHeader className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.45em] text-slate-400">Trust artifacts</p>
-              <CardTitle className="flex items-center gap-3 text-2xl text-slate-900">
+              <p className="text-xs uppercase tracking-[0.45em] text-dt-text-muted">Trust artifacts</p>
+              <CardTitle className="flex items-center gap-3 text-2xl text-dt-text">
                 <Award className="h-6 w-6 text-emerald-500" /> Certifications & references
               </CardTitle>
             </CardHeader>
@@ -350,16 +342,16 @@ export default function FreelancerProfilePage() {
               {certificationCount ? (
                 <div className="space-y-4">
                   {certifications.map((cert) => (
-                    <div key={cert.id} className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+                    <div key={cert.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/80 p-4">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="text-base font-semibold text-slate-900">{cert.name}</h4>
+                        <h4 className="text-base font-semibold text-dt-text">{cert.name}</h4>
                         <Badge variant="outline" className="border-cyan-200 text-cyan-700">{cert.issuer}</Badge>
                       </div>
-                      <div className="mt-1 text-xs text-slate-500">
+                      <div className="mt-1 text-xs text-dt-text-muted">
                         {cert.issueDate ? `Issued ${new Date(cert.issueDate).toLocaleDateString()}` : 'Issue date not provided'}
                       </div>
                       <div className="mt-3 flex flex-wrap gap-3">
-                        {cert.credentialId && <Badge variant="secondary" className="bg-white text-slate-700">ID · {cert.credentialId}</Badge>}
+                        {cert.credentialId && <Badge variant="secondary" className="bg-dt-surface text-dt-text-muted">ID · {cert.credentialId}</Badge>}
                         {cert.credentialUrl && (
                           <a
                             href={cert.credentialUrl}
@@ -375,7 +367,7 @@ export default function FreelancerProfilePage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-sm text-slate-500">
+                <div className="rounded-3xl border border-dashed border-dt-border bg-dt-surface-alt/70 p-6 text-sm text-dt-text-muted">
                   No certifications published yet. Ask the talent to pin references or credentials from their documents tab.
                 </div>
               )}
@@ -384,9 +376,9 @@ export default function FreelancerProfilePage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-slate-200 bg-white shadow-lg">
+          <Card className="border-dt-border bg-dt-surface shadow-lg">
             <CardHeader>
-              <CardTitle className="text-base text-slate-900">Contact</CardTitle>
+              <CardTitle className="text-base text-dt-text">Contact</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button asChild className="w-full bg-emerald-500 text-white shadow-lg shadow-emerald-300/70 hover:bg-emerald-600">
@@ -394,48 +386,48 @@ export default function FreelancerProfilePage() {
                   <Mail className="mr-2 h-4 w-4" /> Start a conversation
                 </Link>
               </Button>
-              <p className="text-xs text-slate-500">Direct messaging keeps everything on-chain ready and avoids sharing personal emails too early.</p>
+              <p className="text-xs text-dt-text-muted">Direct messaging keeps everything on-chain ready and avoids sharing personal emails too early.</p>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 bg-white shadow-lg">
+          <Card className="border-dt-border bg-dt-surface shadow-lg">
             <CardHeader>
-              <CardTitle className="text-base text-slate-900">Availability & logistics</CardTitle>
+              <CardTitle className="text-base text-dt-text">Availability & logistics</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-600">
+            <CardContent className="space-y-4 text-sm text-dt-text-muted">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-slate-500"><Clock3 className="h-4 w-4 text-emerald-400" /> Status</span>
+                <span className="flex items-center gap-2 text-dt-text-muted"><Clock3 className="h-4 w-4 text-emerald-400" /> Status</span>
                 <Badge
                   className={cn(
                     profile?.availability === 'Full-time'
                       ? 'bg-emerald-100 text-emerald-700'
                       : profile?.availability === 'Part-time'
                       ? 'bg-blue-100 text-blue-700'
-                      : 'bg-slate-100 text-slate-700'
+                      : 'bg-dt-surface-alt text-dt-text-muted'
                   )}
                 >
                   {profile?.availability || 'Not specified'}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Hourly rate</span>
-                <span className="font-semibold text-slate-900">{profile?.hourlyRate ? `$${profile.hourlyRate}/hr` : 'Share in chat'}</span>
+                <span className="text-dt-text-muted">Hourly rate</span>
+                <span className="font-semibold text-dt-text">{profile?.hourlyRate ? `$${profile.hourlyRate}/hr` : 'Share in chat'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Timezone</span>
-                <span className="text-slate-900">{profile?.timezone || 'Not set'}</span>
+                <span className="text-dt-text-muted">Timezone</span>
+                <span className="text-dt-text">{profile?.timezone || 'Not set'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Languages</span>
-                <span className="text-right text-slate-900">{languages || 'Add languages'}</span>
+                <span className="text-dt-text-muted">Languages</span>
+                <span className="text-right text-dt-text">{languages || 'Add languages'}</span>
               </div>
             </CardContent>
           </Card>
 
           {portfolioLinks.length > 0 && (
-            <Card className="border-slate-200 bg-white shadow-lg">
+            <Card className="border-dt-border bg-dt-surface shadow-lg">
               <CardHeader>
-                <CardTitle className="text-base text-slate-900">Portfolio links</CardTitle>
+                <CardTitle className="text-base text-dt-text">Portfolio links</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {portfolioLinks.map((link, index) => (
@@ -444,35 +436,35 @@ export default function FreelancerProfilePage() {
                     href={link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-sm text-emerald-700 transition hover:border-emerald-200 hover:bg-white"
+                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-dt-surface-alt/80 px-4 py-3 text-sm text-emerald-700 transition hover:border-emerald-200 hover:bg-dt-surface"
                   >
                     <div className="flex items-center gap-2">
                       <ExternalLink className="h-4 w-4" />
                       <span className="font-medium">{getLinkLabel(link)}</span>
                     </div>
-                    <span className="text-xs uppercase tracking-[0.35em] text-slate-400">Visit</span>
+                    <span className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Visit</span>
                   </a>
                 ))}
               </CardContent>
             </Card>
           )}
 
-          <Card className="border-slate-200 bg-white shadow-lg">
+          <Card className="border-dt-border bg-dt-surface shadow-lg">
             <CardHeader>
-              <CardTitle className="text-base text-slate-900">Credentials summary</CardTitle>
+              <CardTitle className="text-base text-dt-text">Credentials summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-slate-600">
+            <CardContent className="space-y-3 text-sm text-dt-text-muted">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-slate-500"><UploadCloud className="h-4 w-4 text-emerald-400" /> Documents</span>
-                <span className="font-semibold text-slate-900">{resumeUploaded ? 'Resume ready' : 'Awaiting upload'}</span>
+                <span className="flex items-center gap-2 text-dt-text-muted"><UploadCloud className="h-4 w-4 text-emerald-400" /> Documents</span>
+                <span className="font-semibold text-dt-text">{resumeUploaded ? 'Resume ready' : 'Awaiting upload'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Certifications</span>
-                <span className="font-semibold text-slate-900">{certificationCount}</span>
+                <span className="text-dt-text-muted">Certifications</span>
+                <span className="font-semibold text-dt-text">{certificationCount}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Education entries</span>
-                <span className="font-semibold text-slate-900">{educationEntries.length}</span>
+                <span className="text-dt-text-muted">Education entries</span>
+                <span className="font-semibold text-dt-text">{educationEntries.length}</span>
               </div>
             </CardContent>
           </Card>

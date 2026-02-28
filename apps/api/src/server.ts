@@ -4,9 +4,14 @@ import app from './app';
 import { config } from './config';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { connectRedis, disconnectRedis } from './config/redis';
+import { initSocketIO } from './config/socket';
+import { startCronJobs, stopCronJobs } from './services/cron.service';
 
 // Create HTTP server
 const server = http.createServer(app);
+
+// Attach Socket.IO to the HTTP server
+initSocketIO(server);
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal: string): Promise<void> => {
@@ -18,6 +23,7 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
     try {
       await disconnectDatabase();
       await disconnectRedis();
+      stopCronJobs();
       console.log('✅ Graceful shutdown completed');
       process.exit(0);
     } catch (error) {
@@ -57,7 +63,10 @@ const startServer = async (): Promise<void> => {
     
     // Connect to Redis
     await connectRedis();
-    
+
+    // Start scheduled jobs
+    startCronJobs();
+
     // Start listening
     server.listen(config.server.port, () => {
       console.log('');

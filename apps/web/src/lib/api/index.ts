@@ -12,3 +12,7 @@ export { proposalApi } from './proposal';
 export type { Proposal, ProposalStatus, ProposalMilestone, ProposalFreelancer, CreateProposalInput, UpdateProposalInput, AcceptProposalInput, GetProposalsParams, AcceptProposalResult } from './proposal';
 export { contractApi } from './contract';
 export type { Contract, ContractMilestone, ContractStatus, MilestoneStatus, GetContractsParams, Payment, PaymentStats } from './contract';
+export { notificationApi } from './notification';
+export type { GetNotificationsParams } from './notification';
+export { clientProfileApi } from './client-profile';
+export type { ClientPublicProfile } from './client-profile';

@@ -1,5 +1,5 @@
 import { api } from './client';
-import { Job, JobSkill } from './job';
+import { JobSkill } from './job';
 
 // =============================================================================
 // PROPOSAL TYPES
@@ -92,7 +92,10 @@ export interface UpdateProposalInput {
 export interface AcceptProposalInput {
   startDate?: string;
   endDate?: string;
-  milestones: ProposalMilestone[];
+  milestones?: ProposalMilestone[];
+  // For hourly jobs
+  weeklyHourLimit?: number;
+  durationWeeks?: number;
 }
 
 export interface GetProposalsParams {

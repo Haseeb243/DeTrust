@@ -92,22 +92,22 @@ export function ClientProfileForm({ profile, onUpdated }: ClientProfileFormProps
   };
 
   return (
-    <Card className="border-slate-200 bg-white shadow-sm">
+    <Card className="border-dt-border bg-dt-surface shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl text-slate-900">Client organization</CardTitle>
+        <CardTitle className="text-xl text-dt-text">Client organization</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-sm text-slate-600">Company name</label>
+              <label className="text-sm text-dt-text-muted">Company name</label>
               <Input placeholder="Atlas Robotics" {...register('companyName')} className="mt-2" />
               {errors.companyName && <p className="text-sm text-red-500">{errors.companyName.message}</p>}
             </div>
             <div>
-              <label className="text-sm text-slate-600">Team size</label>
+              <label className="text-sm text-dt-text-muted">Team size</label>
               <select
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-400 focus:outline-none"
+                className="mt-2 w-full rounded-xl border border-dt-border bg-dt-input-bg px-3 py-2 text-sm text-dt-text-muted focus:border-emerald-400 focus:outline-none"
                 {...register('companySize')}
               >
                 <option value="">Select size</option>
@@ -123,23 +123,23 @@ export function ClientProfileForm({ profile, onUpdated }: ClientProfileFormProps
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="text-sm text-slate-600">Industry</label>
+              <label className="text-sm text-dt-text-muted">Industry</label>
               <Input placeholder="Climate fintech" {...register('industry')} className="mt-2" />
             </div>
             <div>
-              <label className="text-sm text-slate-600">Website</label>
+              <label className="text-sm text-dt-text-muted">Website</label>
               <Input placeholder="https://atlas.io" {...register('companyWebsite')} className="mt-2" />
               {errors.companyWebsite && <p className="text-sm text-red-500">{errors.companyWebsite.message}</p>}
             </div>
           </div>
 
           <div>
-            <label className="text-sm text-slate-600">Location</label>
+            <label className="text-sm text-dt-text-muted">Location</label>
             <Input placeholder="Toronto, CA" {...register('location')} className="mt-2" />
           </div>
 
           <div>
-            <label className="text-sm text-slate-600">Company narrative</label>
+            <label className="text-sm text-dt-text-muted">Company narrative</label>
             <Textarea rows={5} placeholder="What should freelancers know before collaborating?" {...register('description')} className="mt-2" />
           </div>
 

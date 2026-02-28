@@ -11,9 +11,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="w-full">
         <textarea
+          aria-invalid={error ? true : undefined}
           className={cn(
             'flex min-h-[100px] w-full rounded-xl border px-4 py-3 text-sm transition-all duration-200',
-            'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400',
+            'bg-dt-input-bg border-dt-border text-dt-text placeholder:text-dt-text-muted',
             'focus:outline-none focus:border-brand/50 focus:ring-2 focus:ring-brand/20',
             'disabled:cursor-not-allowed disabled:opacity-50',
             'resize-none',

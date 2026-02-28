@@ -15,6 +15,18 @@ const config: Config = {
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
       },
       colors: {
+        /* Semantic tokens -- auto-flip via CSS variables in globals.css */
+        dt: {
+          bg:            'hsl(var(--base))',
+          surface:       'hsl(var(--base-soft))',
+          'surface-alt': 'hsl(var(--base-contrast))',
+          border:        'hsl(var(--border-subtle))',
+          text:          'hsl(var(--text-strong))',
+          'text-muted':  'hsl(var(--text-soft))',
+          'input-bg':    'hsl(var(--input-bg))',
+          'accent-soft': 'hsl(var(--accent-soft))',
+          'accent-border': 'hsl(var(--accent-border))',
+        },
         brand: {
           DEFAULT: '#00FF88',
           hover: '#00CC6F',
@@ -43,6 +55,12 @@ const config: Config = {
         glass: {
           white: 'rgba(255, 255, 255, 0.05)',
           light: 'rgba(255, 255, 255, 0.1)',
+        },
+        trust: {
+          high: '#22c55e',    // score > 75
+          medium: '#3b82f6',  // score 50-75
+          low: '#eab308',     // score < 50
+          danger: '#ef4444',  // disputes/errors
         },
       },
       animation: {

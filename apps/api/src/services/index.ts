@@ -5,3 +5,4 @@ export { storageService } from './storage.service';
 export { jobService, JobService } from './job.service';
 export { proposalService, ProposalService } from './proposal.service';
 export { contractService, ContractService } from './contract.service';
+export { notificationService, NotificationService } from './notification.service';

@@ -49,14 +49,14 @@ export default function LoginPage() {
 
   return (
     <motion.div
-      className="space-y-10 text-slate-900"
+      className="space-y-10 text-dt-text"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
     >
       <div>
         <p className="text-xs uppercase tracking-[0.4em] text-emerald-600">Sign in</p>
         <h1 className="mt-2 text-3xl font-semibold">Welcome back</h1>
-        <p className="text-slate-600">Wallet-first access with dual-factor support.</p>
+        <p className="text-dt-text-muted">Wallet-first access with dual-factor support.</p>
       </div>
 
       <div className="space-y-4">
@@ -72,16 +72,16 @@ export default function LoginPage() {
           <div className="rounded-3xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
             <p className="font-semibold">WalletConnect project ID recommended</p>
             <p className="mt-1 text-amber-700">
-              Add <code className="text-slate-800">NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID</code> to enable mobile wallets. MetaMask desktop still works instantly.
+              Add <code className="text-dt-text">NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID</code> to enable mobile wallets. MetaMask desktop still works instantly.
             </p>
           </div>
         )}
-        <MetaMaskPriorityConnect className="border-slate-200" />
+        <MetaMaskPriorityConnect className="border-dt-border" />
       </div>
 
-      <form onSubmit={handleEmailLogin} className="space-y-5 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-xl">
+      <form onSubmit={handleEmailLogin} className="space-y-5 rounded-3xl border border-dt-border bg-dt-surface/90 p-6 shadow-xl">
         <div>
-          <label className="text-sm font-medium text-slate-700">Email</label>
+          <label className="text-sm font-medium text-dt-text-muted">Email</label>
           <input
             type="email"
             name="email"
@@ -94,21 +94,21 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-slate-700">Password</label>
+          <label className="text-sm font-medium text-dt-text-muted">Password</label>
           <input
             type="password"
             name="password"
             value={formData.password}
             onChange={handleInputChange}
             className="input-glass mt-2"
-            placeholder="Haseeb12345"
+            placeholder="Enter your password"
             required
             disabled={requires2FA}
           />
         </div>
         {requires2FA && (
           <div>
-            <label className="text-sm font-medium text-slate-700">2FA Code</label>
+            <label className="text-sm font-medium text-dt-text-muted">2FA Code</label>
             <input
               type="text"
               name="twoFactorCode"
@@ -130,8 +130,8 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <div className="flex flex-col gap-3 text-center text-sm text-slate-600">
-        <Link href="/forgot-password" className="font-semibold text-slate-900">
+      <div className="flex flex-col gap-3 text-center text-sm text-dt-text-muted">
+        <Link href="/forgot-password" className="font-semibold text-dt-text">
           Forgot password?
         </Link>
         <p>

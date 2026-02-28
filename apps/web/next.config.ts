@@ -27,7 +27,7 @@ const apiUploadPattern: RemotePattern = (() => {
 const nextConfig: NextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
-  
+
   // Transpile packages from monorepo
   transpilePackages: ['@detrust/types', '@detrust/config'],
   
@@ -42,7 +42,11 @@ const nextConfig: NextConfig = {
     ],
   },
   
-  // Webpack configuration
+  // Turbopack (default for dev in Next.js 16)
+  // Webpack externals/fallbacks are not needed — Turbopack handles SSR imports natively
+  turbopack: {},
+
+  // Webpack configuration (used for production build via --webpack flag)
   webpack: (config) => {
     // Handle native modules for WalletConnect/RainbowKit
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
@@ -53,13 +57,7 @@ const nextConfig: NextConfig = {
       'idb-keyval': false,
       '@react-native-async-storage/async-storage': false,
     };
-    
-    // Handle SVG as React components
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
-    
+
     return config;
   },
   

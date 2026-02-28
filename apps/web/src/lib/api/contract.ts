@@ -5,7 +5,7 @@ import { api } from './client';
 // =============================================================================
 
 export type ContractStatus = 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'DISPUTED';
-export type MilestoneStatus = 'PENDING' | 'IN_PROGRESS' | 'SUBMITTED' | 'APPROVED' | 'PAID' | 'DISPUTED';
+export type MilestoneStatus = 'PENDING' | 'IN_PROGRESS' | 'SUBMITTED' | 'APPROVED' | 'PAID' | 'DISPUTED' | 'REVISION_REQUESTED';
 
 export interface ContractMilestone {
   id: string;
@@ -21,6 +21,19 @@ export interface ContractMilestone {
   paidAt?: string;
   deliverableUrl?: string;
   deliverableHash?: string;
+  revisionNote?: string;
+  revisionCount?: number;
+  createdAt: string;
+  updatedAt: string;
+  timeEntries?: TimeEntryResponse[];
+}
+
+export interface TimeEntryResponse {
+  id: string;
+  milestoneId: string;
+  date: string;
+  hours: number;
+  description: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +49,9 @@ export interface Contract {
   totalAmount: number;
   paidAmount: number;
   status: ContractStatus;
+  billingType: 'FIXED' | 'HOURLY';
+  hourlyRate?: number;
+  weeklyHourLimit?: number;
   escrowAddress?: string;
   blockchainJobId?: string;
   fundingTxHash?: string;
@@ -65,6 +81,7 @@ export interface Contract {
     id: string;
     name?: string;
     avatarUrl?: string;
+    walletAddress?: string;
     freelancerProfile?: {
       title?: string;
       trustScore: number;
@@ -166,8 +183,8 @@ export const contractApi = {
     api.post<Contract>(`/contracts/${contractId}/complete`),
 
   // Raise dispute
-  raiseDispute: (contractId: string, reason: string) =>
-    api.post<Contract>(`/contracts/${contractId}/dispute`, { reason }),
+  raiseDispute: (contractId: string, reason: string, evidence?: string[]) =>
+    api.post<Contract>(`/contracts/${contractId}/dispute`, { reason, evidence }),
 
   // Get payment history
   getPaymentHistory: (params?: { page?: number; limit?: number }) => {

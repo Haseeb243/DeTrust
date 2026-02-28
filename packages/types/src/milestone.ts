@@ -1,5 +1,7 @@
 // Milestone Types for DeTrust Platform
 
+import { TimeEntry } from './timeEntry';
+
 export enum MilestoneStatus {
   PENDING = 'PENDING',
   IN_PROGRESS = 'IN_PROGRESS',
@@ -37,6 +39,9 @@ export interface Milestone {
   paidAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+
+  // Relations (when included)
+  timeEntries?: TimeEntry[];
 }
 
 // Submit Milestone

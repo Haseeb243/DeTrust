@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError, ValidationError } from '../middleware';
+import { getIO } from '../config/socket';
+import { notificationService } from './notification.service';
 
 type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
@@ -28,6 +30,13 @@ export interface FundEscrowInput {
 }
 
 export class ContractService {
+  private emitContractStatus(clientId: string, freelancerId: string, payload: Record<string, unknown>) {
+    const io = getIO();
+    if (io) {
+      io.to(`user:${clientId}`).to(`user:${freelancerId}`).emit('contract:status', payload);
+    }
+  }
+
   /**
    * List contracts for a user
    */
@@ -151,6 +160,7 @@ export class ContractService {
             id: true,
             name: true,
             avatarUrl: true,
+            walletAddress: true,
             freelancerProfile: {
               select: {
                 title: true,
@@ -161,6 +171,11 @@ export class ContractService {
         },
         milestones: {
           orderBy: { orderIndex: 'asc' },
+          include: {
+            timeEntries: {
+              orderBy: { date: 'asc' },
+            },
+          },
         },
       },
     });
@@ -199,8 +214,8 @@ export class ContractService {
       throw new ForbiddenError('Only the freelancer can submit milestones');
     }
 
-    if (contract.status !== 'ACTIVE' && contract.status !== 'PENDING') {
-      throw new ForbiddenError('Contract is not active');
+    if (contract.status !== 'ACTIVE') {
+      throw new ForbiddenError('Escrow must be funded before submitting deliverables');
     }
 
     const milestone = contract.milestones.find((m: { id: string }) => m.id === milestoneId);
@@ -223,23 +238,19 @@ export class ContractService {
       },
     });
 
-    // Update contract status to ACTIVE if PENDING
-    if (contract.status === 'PENDING') {
-      await prisma.contract.update({
-        where: { id: contractId },
-        data: { status: 'ACTIVE' },
-      });
-    }
+    // Create notification for client (uses WebSocket push via notificationService)
+    await notificationService.createNotification({
+      userId: contract.clientId,
+      type: 'MILESTONE_SUBMITTED',
+      title: 'Milestone Submitted for Review',
+      message: `Freelancer has submitted deliverables for milestone "${milestone.title}". You have 7 days to review.`,
+      data: { contractId, milestoneId },
+    });
 
-    // Create notification for client
-    await prisma.notification.create({
-      data: {
-        userId: contract.clientId,
-        type: 'MILESTONE_SUBMITTED',
-        title: 'Milestone Submitted',
-        message: `Milestone "${milestone.title}" has been submitted for review`,
-        data: { contractId, milestoneId },
-      },
+    this.emitContractStatus(contract.clientId, contract.freelancerId, {
+      contractId,
+      milestoneId,
+      status: 'SUBMITTED',
     });
 
     return updatedMilestone;
@@ -324,6 +335,12 @@ export class ContractService {
       },
     });
 
+    this.emitContractStatus(contract.clientId, contract.freelancerId, {
+      contractId,
+      milestoneId,
+      status: 'PAID',
+    });
+
     return result;
   }
 
@@ -373,6 +390,12 @@ export class ContractService {
       },
     });
 
+    this.emitContractStatus(contract.clientId, contract.freelancerId, {
+      contractId,
+      milestoneId,
+      status: 'REVISION_REQUESTED',
+    });
+
     return updatedMilestone;
   }
 
@@ -420,6 +443,11 @@ export class ContractService {
       },
     });
 
+    this.emitContractStatus(contract.clientId, contract.freelancerId, {
+      contractId,
+      status: 'ACTIVE',
+    });
+
     return updatedContract;
   }
 
@@ -460,7 +488,7 @@ export class ContractService {
   /**
    * Raise dispute
    */
-  async raiseDispute(contractId: string, userId: string, reason: string) {
+  async raiseDispute(contractId: string, userId: string, reason: string, evidence?: string[]) {
     const contract = await prisma.contract.findUnique({
       where: { id: contractId },
     });
@@ -491,6 +519,7 @@ export class ContractService {
           initiatorId: userId,
           reason,
           description: reason,
+          evidence: evidence ?? [],
           status: 'OPEN',
           outcome: 'PENDING',
         },
@@ -509,6 +538,11 @@ export class ContractService {
         message: `A dispute has been raised on contract "${contract.title}"`,
         data: { contractId, reason },
       },
+    });
+
+    this.emitContractStatus(contract.clientId, contract.freelancerId, {
+      contractId,
+      status: 'DISPUTED',
     });
 
     return result;

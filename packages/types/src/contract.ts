@@ -21,6 +21,11 @@ export interface Contract {
   description: string | null;
   totalAmount: number;
   status: ContractStatus;
+
+  // Billing
+  billingType: 'FIXED' | 'HOURLY';
+  hourlyRate: number | null;
+  weeklyHourLimit: number | null;
   
   // Blockchain Data
   escrowAddress: string | null;

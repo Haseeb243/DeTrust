@@ -1,27 +1,24 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import {
   Briefcase,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
-  DollarSign,
   FileCheck,
   Shield,
-  XCircle,
 } from 'lucide-react';
 
 import { SecureAvatar } from '@/components/secure-avatar';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge, Button, Card, CardContent } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { contractApi, type Contract, type ContractStatus, type GetContractsParams } from '@/lib/api';
+import { type Contract, type ContractStatus, type GetContractsParams } from '@/lib/api';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
+import { useContracts } from '@/hooks/queries/use-contracts';
 
 const STATUS_COLORS: Record<ContractStatus, string> = {
   PENDING: 'bg-amber-100 text-amber-700',
@@ -48,60 +45,32 @@ const TABS: { value: ContractStatus | ''; label: string }[] = [
 ];
 
 export default function ContractsPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
-
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<ContractStatus | ''>('');
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: 1,
-    totalPages: 1,
-    hasNext: false,
-    hasPrev: false,
-  });
-
   const isClient = user?.role === 'CLIENT';
 
-  const fetchContracts = useCallback(async (page = 1) => {
-    setLoading(true);
-    try {
-      const params: GetContractsParams = {
-        page,
-        limit: 10,
-        sort: 'createdAt',
-        order: 'desc',
-        role: isClient ? 'client' : 'freelancer',
-      };
-      if (activeTab) {
-        params.status = activeTab;
-      }
+  const [activeTab, setActiveTab] = useState<ContractStatus | ''>('');
+  const [page, setPage] = useState(1);
 
-      const response = await contractApi.listContracts(params);
+  const params: GetContractsParams = {
+    page,
+    limit: 10,
+    sort: 'createdAt',
+    order: 'desc',
+    role: isClient ? 'client' : 'freelancer',
+    ...(activeTab ? { status: activeTab } : {}),
+  };
 
-      if (response.success && response.data) {
-        setContracts(response.data.items);
-        setPagination({
-          total: response.data.total,
-          page: response.data.page,
-          totalPages: response.data.totalPages,
-          hasNext: response.data.hasNext,
-          hasPrev: response.data.hasPrev,
-        });
-      }
-    } catch (error) {
-      toast.error('Failed to load contracts');
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, isClient]);
+  const { data, isLoading } = useContracts(params);
+  const contracts = data?.items ?? [];
+  const pagination = useMemo(() => ({
+    total: data?.total ?? 0,
+    page: data?.page ?? 1,
+    totalPages: data?.totalPages ?? 1,
+    hasNext: data?.hasNext ?? false,
+    hasPrev: data?.hasPrev ?? false,
+  }), [data]);
 
-  useEffect(() => {
-    fetchContracts();
-  }, [fetchContracts]);
-
-  const getOtherParty = (contract: Contract) => {
+  const getOtherParty = useCallback((contract: Contract) => {
     if (isClient) {
       return {
         name: contract.freelancer?.name || 'Freelancer',
@@ -116,34 +85,34 @@ export default function ContractsPage() {
       subtitle: contract.client?.clientProfile?.companyName || 'Client',
       trustScore: contract.client?.clientProfile?.trustScore || 0,
     };
-  };
+  }, [isClient]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Active Contracts</h1>
-          <p className="text-slate-600">
+          <h1 className="text-2xl font-semibold text-dt-text">Active Contracts</h1>
+          <p className="text-dt-text-muted">
             {isClient ? 'Manage your contracts with freelancers' : 'Track your ongoing contracts'}
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-2">
+      <div className="flex gap-2 overflow-x-auto border-b border-dt-border pb-2">
         {TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => {
               setActiveTab(tab.value);
-              setPagination((prev) => ({ ...prev, page: 1 }));
+              setPage(1);
             }}
             className={cn(
               'whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition',
               activeTab === tab.value
                 ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                : 'text-dt-text-muted hover:bg-dt-surface-alt'
             )}
           >
             {tab.label}
@@ -152,18 +121,18 @@ export default function ContractsPage() {
       </div>
 
       {/* Contracts List */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex min-h-[300px] items-center justify-center">
           <Spinner size="lg" />
         </div>
       ) : contracts.length === 0 ? (
-        <Card className="border-slate-200 bg-white shadow-lg">
+        <Card className="border-dt-border bg-dt-surface shadow-lg">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Briefcase className="h-12 w-12 text-slate-300" />
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">
+            <h3 className="mt-4 text-lg font-semibold text-dt-text">
               {activeTab ? `No ${activeTab.toLowerCase()} contracts` : 'No contracts yet'}
             </h3>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 text-dt-text-muted">
               {isClient
                 ? 'Accept a proposal to create a contract'
                 : 'Get your proposals accepted to start contracts'}
@@ -188,7 +157,7 @@ export default function ContractsPage() {
 
             return (
               <Link key={contract.id} href={`/contracts/${contract.id}`}>
-                <Card className="border-slate-200 bg-white shadow-md transition-all hover:border-emerald-200 hover:shadow-lg">
+                <Card className="border-dt-border bg-dt-surface shadow-md transition-all hover:border-emerald-200 hover:shadow-lg">
                   <CardContent className="p-6">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       {/* Contract Info */}
@@ -198,21 +167,21 @@ export default function ContractsPage() {
                           alt={otherParty.name}
                           size={56}
                           fallbackInitial={otherParty.name[0]?.toUpperCase() ?? 'U'}
-                          containerClassName="h-14 w-14 overflow-hidden rounded-full border-2 border-emerald-100 bg-slate-100"
+                          containerClassName="h-14 w-14 overflow-hidden rounded-full border-2 border-emerald-100 bg-dt-surface-alt"
                         />
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-lg font-semibold text-slate-900">
+                            <h3 className="text-lg font-semibold text-dt-text">
                               {contract.title}
                             </h3>
                             <Badge className={STATUS_COLORS[contract.status as ContractStatus]}>
                               {contract.status}
                             </Badge>
                           </div>
-                          <p className="text-sm text-slate-500">
+                          <p className="text-sm text-dt-text-muted">
                             with {otherParty.name} · {otherParty.subtitle}
                           </p>
-                          <div className="mt-1 flex items-center gap-3 text-sm text-slate-500">
+                          <div className="mt-1 flex items-center gap-3 text-sm text-dt-text-muted">
                             <span className="flex items-center gap-1">
                               <Shield className="h-4 w-4 text-emerald-500" />
                               {otherParty.trustScore}% trust
@@ -227,11 +196,11 @@ export default function ContractsPage() {
 
                       {/* Amount & Progress */}
                       <div className="text-right">
-                        <div className="text-xl font-semibold text-slate-900">
-                          ${contract.totalAmount.toLocaleString()}
+                        <div className="text-xl font-semibold text-dt-text">
+                          ${Number(contract.totalAmount).toLocaleString()}
                         </div>
-                        <div className="text-sm text-slate-500">
-                          ${contract.paidAmount?.toLocaleString() || 0} paid
+                        <div className="text-sm text-dt-text-muted">
+                          ${Number(contract.paidAmount ?? 0).toLocaleString()} paid
                         </div>
                       </div>
                     </div>
@@ -240,15 +209,15 @@ export default function ContractsPage() {
                     {totalMilestones > 0 && (
                       <div className="mt-4 space-y-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-1 text-slate-500">
+                          <span className="flex items-center gap-1 text-dt-text-muted">
                             <FileCheck className="h-4 w-4" />
                             Milestones
                           </span>
-                          <span className="font-medium text-slate-900">
+                          <span className="font-medium text-dt-text">
                             {completedMilestones} / {totalMilestones} completed
                           </span>
                         </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-2 overflow-hidden rounded-full bg-dt-surface-alt">
                           <div
                             className="h-full rounded-full bg-emerald-500 transition-all"
                             style={{ width: `${progress}%` }}
@@ -273,7 +242,7 @@ export default function ContractsPage() {
           {/* Pagination */}
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between pt-4">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-dt-text-muted">
                 Showing {(pagination.page - 1) * 10 + 1} to{' '}
                 {Math.min(pagination.page * 10, pagination.total)} of {pagination.total} contracts
               </p>
@@ -282,8 +251,8 @@ export default function ContractsPage() {
                   variant="outline"
                   size="sm"
                   disabled={!pagination.hasPrev}
-                  onClick={() => fetchContracts(pagination.page - 1)}
-                  className="border-slate-200"
+                  onClick={() => setPage(pagination.page - 1)}
+                  className="border-dt-border"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
@@ -292,8 +261,8 @@ export default function ContractsPage() {
                   variant="outline"
                   size="sm"
                   disabled={!pagination.hasNext}
-                  onClick={() => fetchContracts(pagination.page + 1)}
-                  className="border-slate-200"
+                  onClick={() => setPage(pagination.page + 1)}
+                  className="border-dt-border"
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />

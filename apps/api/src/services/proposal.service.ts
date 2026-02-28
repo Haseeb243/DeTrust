@@ -1,6 +1,6 @@
 import { Prisma, ProposalStatus, PrismaClient } from '@prisma/client';
 import { prisma } from '../config/database';
-import { NotFoundError, ForbiddenError, ConflictError } from '../middleware';
+import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from '../middleware';
 import { CreateProposalInput, UpdateProposalInput, AcceptProposalInput, GetProposalsQuery } from '../validators';
 
 type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
@@ -49,8 +49,23 @@ export class ProposalService {
       where: { userId: freelancerId },
     });
 
-    if (!freelancerProfile || !freelancerProfile.profileComplete) {
-      throw new ForbiddenError('Please complete your profile before submitting proposals');
+    if (!freelancerProfile || freelancerProfile.completenessScore < 70) {
+      throw new ForbiddenError(
+        `Profile must be at least 70% complete to submit proposals (currently ${freelancerProfile?.completenessScore ?? 0}%)`
+      );
+    }
+
+    // Enforce hourly rate range for HOURLY jobs
+    if (job.type === 'HOURLY') {
+      const min = job.hourlyRateMin ? Number(job.hourlyRateMin) : null;
+      const max = job.hourlyRateMax ? Number(job.hourlyRateMax) : null;
+      if (min !== null && max !== null) {
+        if (data.proposedRate < min || data.proposedRate > max) {
+          throw new ValidationError(
+            `Proposed hourly rate must be between $${min} and $${max}/hr`
+          );
+        }
+      }
     }
 
     const proposal = await prisma.proposal.create({
@@ -270,8 +285,66 @@ export class ProposalService {
         data: { status: 'IN_PROGRESS' },
       });
 
-      // Calculate total amount from milestones
-      const totalAmount = data.milestones.reduce((sum, m) => sum + m.amount, 0);
+      // Determine billing type and milestones
+      const isHourly = proposal.job.type === 'HOURLY';
+      let milestoneData: Array<{
+        title: string;
+        description: string;
+        amount: number;
+        orderIndex: number;
+        dueDate: Date | null;
+        status: 'PENDING';
+      }>;
+      let totalAmount: number;
+      let contractBillingType: string;
+      let contractHourlyRate: number | undefined;
+      let contractWeeklyHourLimit: number | undefined;
+
+      if (isHourly) {
+        // Auto-generate weekly billing period milestones
+        const hourlyRate = Number(proposal.proposedRate);
+        const typedData = data as AcceptProposalInput & { weeklyHourLimit?: number; durationWeeks?: number };
+        const weeklyHourLimit = typedData.weeklyHourLimit ?? 40;
+        const durationWeeks = typedData.durationWeeks ?? 4;
+        const weeklyAmount = hourlyRate * weeklyHourLimit;
+        const startDate = data.startDate ? new Date(data.startDate) : new Date();
+
+        milestoneData = Array.from({ length: durationWeeks }, (_, i) => {
+          const weekStart = new Date(startDate);
+          weekStart.setDate(weekStart.getDate() + i * 7);
+          const dueDate = new Date(weekStart);
+          dueDate.setDate(dueDate.getDate() + 6);
+
+          return {
+            title: `Week ${i + 1}`,
+            description: `Billing period: ${weekStart.toISOString().slice(0, 10)} to ${dueDate.toISOString().slice(0, 10)}`,
+            amount: weeklyAmount,
+            orderIndex: i,
+            dueDate,
+            status: 'PENDING' as const,
+          };
+        });
+
+        totalAmount = weeklyAmount * durationWeeks;
+        contractBillingType = 'HOURLY';
+        contractHourlyRate = hourlyRate;
+        contractWeeklyHourLimit = weeklyHourLimit;
+      } else {
+        // Fixed-price: use client-provided milestones
+        milestoneData = data.milestones.map((milestone, index) => ({
+          title: milestone.title,
+          description: milestone.description || '',
+          amount: Number(milestone.amount),
+          orderIndex: index,
+          dueDate: milestone.dueDate ? new Date(milestone.dueDate) : null,
+          status: 'PENDING' as const,
+        }));
+
+        totalAmount = milestoneData.reduce((sum, m) => sum + m.amount, 0);
+        contractBillingType = 'FIXED';
+        contractHourlyRate = undefined;
+        contractWeeklyHourLimit = undefined;
+      }
 
       // Create contract
       const contract = await tx.contract.create({
@@ -283,18 +356,14 @@ export class ProposalService {
           title: proposal.job.title,
           description: proposal.job.description,
           totalAmount,
+          billingType: contractBillingType,
+          hourlyRate: contractHourlyRate,
+          weeklyHourLimit: contractWeeklyHourLimit,
           status: 'PENDING',
           startDate: data.startDate ? new Date(data.startDate) : new Date(),
           endDate: data.endDate ? new Date(data.endDate) : null,
           milestones: {
-            create: data.milestones.map((milestone, index) => ({
-              title: milestone.title,
-              description: milestone.description || '',
-              amount: milestone.amount,
-              orderIndex: index,
-              dueDate: milestone.dueDate ? new Date(milestone.dueDate) : null,
-              status: 'PENDING',
-            })),
+            create: milestoneData,
           },
         },
         include: {

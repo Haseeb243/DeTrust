@@ -30,14 +30,14 @@ export default function ForgotPasswordPage() {
   if (isSubmitted) {
     return (
       <div className="w-full max-w-md">
-        <div className="glass-card rounded-2xl p-8 text-center text-slate-900">
+        <div className="glass-card rounded-2xl p-8 text-center text-dt-text">
           <div className="mb-4 text-5xl">📧</div>
           <h1 className="mb-2 text-2xl font-bold">Check Your Email</h1>
-          <p className="mb-6 text-slate-600">
+          <p className="mb-6 text-dt-text-muted">
             We&apos;ve sent a password reset link to{' '}
-            <span className="font-semibold text-slate-900">{email}</span>
+            <span className="font-semibold text-dt-text">{email}</span>
           </p>
-          <p className="mb-6 text-sm text-slate-500">
+          <p className="mb-6 text-sm text-dt-text-muted">
             Didn&apos;t receive the email? Check your spam folder or try again.
           </p>
           <button
@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
           </button>
           <Link
             href="/login"
-            className="mt-4 block text-sm text-slate-500 hover:text-slate-900"
+            className="mt-4 block text-sm text-dt-text-muted hover:text-dt-text"
           >
             Back to Login
           </Link>
@@ -59,11 +59,11 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="glass-card rounded-2xl p-8 text-slate-900">
+      <div className="glass-card rounded-2xl p-8 text-dt-text">
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-2xl font-bold">Forgot Password?</h1>
-          <p className="text-slate-600">
+          <p className="text-dt-text-muted">
             Enter your email and we&apos;ll send you a reset link
           </p>
         </div>
@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
+            <label htmlFor="email" className="mb-2 block text-sm font-medium text-dt-text-muted">
               Email
             </label>
             <input
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
         </form>
 
         {/* Footer Link */}
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="mt-6 text-center text-sm text-dt-text-muted">
           Remember your password?{' '}
           <Link href="/login" className="font-semibold text-emerald-600 hover:underline">
             Sign in

@@ -2,13 +2,14 @@ import { Router } from 'express';
 
 import { userController } from '../controllers';
 import { authenticate, optionalAuth, validateBody, requireFreelancer, requireClient } from '../middleware';
-import { 
-  updateUserSchema, 
-  updateFreelancerProfileSchema, 
+import {
+  updateUserSchema,
+  updateFreelancerProfileSchema,
   updateClientProfileSchema,
   addSkillSchema,
   addEducationSchema,
   setRoleSchema,
+  updateKycSchema,
 } from '../validators';
 
 const router: Router = Router();
@@ -46,6 +47,18 @@ router.post(
   authenticate,
   validateBody(setRoleSchema),
   userController.setRole
+);
+
+/**
+ * @route   PATCH /users/me/kyc
+ * @desc    Submit or update KYC data
+ * @access  Private
+ */
+router.patch(
+  '/me/kyc',
+  authenticate,
+  validateBody(updateKycSchema),
+  userController.updateKyc
 );
 
 // =============================================================================
@@ -154,6 +167,13 @@ router.patch(
  * @access  Public
  */
 router.get('/freelancers', optionalAuth, userController.searchFreelancers);
+
+/**
+ * @route   GET /users/clients/:id/profile
+ * @desc    Get client public profile with work history
+ * @access  Public
+ */
+router.get('/clients/:id/profile', optionalAuth, userController.getClientProfile);
 
 /**
  * @route   GET /users/:id

@@ -134,7 +134,7 @@ class StorageService {
         encryptionAuthTag: toHex(authTag),
         resourceType,
         resourceId,
-        metadata,
+        metadata: metadata as Prisma.InputJsonValue | undefined,
       },
     });
 
@@ -142,17 +142,20 @@ class StorageService {
   }
 
   async replaceCategoryFile(options: UploadSecureFileOptions): Promise<SecureFile> {
+    const newFile = await this.uploadSecureFile(options);
+
     await prisma.secureFile.updateMany({
       where: {
         userId: options.userId,
         category: options.category,
+        id: { not: newFile.id },
       },
       data: {
         visibility: SecureFileVisibility.PRIVATE,
       },
     });
 
-    return this.uploadSecureFile(options);
+    return newFile;
   }
 
   async getAccessibleFile(fileId: string, viewerId?: string | null): Promise<SecureFile> {
