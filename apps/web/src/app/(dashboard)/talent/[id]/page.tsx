@@ -189,8 +189,8 @@ export default function FreelancerProfilePage() {
                 <Badge
                   variant="secondary"
                   className={cn(
-                    'border-emerald-200 bg-emerald-50 text-emerald-700',
-                    profile?.availability === 'Part-time' && 'bg-cyan-50 text-cyan-700',
+                    'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
+                    profile?.availability === 'Part-time' && 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
                     !profile?.availability && 'bg-dt-surface-alt text-dt-text-muted'
                   )}
                 >
@@ -213,7 +213,7 @@ export default function FreelancerProfilePage() {
             <p className="text-sm text-dt-text-muted">Profile completion helps prioritize outreach.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               {highlightStats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-white/40 bg-dt-surface/70 p-4 text-left shadow-inner">
+                <div key={stat.label} className="rounded-2xl border border-white/40 bg-dt-surface/70 p-4 text-left shadow-inner dark:border-slate-700">
                   <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-dt-text-muted">
                     {stat.icon}
                     <span>{stat.label}</span>
@@ -256,7 +256,7 @@ export default function FreelancerProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
-                <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-5 shadow-sm">
+                <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-5 shadow-sm dark:border-emerald-900/50 dark:from-emerald-950/30 dark:via-transparent dark:to-transparent">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.35em] text-emerald-500">Resume signal</p>
@@ -281,11 +281,11 @@ export default function FreelancerProfilePage() {
                         </Link>
                       </Button>
                     )}
-                    {resumeUploaded && <Badge variant="secondary" className="bg-dt-surface/70 text-emerald-600">Available to view</Badge>}
+                    {resumeUploaded && <Badge variant="secondary" className="bg-dt-surface/70 text-emerald-600 dark:text-emerald-400">Available to view</Badge>}
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 via-white to-white p-5 shadow-sm">
+                <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 via-white to-white p-5 shadow-sm dark:border-emerald-900/50 dark:from-emerald-950/30 dark:via-transparent dark:to-transparent">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Core stack</p>
@@ -312,7 +312,7 @@ export default function FreelancerProfilePage() {
                   )}
                 </div>
 
-                <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/60 via-white to-white p-5 shadow-sm">
+                <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/60 via-white to-white p-5 shadow-sm dark:border-emerald-900/50 dark:from-emerald-950/30 dark:via-transparent dark:to-transparent">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Education & study</p>
@@ -323,7 +323,7 @@ export default function FreelancerProfilePage() {
                   {educationEntries.length ? (
                     <div className="mt-4 space-y-3">
                       {educationEntries.map((entry) => (
-                        <div key={entry.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/70 p-3">
+                        <div key={entry.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/70 p-3 dark:border-slate-700">
                           <p className="text-sm font-semibold text-dt-text">{entry.degree || 'Program'} · {entry.institution}</p>
                           <p className="text-xs text-dt-text-muted">{formatEducationRange(entry.startDate, entry.endDate)}</p>
                           {entry.fieldOfStudy ? <p className="text-xs text-dt-text-muted">{entry.fieldOfStudy}</p> : null}
@@ -349,10 +349,10 @@ export default function FreelancerProfilePage() {
               {certificationCount ? (
                 <div className="space-y-4">
                   {certifications.map((cert) => (
-                    <div key={cert.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/80 p-4">
+                    <div key={cert.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/80 p-4 dark:border-slate-700">
                       <div className="flex flex-wrap items-center gap-2">
                         <h4 className="text-base font-semibold text-dt-text">{cert.name}</h4>
-                        <Badge variant="outline" className="border-cyan-200 text-cyan-700">{cert.issuer}</Badge>
+                        <Badge variant="outline" className="border-cyan-200 text-cyan-700 dark:border-cyan-800 dark:text-cyan-300">{cert.issuer}</Badge>
                       </div>
                       <div className="mt-1 text-xs text-dt-text-muted">
                         {cert.issueDate ? `Issued ${new Date(cert.issueDate).toLocaleDateString()}` : 'Issue date not provided'}
@@ -364,7 +364,7 @@ export default function FreelancerProfilePage() {
                             href={cert.credentialUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline"
+                            className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline dark:text-emerald-400"
                           >
                             View credential <ExternalLink className="h-3 w-3" />
                           </a>
@@ -407,9 +407,9 @@ export default function FreelancerProfilePage() {
                 <Badge
                   className={cn(
                     profile?.availability === 'Full-time'
-                      ? 'bg-emerald-100 text-emerald-700'
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                       : profile?.availability === 'Part-time'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
                       : 'bg-dt-surface-alt text-dt-text-muted'
                   )}
                 >
@@ -443,7 +443,7 @@ export default function FreelancerProfilePage() {
                     href={link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-dt-surface-alt/80 px-4 py-3 text-sm text-emerald-700 transition hover:border-emerald-200 hover:bg-dt-surface"
+                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-dt-surface-alt/80 px-4 py-3 text-sm text-emerald-700 transition hover:border-emerald-200 hover:bg-dt-surface dark:border-slate-700 dark:text-emerald-400 dark:hover:border-emerald-700"
                   >
                     <div className="flex items-center gap-2">
                       <ExternalLink className="h-4 w-4" />

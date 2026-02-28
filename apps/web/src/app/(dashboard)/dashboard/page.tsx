@@ -9,8 +9,10 @@ import {
   Briefcase,
   Inbox,
   ListChecks,
+  MessageSquareText,
   ShieldCheck,
   Sparkles,
+  Star,
   Wallet2,
   CheckCircle2,
 } from 'lucide-react';
@@ -18,10 +20,12 @@ import {
 import { useAuthStore } from '@/store';
 import { ProfileProgressRing } from '@/components/profile/profile-progress-ring';
 import { TrustScoreCard } from '@/components/trust-score';
+import { ReviewSummaryCard } from '@/components/reviews';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
 import { userApi } from '@/lib/api';
 import { useTrustScore } from '@/hooks/queries/use-trust-score';
+import { useReviewSummary } from '@/hooks/queries/use-reviews';
 
 const ratingLabel = (value?: number | string | null) => {
   const num = value != null ? Number(value) : NaN;
@@ -29,9 +33,9 @@ const ratingLabel = (value?: number | string | null) => {
 };
 
 const toneClasses: Record<'success' | 'warning' | 'info', string> = {
-  success: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-  warning: 'border-amber-100 bg-amber-50 text-amber-900',
-  info: 'border-cyan-100 bg-cyan-50 text-cyan-900',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200',
+  warning: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200',
+  info: 'border-cyan-200 bg-cyan-50 text-cyan-900 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200',
 };
 
 export default function DashboardPage() {
@@ -59,6 +63,7 @@ export default function DashboardPage() {
   const isFreelancer = user?.role === 'FREELANCER';
   const completion = computeProfileCompletion(user);
   const { data: trustScoreBreakdown } = useTrustScore(user?.id ?? '');
+  const { data: reviewSummary } = useReviewSummary(user?.id ?? '');
   const freelancerProfile = user?.freelancerProfile;
   const clientProfile = user?.clientProfile;
   const heroStats = useMemo(() => isFreelancer
@@ -217,7 +222,7 @@ export default function DashboardPage() {
             <div className="flex flex-wrap items-center gap-3 text-sm text-dt-text-muted">
               <Badge
                 variant="secondary"
-                className="border border-emerald-200 bg-emerald-50 text-emerald-700"
+                className="border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
               >
                 Module 1
               </Badge>
@@ -320,6 +325,31 @@ export default function DashboardPage() {
         <TrustScoreCard breakdown={trustScoreBreakdown} />
       )}
 
+      {/* Reputation Snapshot (Module 3) */}
+      {reviewSummary && reviewSummary.totalReviews > 0 && (
+        <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base text-dt-text">
+                <Star className="h-4 w-4 text-amber-400" /> Reputation snapshot
+              </CardTitle>
+              <Link
+                href="/reviews"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+              >
+                View all reviews <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ReviewSummaryCard
+              summary={reviewSummary}
+              subjectRole={isFreelancer ? 'FREELANCER' : 'CLIENT'}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">
           <CardHeader>
@@ -360,8 +390,8 @@ export default function DashboardPage() {
               <div className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Wallet</div>
               <div className="font-mono text-base text-dt-text">{shortWallet(user.walletAddress || address)}</div>
             </div>
-            <div className="rounded-2xl border border-dt-border bg-emerald-50/80 p-4 text-sm text-emerald-900">
-              <div className="text-xs uppercase tracking-[0.3em] text-emerald-500">Status</div>
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+              <div className="text-xs uppercase tracking-[0.3em] text-emerald-600 dark:text-emerald-400">Status</div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-emerald-500" />
                 {user.walletAddress ? 'Escrow payouts ready' : 'Awaiting wallet pairing'}
@@ -377,6 +407,13 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-dt-text-muted">
+            <Link
+              href="/reviews"
+              className="block rounded-2xl border border-dt-border bg-dt-surface p-4 shadow-sm transition hover:border-emerald-300 dark:hover:border-emerald-700"
+            >
+              <p className="font-medium text-dt-text">Check your reviews & reputation</p>
+              <p className="text-xs text-dt-text-muted">View ratings and feedback from completed contracts.</p>
+            </Link>
             <div className="rounded-2xl border border-dt-border bg-dt-surface p-4 shadow-sm">
               <p className="font-medium text-dt-text">Review trust signals weekly</p>
               <p className="text-xs text-dt-text-muted">Boost your score by reflecting new deliverables.</p>
@@ -388,10 +425,6 @@ export default function DashboardPage() {
                   ? 'Re-run AI capability scans when you add evidence.'
                   : 'Keep talent updated with escrow-backed status updates.'}
               </p>
-            </div>
-            <div className="rounded-2xl border border-dt-border bg-dt-surface p-4 shadow-sm">
-              <p className="font-medium text-dt-text">Monitor notifications</p>
-              <p className="text-xs text-dt-text-muted">Critical alerts appear in the center above—stay responsive.</p>
             </div>
           </CardContent>
         </Card>
