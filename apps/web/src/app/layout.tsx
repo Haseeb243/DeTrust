@@ -72,10 +72,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    // suppressHydrationWarning prevents React hydration mismatch when the
+    // client-side theme store adds/removes the `dark` class after SSR.
+    // This is the recommended Next.js pattern for theme toggling.
     <html
       lang="en"
       className={`${displayFont.variable} ${bodyFont.variable} dark`}
       data-theme="detrust"
+      suppressHydrationWarning
     >
       <body className="min-h-screen bg-base text-foreground antialiased">
         <a

@@ -27,8 +27,8 @@ export function ProfileIdentityCard({ profile, walletDisplayAddress, shortWallet
         <div className="rounded-2xl border border-dt-border bg-dt-surface-alt p-4">
           <p className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Wallet</p>
           <p className="font-mono text-dt-text">{walletDisplayAddress ? shortWallet(walletDisplayAddress) : 'Not paired yet'}</p>
-          {!profile.walletAddress && walletDisplayAddress ? (
-            <p className="text-xs text-dt-text-muted">Connected this session — save it in edit mode to persist.</p>
+          {walletDisplayAddress && profile.walletAddress?.toLowerCase() !== walletDisplayAddress.toLowerCase() ? (
+            <p className="text-xs text-cyan-600">Syncing new wallet automatically…</p>
           ) : null}
         </div>
         <div className="rounded-2xl border border-dt-border bg-dt-surface-alt p-4">

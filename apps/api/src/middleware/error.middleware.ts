@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
+import { Prisma } from '@prisma/client';
 
 import { config } from '../config';
 import { ApiErrorCode } from '@detrust/types';
@@ -102,6 +103,29 @@ export const errorHandler: ErrorRequestHandler = (
     return;
   }
   
+  // Prisma known errors — map common codes to meaningful HTTP responses
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === 'P2002') {
+      // Unique constraint violation
+      res.status(409).json({
+        success: false,
+        error: {
+          code: ApiErrorCode.CONFLICT,
+          message: 'A unique constraint was violated. The resource already exists.',
+        },
+      });
+      return;
+    }
+    if (err.code === 'P2025') {
+      // Record not found for update/delete
+      res.status(404).json({
+        success: false,
+        error: { code: ApiErrorCode.NOT_FOUND, message: 'Record not found' },
+      });
+      return;
+    }
+  }
+
   // Custom AppError
   if (err instanceof AppError) {
     res.status(err.statusCode).json({

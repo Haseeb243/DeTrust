@@ -6,6 +6,13 @@ import { Web3Provider } from '@/lib/wagmi';
 import { useAuthStore, useThemeStore } from '@/store';
 import { queryClient } from '@/lib/query-client';
 import { Toaster } from 'sonner';
+import { useWalletSync } from '@/hooks/use-wallet-sync';
+
+/** Mounted inside Web3Provider so wagmi context is available */
+function WalletSyncWatcher() {
+  useWalletSync();
+  return null;
+}
 
 interface ProvidersProps {
   children: ReactNode;
@@ -41,6 +48,7 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <Web3Provider>
+        <WalletSyncWatcher />
         {children}
         <Toaster
           theme={resolvedTheme}

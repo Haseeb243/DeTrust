@@ -41,13 +41,15 @@ export default function ProfileEditPage() {
   const freelancerProfile = user?.freelancerProfile ?? null;
   const clientProfile = user?.clientProfile ?? null;
   const profileComplete = isFreelancer ? Boolean(freelancerProfile?.profileComplete) : completion >= 70;
-  const walletDisplayAddress = user?.walletAddress ?? (isConnected ? connectedAddress : null);
+  // Always prefer connected wallet for display; fall back to stored only when disconnected
+  const walletDisplayAddress = (isConnected && connectedAddress) ? connectedAddress : (user?.walletAddress ?? null);
+  const isSyncedWithConnected = !isConnected || connectedAddress?.toLowerCase() === user?.walletAddress?.toLowerCase();
   const walletBadgeLabel = walletDisplayAddress
-    ? user?.walletAddress
+    ? isSyncedWithConnected
       ? `Wallet ${shortWallet(walletDisplayAddress)}`
-      : `Wallet ${shortWallet(walletDisplayAddress)} · unsynced`
+      : `Wallet ${shortWallet(walletDisplayAddress)} · syncing…`
     : 'Wallet not linked';
-  const walletBadgeTone = user?.walletAddress
+  const walletBadgeTone = isSyncedWithConnected && walletDisplayAddress
     ? 'border-dt-border text-dt-text-muted'
     : walletDisplayAddress
     ? 'border-cyan-200 text-cyan-600'
@@ -371,8 +373,8 @@ export default function ProfileEditPage() {
               <div className="rounded-2xl border border-emerald-100 bg-dt-surface/70 p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Wallet</p>
                 <p className="font-mono text-dt-text">{walletDisplayAddress ? shortWallet(walletDisplayAddress) : 'Not paired yet'}</p>
-                {!user.walletAddress && walletDisplayAddress ? (
-                  <p className="text-xs text-dt-text-muted">Connected this session — syncing automatically.</p>
+                {walletDisplayAddress && !isSyncedWithConnected ? (
+                  <p className="text-xs text-cyan-600">Syncing new wallet automatically…</p>
                 ) : !walletDisplayAddress ? (
                   <p className="text-xs text-dt-text-muted">Connect a wallet from the navigation bar.</p>
                 ) : null}

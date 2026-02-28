@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { NotFoundError, ForbiddenError } from '../middleware';
+import { NotFoundError, ForbiddenError, ConflictError } from '../middleware';
 import { 
   UpdateUserInput, 
   UpdateFreelancerProfileInput, 
@@ -165,6 +165,17 @@ export class UserService {
    * Update user basic info
    */
   async updateUser(userId: string, data: UpdateUserInput) {
+    // Guard: if a new walletAddress is being set, make sure no OTHER user already owns it
+    if (data.walletAddress) {
+      const existing = await prisma.user.findUnique({
+        where: { walletAddress: data.walletAddress },
+        select: { id: true },
+      });
+      if (existing && existing.id !== userId) {
+        throw new ConflictError('This wallet address is already linked to another account');
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id: userId },
       data,

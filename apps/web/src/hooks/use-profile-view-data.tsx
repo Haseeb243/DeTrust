@@ -33,11 +33,13 @@ export function useProfileViewData() {
   const freelancerProfile = profile?.freelancerProfile ?? null;
   const clientProfile = profile?.clientProfile ?? null;
   const profileComplete = isFreelancer ? Boolean(freelancerProfile?.profileComplete) : completion >= 70;
-  const walletDisplayAddress = profile?.walletAddress ?? (isConnected ? connectedAddress : null);
+  // Always prefer the live connected address; fall back to stored only when disconnected
+  const walletDisplayAddress = (isConnected && connectedAddress) ? connectedAddress : (profile?.walletAddress ?? null);
+  const isSyncedWithConnected = !isConnected || connectedAddress?.toLowerCase() === profile?.walletAddress?.toLowerCase();
   const walletBadgeLabel = walletDisplayAddress
-    ? profile?.walletAddress
+    ? isSyncedWithConnected
       ? `Wallet ${shortWallet(walletDisplayAddress)}`
-      : `Wallet ${shortWallet(walletDisplayAddress)} \u00b7 unsynced`
+      : `Wallet ${shortWallet(walletDisplayAddress)} \u00b7 syncing\u2026`
     : 'Wallet not linked';
   const languages = (freelancerProfile?.languages ?? []).join(' \u00b7 ');
   const resumeUploaded = Boolean(freelancerProfile?.resumeUrl);

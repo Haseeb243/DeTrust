@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -31,7 +31,6 @@ import { cn } from '@/lib/utils';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
 import { useLiveNotifications } from '@/hooks/use-live-notifications';
 import { useSafeAccount } from '@/hooks/use-safe-account';
-import { userApi } from '@/lib/api';
 import { BrandMark } from '@/components/layout/brand-mark';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { TokenBalance } from '@/components/layout/token-balance';
@@ -88,25 +87,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     router.replace('/profile');
   }, [isNewUser, isProfileRoute, router, user]);
 
-  // Auto-sync wallet address to backend whenever wallet connects via nav bar
-  // Works for both freelancers and clients; also auto-verifies client payment
-  const lastSyncedAddress = useRef<string | null>(null);
-  useEffect(() => {
-    if (!isConnected || !connectedAddress || !user) return;
-    const walletMatches = user.walletAddress?.toLowerCase() === connectedAddress.toLowerCase();
-    const clientNeedsVerification = user.role === 'CLIENT' && !user.clientProfile?.paymentVerified;
-    if (walletMatches && !clientNeedsVerification) return;
-    // Skip if we already synced this exact address
-    if (lastSyncedAddress.current === connectedAddress.toLowerCase()) return;
-    lastSyncedAddress.current = connectedAddress.toLowerCase();
-    userApi.updateMe({ walletAddress: connectedAddress }).then((res) => {
-      if (res.success && res.data) {
-        setUser(res.data);
-      }
-    }).catch(() => {
-      lastSyncedAddress.current = null; // Allow retry on failure
-    });
-  }, [isConnected, connectedAddress, user, setUser]);
+  // Wallet sync is handled globally by useWalletSync in providers.tsx (WalletSyncWatcher)
   
   const role = user?.role || 'FREELANCER';
   const navItems = navigation[role as keyof typeof navigation] || navigation.FREELANCER;

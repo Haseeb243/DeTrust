@@ -23,7 +23,9 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
   const [previewUrl, setPreviewUrl] = useState(user?.avatarUrl || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { address: connectedAddress, isConnected } = useSafeAccount();
-  const displayedWalletAddress = user?.walletAddress || (isConnected ? connectedAddress : null);
+  // Always prefer the currently connected wallet; fall back to stored address only when disconnected
+  const displayedWalletAddress = (isConnected && connectedAddress) ? connectedAddress : (user?.walletAddress ?? null);
+  const isSyncedWithConnected = !isConnected || connectedAddress?.toLowerCase() === user?.walletAddress?.toLowerCase();
 
   const {
     register,
@@ -109,7 +111,7 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
   };
 
   const copyWallet = async () => {
-    const addressToCopy = user?.walletAddress || displayedWalletAddress;
+    const addressToCopy = displayedWalletAddress || user?.walletAddress;
     if (!addressToCopy || typeof navigator === 'undefined') return;
     await navigator.clipboard.writeText(addressToCopy);
     toast.success('Wallet address copied');
@@ -167,14 +169,14 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
               <label className="text-sm text-dt-text-muted">Wallet</label>
               <div className="mt-2 flex items-center gap-2">
                 <Input value={displayedWalletAddress || 'Not paired yet'} disabled />
-                {(user?.walletAddress || displayedWalletAddress) && (
+                {displayedWalletAddress && (
                   <Button type="button" variant="secondary" size="icon" onClick={copyWallet}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 )}
               </div>
-              {!user?.walletAddress && displayedWalletAddress && (
-                <p className="mt-1 text-xs text-amber-600">Connected this session — save profile to persist.</p>
+              {isConnected && !isSyncedWithConnected && (
+                <p className="mt-1 text-xs text-cyan-600">Syncing new wallet to your account…</p>
               )}
             </div>
           </div>

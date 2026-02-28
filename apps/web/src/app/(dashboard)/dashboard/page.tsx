@@ -371,13 +371,13 @@ export default function DashboardPage() {
             </div>
             <div className="rounded-2xl border border-dt-border bg-dt-surface p-4 text-sm shadow-sm">
               <div className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Wallet</div>
-              <div className="font-mono text-base text-dt-text">{shortWallet(user.walletAddress || address)}</div>
+              <div className="font-mono text-base text-dt-text">{shortWallet((isConnected && address) ? address : user.walletAddress)}</div>
             </div>
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
               <div className="text-xs uppercase tracking-[0.3em] text-emerald-600 dark:text-emerald-400">Status</div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                {user.walletAddress ? 'Escrow payouts ready' : 'Awaiting wallet pairing'}
+                {(isConnected && address) || user.walletAddress ? 'Escrow payouts ready' : 'Awaiting wallet pairing'}
               </div>
             </div>
           </CardContent>
