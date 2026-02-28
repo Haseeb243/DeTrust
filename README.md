@@ -172,7 +172,7 @@ pnpm dev
 ## 👥 Team
 
 - **Haseeb Ahmad Khalil** - CIIT/FA22-BCS-027/ISB
-- **Noor-Ul-Huda** - CIIT/FA22-BCS-081/ISB
+
 
 **Supervisor**: Dr. Tehsin Kanwal
 
