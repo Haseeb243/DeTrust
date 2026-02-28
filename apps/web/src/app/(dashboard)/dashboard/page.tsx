@@ -17,9 +17,11 @@ import {
 
 import { useAuthStore } from '@/store';
 import { ProfileProgressRing } from '@/components/profile/profile-progress-ring';
+import { TrustScoreCard } from '@/components/trust-score';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
 import { userApi } from '@/lib/api';
+import { useTrustScore } from '@/hooks/queries/use-trust-score';
 
 const ratingLabel = (value?: number | string | null) => {
   const num = value != null ? Number(value) : NaN;
@@ -56,6 +58,7 @@ export default function DashboardPage() {
 
   const isFreelancer = user?.role === 'FREELANCER';
   const completion = computeProfileCompletion(user);
+  const { data: trustScoreBreakdown } = useTrustScore(user?.id ?? '');
   const freelancerProfile = user?.freelancerProfile;
   const clientProfile = user?.clientProfile;
   const heroStats = useMemo(() => isFreelancer
@@ -311,6 +314,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Trust Score Breakdown (Module 4) */}
+      {trustScoreBreakdown && trustScoreBreakdown.components.length > 0 && (
+        <TrustScoreCard breakdown={trustScoreBreakdown} />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">

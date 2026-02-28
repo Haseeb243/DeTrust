@@ -18,14 +18,23 @@ interface ReviewFormProps {
   onCancel?: () => void;
 }
 
-const RATING_CATEGORIES = [
+/** Client reviewing freelancer */
+const CLIENT_RATING_CATEGORIES = [
   { key: 'communicationRating', label: 'Communication' },
   { key: 'qualityRating', label: 'Quality of Work' },
   { key: 'timelinessRating', label: 'Timeliness' },
   { key: 'professionalismRating', label: 'Professionalism' },
 ] as const;
 
-type RatingKey = (typeof RATING_CATEGORIES)[number]['key'];
+/** Freelancer reviewing client (SRS FE-2: Job Clarity rating) */
+const FREELANCER_RATING_CATEGORIES = [
+  { key: 'communicationRating', label: 'Communication' },
+  { key: 'qualityRating', label: 'Job Clarity' },
+  { key: 'timelinessRating', label: 'Payment Promptness' },
+  { key: 'professionalismRating', label: 'Responsiveness' },
+] as const;
+
+type RatingKey = (typeof CLIENT_RATING_CATEGORIES)[number]['key'];
 
 export function ReviewForm({
   contractId,
@@ -45,6 +54,8 @@ export function ReviewForm({
   const [comment, setComment] = useState('');
 
   const submitReview = useSubmitReview();
+
+  const ratingCategories = isClient ? CLIENT_RATING_CATEGORIES : FREELANCER_RATING_CATEGORIES;
 
   const handleCategoryChange = useCallback((key: RatingKey, value: number) => {
     setCategoryRatings((prev) => ({ ...prev, [key]: value }));
@@ -110,7 +121,7 @@ export function ReviewForm({
 
         {/* Category Ratings */}
         <div className="grid gap-4 sm:grid-cols-2">
-          {RATING_CATEGORIES.map((cat) => (
+          {ratingCategories.map((cat) => (
             <div key={cat.key} className="space-y-1">
               <label className="text-sm text-dt-text-muted">{cat.label}</label>
               <StarRating

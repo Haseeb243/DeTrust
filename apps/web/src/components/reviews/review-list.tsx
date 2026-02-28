@@ -1,7 +1,9 @@
 'use client';
 
-import { MessageSquare, Calendar } from 'lucide-react';
+import Link from 'next/link';
+import { MessageSquare, Calendar, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
+import { SecureAvatar } from '@/components/secure-avatar';
 import { StarRating } from './star-rating';
 import type { Review } from '@/lib/api/review';
 
@@ -17,28 +19,48 @@ const formatDate = (date: string) =>
     year: 'numeric',
   });
 
+/** Determine if the review author was the client (reviewing a freelancer) */
+function isClientAuthor(review: Review): boolean {
+  return Boolean(review.contract && review.authorId === review.contract.clientId);
+}
+
+/** Category labels differ based on who wrote the review */
+function getCategoryLabels(isClient: boolean) {
+  return isClient
+    ? { communication: 'Communication', quality: 'Quality', timeliness: 'Timeliness', professionalism: 'Professionalism' }
+    : { communication: 'Communication', quality: 'Job Clarity', timeliness: 'Payment Promptness', professionalism: 'Responsiveness' };
+}
+
 function ReviewCard({ review }: { review: Review }) {
   const authorName = review.author?.name || 'Anonymous';
-  const initial = authorName[0]?.toUpperCase() ?? 'A';
+  const clientReview = isClientAuthor(review);
+  const labels = getCategoryLabels(clientReview);
 
   return (
     <Card className="border-dt-border bg-dt-surface shadow-sm transition-shadow hover:shadow-md">
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
           {/* Author Avatar */}
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-            {initial}
-          </div>
+          <SecureAvatar
+            src={review.author?.avatarUrl}
+            alt={authorName}
+            size={40}
+            fallbackInitial={authorName[0]}
+          />
 
           <div className="min-w-0 flex-1">
             {/* Header Row */}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <span className="font-medium text-dt-text">{authorName}</span>
-                {review.contract?.title && (
-                  <span className="ml-2 text-xs text-dt-text-muted">
+                {review.contract?.title && review.contract?.id && (
+                  <Link
+                    href={`/contracts/${review.contract.id}`}
+                    className="ml-2 inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 hover:underline dark:text-emerald-400 dark:hover:text-emerald-300"
+                  >
                     on &ldquo;{review.contract.title}&rdquo;
-                  </span>
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
                 )}
               </div>
               <div className="flex items-center gap-1 text-xs text-dt-text-muted">
@@ -56,16 +78,16 @@ function ReviewCard({ review }: { review: Review }) {
             {(review.communicationRating || review.qualityRating || review.timelinessRating || review.professionalismRating) && (
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-dt-text-muted">
                 {review.communicationRating && (
-                  <span>Communication: {Number(review.communicationRating).toFixed(1)}</span>
+                  <span>{labels.communication}: {Number(review.communicationRating).toFixed(1)}</span>
                 )}
                 {review.qualityRating && (
-                  <span>Quality: {Number(review.qualityRating).toFixed(1)}</span>
+                  <span>{labels.quality}: {Number(review.qualityRating).toFixed(1)}</span>
                 )}
                 {review.timelinessRating && (
-                  <span>Timeliness: {Number(review.timelinessRating).toFixed(1)}</span>
+                  <span>{labels.timeliness}: {Number(review.timelinessRating).toFixed(1)}</span>
                 )}
                 {review.professionalismRating && (
-                  <span>Professionalism: {Number(review.professionalismRating).toFixed(1)}</span>
+                  <span>{labels.professionalism}: {Number(review.professionalismRating).toFixed(1)}</span>
                 )}
               </div>
             )}

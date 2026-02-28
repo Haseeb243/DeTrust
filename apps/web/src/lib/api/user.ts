@@ -121,6 +121,19 @@ interface FreelancerSearchParams {
   order?: 'asc' | 'desc';
 }
 
+export interface TrustScoreComponent {
+  label: string;
+  weight: number;
+  rawValue: number;
+  normalizedValue: number;
+  weightedValue: number;
+}
+
+export interface TrustScoreBreakdown {
+  totalScore: number;
+  components: TrustScoreComponent[];
+}
+
 // User API functions
 export const userApi = {
   // Get current user
@@ -179,6 +192,10 @@ export const userApi = {
     const query = searchParams.toString();
     return api.get<PaginatedResponse<User>>(`/users/freelancers${query ? `?${query}` : ''}`);
   },
+
+  // Trust Score
+  getTrustScore: (userId: string) =>
+    api.get<TrustScoreBreakdown>(`/users/${userId}/trust-score`),
 };
 
 export default userApi;

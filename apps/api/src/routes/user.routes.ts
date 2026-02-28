@@ -176,6 +176,13 @@ router.get('/freelancers', optionalAuth, userController.searchFreelancers);
 router.get('/clients/:id/profile', optionalAuth, userController.getClientProfile);
 
 /**
+ * @route   GET /users/:id/trust-score
+ * @desc    Get trust score breakdown for a user
+ * @access  Public
+ */
+router.get('/:id/trust-score', optionalAuth, userController.getTrustScore);
+
+/**
  * @route   GET /users/:id
  * @desc    Get public profile
  * @access  Public

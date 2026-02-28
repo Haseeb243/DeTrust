@@ -24,7 +24,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { SecureAvatar } from '@/components/secure-avatar';
 import { useClientProfile } from '@/hooks/queries/use-client-profile';
 import { useUserReviews, useReviewSummary } from '@/hooks/queries/use-reviews';
+import { useTrustScore } from '@/hooks/queries/use-trust-score';
 import { ReviewSummaryCard, ReviewList } from '@/components/reviews';
+import { TrustScoreCard } from '@/components/trust-score';
 
 export default function ClientProfilePage() {
   const router = useRouter();
@@ -33,6 +35,7 @@ export default function ClientProfilePage() {
   const { data: profile, isLoading } = useClientProfile(clientId);
   const { data: reviewSummary } = useReviewSummary(clientId);
   const { data: reviewsData } = useUserReviews(clientId, { page: 1, limit: 10 });
+  const { data: trustScoreBreakdown } = useTrustScore(clientId);
 
   const cp = profile?.user.clientProfile;
 
@@ -386,6 +389,11 @@ export default function ClientProfilePage() {
           </Card>
         </div>
       </div>
+
+      {/* Trust Score Breakdown (Module 4) */}
+      {trustScoreBreakdown && trustScoreBreakdown.components.length > 0 && (
+        <TrustScoreCard breakdown={trustScoreBreakdown} />
+      )}
 
       {/* Reviews Section */}
       <Card className="border-dt-border bg-dt-surface text-dt-text shadow-xl">

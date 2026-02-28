@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { userService } from '../services';
+import { userService, trustScoreService } from '../services';
 import { AuthenticatedRequest } from '../middleware';
 
 export class UserController {
@@ -251,6 +251,20 @@ export class UserController {
         message: 'KYC data updated',
         data: user,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get trust score breakdown for a user
+   * GET /users/:id/trust-score
+   */
+  async getTrustScore(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const breakdown = await trustScoreService.getTrustScoreBreakdown(id);
+      res.json({ success: true, data: breakdown });
     } catch (error) {
       next(error);
     }

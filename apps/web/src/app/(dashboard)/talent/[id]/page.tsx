@@ -27,7 +27,9 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/compo
 import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/hooks/queries/use-user';
 import { useUserReviews, useReviewSummary } from '@/hooks/queries/use-reviews';
+import { useTrustScore } from '@/hooks/queries/use-trust-score';
 import { ReviewSummaryCard, ReviewList } from '@/components/reviews';
+import { TrustScoreCard } from '@/components/trust-score';
 import { openSecureFileInNewTab } from '@/lib/secure-files';
 import { api } from '@/lib/api/client';
 import { useAuthStore } from '@/store/auth.store';
@@ -41,6 +43,7 @@ export default function FreelancerProfilePage() {
   const { data: freelancer, isLoading: loading } = useUser(freelancerId);
   const { data: reviewSummary } = useReviewSummary(freelancerId);
   const { data: reviewsData } = useUserReviews(freelancerId, { page: 1, limit: 10 });
+  const { data: trustScoreBreakdown } = useTrustScore(freelancerId);
   const { isAuthenticated } = useAuthStore();
 
   const profile = freelancer?.freelancerProfile;
@@ -474,6 +477,11 @@ export default function FreelancerProfilePage() {
           </Card>
         </div>
       </div>
+
+      {/* Trust Score Breakdown (Module 4) */}
+      {trustScoreBreakdown && trustScoreBreakdown.components.length > 0 && (
+        <TrustScoreCard breakdown={trustScoreBreakdown} />
+      )}
 
       {/* Reviews Section */}
       <Card className="border-dt-border bg-dt-surface text-dt-text shadow-xl">
