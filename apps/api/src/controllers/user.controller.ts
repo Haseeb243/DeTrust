@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService, trustScoreService } from '../services';
 import { AuthenticatedRequest } from '../middleware';
+import { prisma } from '../config/database';
 
 export class UserController {
   /**
@@ -265,6 +266,39 @@ export class UserController {
       const { id } = req.params;
       const breakdown = await trustScoreService.getTrustScoreBreakdown(id);
       res.json({ success: true, data: breakdown });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get trust score history (trend data) for a user
+   * GET /users/:id/trust-score/history
+   */
+  async getTrustScoreHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
+
+      const history = await prisma.trustScoreHistory.findMany({
+        where: { userId: id },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        select: {
+          id: true,
+          score: true,
+          breakdown: true,
+          createdAt: true,
+        },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          items: history.reverse(), // Return oldest-first for chart rendering
+          total: history.length,
+        },
+      });
     } catch (error) {
       next(error);
     }

@@ -285,5 +285,5 @@ Audited all 43 endpoints across 8 controllers. Fixed 9 non-conforming responses:
 ## Remaining Work
 
 - M-2 (cacheComponents/PPR): Deferred — requires migrating dashboard pages from `'use client'` to Server Components with `use cache` directives. Landing page and auth layout already converted.
-- L-3: Production blockchain contract addresses (requires deployment -- zero-address placeholders remain)
+- Blockchain: Using Hardhat local node (chain 31337) for development — production deployment deferred.
 
