@@ -173,7 +173,6 @@ pnpm dev
 
 - **Haseeb Ahmad Khalil** - CIIT/FA22-BCS-027/ISB
 
-
 **Supervisor**: Dr. Tehsin Kanwal
 
 **Institution**: COMSATS University, Islamabad
