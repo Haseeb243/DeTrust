@@ -14,7 +14,7 @@ import { ClientProfileForm } from '@/components/profile/client-profile-form';
 import { ProfileProgressRing } from '@/components/profile/profile-progress-ring';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { type User, type FreelancerProfile, type ClientProfile, type FreelancerSkill, type EducationEntry, type CertificationEntry, userApi } from '@/lib/api';
+import { type User, type FreelancerProfile, type ClientProfile, type FreelancerSkill, type EducationEntry, type CertificationEntry } from '@/lib/api';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
 import { useAuthStore } from '@/store';
 import { useCurrentUser } from '@/hooks/queries/use-user';
@@ -32,20 +32,6 @@ export default function ProfileEditPage() {
       setUser(profileData as User);
     }
   }, [profileData, setUser]);
-
-  // Auto-sync wallet address to backend when connected but not saved
-  // Also re-sync when client has no paymentVerified yet (wallet linked before feature existed)
-  useEffect(() => {
-    if (!isConnected || !connectedAddress || !user) return;
-    const walletMatches = user.walletAddress?.toLowerCase() === connectedAddress.toLowerCase();
-    const clientNeedsVerification = user.role === 'CLIENT' && !user.clientProfile?.paymentVerified;
-    if (walletMatches && !clientNeedsVerification) return;
-    userApi.updateMe({ walletAddress: connectedAddress }).then((res) => {
-      if (res.success && res.data) {
-        setUser(res.data);
-      }
-    }).catch(() => { /* silent – user can retry manually */ });
-  }, [isConnected, connectedAddress, user, setUser]);
 
   const { objectUrl: avatarObjectUrl, isLoading: avatarLoading } = useSecureObjectUrl(user?.avatarUrl);
 

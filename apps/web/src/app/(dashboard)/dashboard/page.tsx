@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useAccount, useBalance } from 'wagmi';
 import {
   ArrowUpRight,
@@ -22,7 +22,6 @@ import { TrustScoreCard } from '@/components/trust-score';
 import { ReviewSummaryCard } from '@/components/reviews';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
-import { userApi } from '@/lib/api';
 import { useTrustScore } from '@/hooks/queries/use-trust-score';
 import { useReviewSummary } from '@/hooks/queries/use-reviews';
 
@@ -38,7 +37,7 @@ const toneClasses: Record<'success' | 'warning' | 'info', string> = {
 };
 
 export default function DashboardPage() {
-  const { user, isNewUser, setUser } = useAuthStore();
+  const { user, isNewUser } = useAuthStore();
   const { address, isConnected } = useAccount();
   const { data: balanceData } = useBalance({
     address,
@@ -47,20 +46,6 @@ export default function DashboardPage() {
       refetchInterval: 15000,
     },
   });
-
-  // Auto-sync wallet address to backend when connected but not saved
-  // Also re-sync when client has no paymentVerified yet (wallet linked before feature existed)
-  useEffect(() => {
-    if (!isConnected || !address || !user) return;
-    const walletMatches = user.walletAddress?.toLowerCase() === address.toLowerCase();
-    const clientNeedsVerification = user.role === 'CLIENT' && !user.clientProfile?.paymentVerified;
-    if (walletMatches && !clientNeedsVerification) return;
-    userApi.updateMe({ walletAddress: address }).then((res) => {
-      if (res.success && res.data) {
-        setUser(res.data);
-      }
-    }).catch(() => { /* silent */ });
-  }, [isConnected, address, user, setUser]);
 
   const isFreelancer = user?.role === 'FREELANCER';
   const completion = computeProfileCompletion(user);
