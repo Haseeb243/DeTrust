@@ -492,7 +492,7 @@ export default function FreelancerProfilePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {reviewSummary && <ReviewSummaryCard summary={reviewSummary} />}
+          {reviewSummary && <ReviewSummaryCard summary={reviewSummary} subjectRole="FREELANCER" />}
           <ReviewList
             reviews={reviewsData?.items ?? []}
             emptyMessage="No reviews yet. Reviews will appear here once contracts are completed."

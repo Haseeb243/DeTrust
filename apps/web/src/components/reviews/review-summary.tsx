@@ -8,17 +8,29 @@ import type { ReviewSummary as ReviewSummaryType } from '@/lib/api/review';
 
 interface ReviewSummaryProps {
   summary: ReviewSummaryType;
+  /** Role of the user whose reviews are being summarized */
+  subjectRole?: 'FREELANCER' | 'CLIENT';
   className?: string;
 }
 
-const CATEGORY_LABELS = [
+/** Category labels for reviews received by a freelancer (authored by clients) */
+const FREELANCER_CATEGORY_LABELS = [
   { key: 'averageCommunication', label: 'Communication' },
   { key: 'averageQuality', label: 'Quality' },
   { key: 'averageTimeliness', label: 'Timeliness' },
   { key: 'averageProfessionalism', label: 'Professionalism' },
 ] as const;
 
-export function ReviewSummaryCard({ summary, className }: ReviewSummaryProps) {
+/** Category labels for reviews received by a client (authored by freelancers) */
+const CLIENT_CATEGORY_LABELS = [
+  { key: 'averageCommunication', label: 'Communication' },
+  { key: 'averageQuality', label: 'Job Clarity' },
+  { key: 'averageTimeliness', label: 'Payment Promptness' },
+  { key: 'averageProfessionalism', label: 'Responsiveness' },
+] as const;
+
+export function ReviewSummaryCard({ summary, subjectRole, className }: ReviewSummaryProps) {
+  const categoryLabels = subjectRole === 'CLIENT' ? CLIENT_CATEGORY_LABELS : FREELANCER_CATEGORY_LABELS;
   const maxCount = Math.max(...Object.values(summary.ratingDistribution), 1);
 
   return (
@@ -65,7 +77,7 @@ export function ReviewSummaryCard({ summary, className }: ReviewSummaryProps) {
         {/* Category Averages */}
         {summary.totalReviews > 0 && (
           <div className="mt-6 grid grid-cols-2 gap-4 border-t border-dt-border pt-4 sm:grid-cols-4">
-            {CATEGORY_LABELS.map(({ key, label }) => {
+            {categoryLabels.map(({ key, label }) => {
               const val = summary[key];
               return (
                 <div key={key} className="text-center">
