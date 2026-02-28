@@ -74,7 +74,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${displayFont.variable} ${bodyFont.variable}`}
+      className={`${displayFont.variable} ${bodyFont.variable} dark`}
       data-theme="detrust"
     >
       <body className="min-h-screen bg-base text-foreground antialiased">

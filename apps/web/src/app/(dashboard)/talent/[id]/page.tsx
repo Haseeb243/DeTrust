@@ -152,10 +152,10 @@ export default function FreelancerProfilePage() {
         Back to talent
       </Button>
 
-      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-white via-slate-50 to-slate-100 p-8 shadow-[0_35px_120px_rgba(15,23,42,0.12)]">
+      <section className="relative overflow-hidden rounded-[32px] bg-dt-surface-alt p-8 shadow-[0_35px_120px_rgba(15,23,42,0.12)]">
         <div className="absolute inset-0 opacity-90" aria-hidden>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(79,70,229,0.12),transparent_55%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(16,185,129,0.14),transparent_45%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(34,197,94,0.08),transparent_55%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(59,130,246,0.08),transparent_45%)]" />
         </div>
         <div className="relative z-10 flex flex-wrap items-start gap-8">
           <div className="flex items-start gap-6">
