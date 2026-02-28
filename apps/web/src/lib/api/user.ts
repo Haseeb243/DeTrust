@@ -134,6 +134,18 @@ export interface TrustScoreBreakdown {
   components: TrustScoreComponent[];
 }
 
+export interface TrustScoreHistoryEntry {
+  id: string;
+  score: number;
+  breakdown: TrustScoreComponent[] | null;
+  createdAt: string;
+}
+
+export interface TrustScoreHistoryResponse {
+  items: TrustScoreHistoryEntry[];
+  total: number;
+}
+
 // User API functions
 export const userApi = {
   // Get current user
@@ -196,6 +208,12 @@ export const userApi = {
   // Trust Score
   getTrustScore: (userId: string) =>
     api.get<TrustScoreBreakdown>(`/users/${userId}/trust-score`),
+
+  // Trust Score History
+  getTrustScoreHistory: (userId: string, limit?: number) => {
+    const params = limit ? `?limit=${limit}` : '';
+    return api.get<TrustScoreHistoryResponse>(`/users/${userId}/trust-score/history${params}`);
+  },
 };
 
 export default userApi;
