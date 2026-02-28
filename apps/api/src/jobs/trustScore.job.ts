@@ -33,7 +33,7 @@ async function recalculateAllTrustScores(): Promise<void> {
           data: {
             userId: f.userId,
             score: breakdown.totalScore,
-            breakdown: JSON.parse(JSON.stringify(breakdown.components)),
+            breakdown: breakdown.components as unknown as Record<string, unknown>[],
           },
         });
 
@@ -58,7 +58,7 @@ async function recalculateAllTrustScores(): Promise<void> {
           data: {
             userId: c.userId,
             score: breakdown.totalScore,
-            breakdown: JSON.parse(JSON.stringify(breakdown.components)),
+            breakdown: breakdown.components as unknown as Record<string, unknown>[],
           },
         });
 

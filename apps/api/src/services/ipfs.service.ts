@@ -41,7 +41,7 @@ export class IpfsService {
   async uploadJSON(data: Record<string, unknown>, name?: string): Promise<string> {
     if (!this.isConfigured) {
       // Fallback: compute deterministic SHA-256 hash of the content
-      const json = JSON.stringify(data, null, 0);
+      const json = JSON.stringify(data);
       return `sha256:${crypto.createHash('sha256').update(json).digest('hex')}`;
     }
 
@@ -64,7 +64,7 @@ export class IpfsService {
       const text = await response.text();
       console.error('[IpfsService] Pinata upload failed:', text);
       // Fallback to local hash on failure
-      const json = JSON.stringify(data, null, 0);
+      const json = JSON.stringify(data);
       return `sha256:${crypto.createHash('sha256').update(json).digest('hex')}`;
     }
 
