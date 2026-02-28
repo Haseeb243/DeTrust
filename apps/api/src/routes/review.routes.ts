@@ -1,0 +1,23 @@
+import { Router } from 'express';
+import { authenticate, optionalAuth, validateBody } from '../middleware';
+import { reviewController } from '../controllers/review.controller';
+import { createReviewSchema } from '../validators/review.validator';
+
+const router: Router = Router();
+
+// Submit a review (authenticated users only)
+router.post('/', authenticate, validateBody(createReviewSchema), reviewController.submitReview);
+
+// Get reviews for a specific contract (optional auth for double-blind)
+router.get('/contract/:contractId', optionalAuth, reviewController.getContractReviews);
+
+// Check if current user has reviewed a contract
+router.get('/contract/:contractId/status', authenticate, reviewController.getReviewStatus);
+
+// Get reviews for a specific user (optional auth for double-blind)
+router.get('/user/:userId', optionalAuth, reviewController.getUserReviews);
+
+// Get aggregated review summary for a user
+router.get('/user/:userId/summary', reviewController.getReviewSummary);
+
+export default router;

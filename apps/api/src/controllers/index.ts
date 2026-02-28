@@ -6,3 +6,4 @@ export * as jobController from './job.controller';
 export * as proposalController from './proposal.controller';
 export { contractController } from './contract.controller';
 export { notificationController } from './notification.controller';
+export { reviewController } from './review.controller';

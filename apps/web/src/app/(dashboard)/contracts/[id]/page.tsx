@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ArrowLeft, XCircle } from 'lucide-react';
+import { ArrowLeft, XCircle, MessageSquareText } from 'lucide-react';
 
 import { Button } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
@@ -14,7 +14,9 @@ import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
 import { ContractHeader, EscrowFunding, MilestoneList, ContractSidebar } from '@/components/contracts';
 import { MilestoneTimeline } from '@/components/contracts/milestone-timeline';
 import { DisputeForm } from '@/components/contracts/dispute-form';
+import { ReviewForm, ReviewList } from '@/components/reviews';
 import { useContract, useRaiseDispute } from '@/hooks/queries/use-contracts';
+import { useContractReviews, useReviewStatus } from '@/hooks/queries/use-reviews';
 
 export default function ContractDetailPage() {
   const params = useParams();
@@ -29,6 +31,16 @@ export default function ContractDetailPage() {
   const { data: contract, isLoading: loading, refetch } = useContract(contractId);
   const raiseDisputeMutation = useRaiseDispute();
   const [showDisputeForm, setShowDisputeForm] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
+  const isCompleted = contract?.status === 'COMPLETED';
+
+  const { data: contractReviewsData, refetch: refetchReviews } = useContractReviews(
+    isCompleted ? contractId : ''
+  );
+  const { data: reviewStatusData } = useReviewStatus(
+    isCompleted ? contractId : ''
+  );
 
   const isClient = user?.role === 'CLIENT';
   const isFreelancer = user?.role === 'FREELANCER';
@@ -122,6 +134,52 @@ export default function ContractDetailPage() {
             onApproveOnChain={async (jobId, idx) => { await approveOnChain(jobId, idx); }}
             onRefresh={() => { refetch(); }}
           />
+
+          {/* Reviews & Feedback Section */}
+          {isCompleted && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-dt-text">
+                  <MessageSquareText className="h-5 w-5 text-emerald-500" />
+                  Reviews & Feedback
+                </h2>
+                {!reviewStatusData?.hasReviewed && !showReviewForm && (
+                  <Button
+                    onClick={() => setShowReviewForm(true)}
+                    className="bg-emerald-500 text-white hover:bg-emerald-600"
+                    size="sm"
+                  >
+                    Write Review
+                  </Button>
+                )}
+              </div>
+
+              {showReviewForm && !reviewStatusData?.hasReviewed && (
+                <ReviewForm
+                  contractId={contractId}
+                  contractTitle={contract.title}
+                  subjectName={otherParty.name}
+                  isClient={!!isClient}
+                  onSuccess={() => {
+                    setShowReviewForm(false);
+                    refetchReviews();
+                  }}
+                  onCancel={() => setShowReviewForm(false)}
+                />
+              )}
+
+              {reviewStatusData?.hasReviewed && !showReviewForm && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  ✓ You have submitted your review for this contract.
+                </div>
+              )}
+
+              <ReviewList
+                reviews={contractReviewsData?.items ?? []}
+                emptyMessage="No reviews submitted yet for this contract."
+              />
+            </div>
+          )}
         </div>
 
         <ContractSidebar

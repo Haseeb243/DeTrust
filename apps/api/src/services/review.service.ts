@@ -1,0 +1,317 @@
+import { prisma } from '../config/database';
+import { NotFoundError, ForbiddenError, ValidationError } from '../middleware';
+import { notificationService } from './notification.service';
+import type { CreateReviewInput, GetReviewsQuery } from '../validators/review.validator';
+
+// 14-day double-blind window (SRS FR-J7.2)
+const DOUBLE_BLIND_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+
+export class ReviewService {
+  /**
+   * Submit a review for a completed contract.
+   * Enforces: one review per author per contract, contract must be COMPLETED,
+   * author must be a party, and double-blind visibility rules.
+   */
+  async submitReview(authorId: string, input: CreateReviewInput) {
+    const contract = await prisma.contract.findUnique({
+      where: { id: input.contractId },
+      select: {
+        id: true,
+        status: true,
+        clientId: true,
+        freelancerId: true,
+        completedAt: true,
+        title: true,
+      },
+    });
+
+    if (!contract) {
+      throw new NotFoundError('Contract not found');
+    }
+
+    if (contract.status !== 'COMPLETED') {
+      throw new ValidationError('Reviews can only be submitted for completed contracts');
+    }
+
+    const isClient = contract.clientId === authorId;
+    const isFreelancer = contract.freelancerId === authorId;
+
+    if (!isClient && !isFreelancer) {
+      throw new ForbiddenError('Only contract parties can submit reviews');
+    }
+
+    // Determine who the review is about
+    const subjectId = isClient ? contract.freelancerId : contract.clientId;
+
+    // Check for duplicate review
+    const existing = await prisma.review.findUnique({
+      where: {
+        contractId_authorId: {
+          contractId: input.contractId,
+          authorId,
+        },
+      },
+    });
+
+    if (existing) {
+      throw new ValidationError('You have already submitted a review for this contract');
+    }
+
+    // Create the review
+    const review = await prisma.review.create({
+      data: {
+        contractId: input.contractId,
+        authorId,
+        subjectId,
+        overallRating: input.overallRating,
+        communicationRating: input.communicationRating ?? null,
+        qualityRating: input.qualityRating ?? null,
+        timelinessRating: input.timelinessRating ?? null,
+        professionalismRating: input.professionalismRating ?? null,
+        comment: input.comment ?? null,
+        isPublic: true,
+      },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        subject: { select: { id: true, name: true, avatarUrl: true } },
+      },
+    });
+
+    // Update subject's review count and average rating
+    await this.updateUserReviewStats(subjectId);
+
+    // Notify the other party
+    await notificationService.createNotification({
+      userId: subjectId,
+      type: 'REVIEW_RECEIVED',
+      title: 'New Review Received',
+      message: `You received a ${input.overallRating}-star review for "${contract.title}".`,
+      data: { contractId: input.contractId, reviewId: review.id },
+    });
+
+    return review;
+  }
+
+  /**
+   * Get reviews for a specific user with pagination.
+   * Respects double-blind: hides reviews where the other party hasn't
+   * reviewed yet and the 14-day window hasn't elapsed.
+   */
+  async getUserReviews(userId: string, query: GetReviewsQuery, viewerId?: string) {
+    const { role, page, limit } = query;
+
+    const where: Record<string, unknown> = { subjectId: userId, isPublic: true };
+
+    if (role === 'as_freelancer') {
+      // Reviews where the user was the freelancer (subject) and author was client
+      where.contract = { freelancerId: userId };
+    } else if (role === 'as_client') {
+      where.contract = { clientId: userId };
+    }
+
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        where,
+        include: {
+          author: { select: { id: true, name: true, avatarUrl: true } },
+          subject: { select: { id: true, name: true, avatarUrl: true } },
+          contract: {
+            select: {
+              id: true,
+              title: true,
+              completedAt: true,
+              clientId: true,
+              freelancerId: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.review.count({ where }),
+    ]);
+
+    // Apply double-blind filter: hide review if counterpart hasn't reviewed yet
+    // and 14-day window hasn't closed, UNLESS the viewer is the author
+    const now = Date.now();
+    type ReviewItem = (typeof reviews)[number];
+    const visibleReviews = await Promise.all(
+      reviews.map(async (review: ReviewItem) => {
+        const completedAt = review.contract.completedAt
+          ? new Date(review.contract.completedAt).getTime()
+          : 0;
+        const windowClosed = now - completedAt > DOUBLE_BLIND_WINDOW_MS;
+
+        // Always visible if window closed or viewer is the author
+        if (windowClosed || review.authorId === viewerId) {
+          return review;
+        }
+
+        // Check if the counterpart has also submitted their review
+        const counterpartReview = await prisma.review.findUnique({
+          where: {
+            contractId_authorId: {
+              contractId: review.contractId,
+              authorId: review.subjectId,
+            },
+          },
+          select: { id: true },
+        });
+
+        // Both submitted → visible
+        if (counterpartReview) return review;
+
+        // Within window and counterpart hasn't reviewed → hide unless viewer is the subject
+        if (review.subjectId === viewerId) {
+          return null; // Don't show to the subject yet
+        }
+
+        return review;
+      })
+    );
+
+    const filtered = visibleReviews.filter(Boolean);
+
+    return {
+      items: filtered,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrev: page > 1,
+    };
+  }
+
+  /**
+   * Get reviews for a specific contract (both parties' reviews).
+   * Respects double-blind rules.
+   */
+  async getContractReviews(contractId: string, viewerId?: string) {
+    const contract = await prisma.contract.findUnique({
+      where: { id: contractId },
+      select: { id: true, completedAt: true, clientId: true, freelancerId: true },
+    });
+
+    if (!contract) {
+      throw new NotFoundError('Contract not found');
+    }
+
+    const reviews = await prisma.review.findMany({
+      where: { contractId },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        subject: { select: { id: true, name: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const now = Date.now();
+    const completedAt = contract.completedAt
+      ? new Date(contract.completedAt).getTime()
+      : 0;
+    const windowClosed = now - completedAt > DOUBLE_BLIND_WINDOW_MS;
+    const bothSubmitted = reviews.length >= 2;
+
+    // If window closed or both submitted, show all
+    if (windowClosed || bothSubmitted) {
+      return { items: reviews, canReview: this.canReview(reviews, viewerId, contract) };
+    }
+
+    // Otherwise only show the viewer's own review
+    const visible = reviews.filter((r: { authorId: string }) => r.authorId === viewerId);
+    return { items: visible, canReview: this.canReview(reviews, viewerId, contract) };
+  }
+
+  /**
+   * Get review summary (aggregated ratings) for a user.
+   */
+  async getReviewSummary(userId: string) {
+    const aggregate = await prisma.review.aggregate({
+      where: { subjectId: userId, isPublic: true },
+      _avg: {
+        overallRating: true,
+        communicationRating: true,
+        qualityRating: true,
+        timelinessRating: true,
+        professionalismRating: true,
+      },
+      _count: true,
+    });
+
+    // Rating distribution
+    const distribution = await prisma.review.groupBy({
+      by: ['overallRating'],
+      where: { subjectId: userId, isPublic: true },
+      _count: true,
+    });
+
+    const ratingDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const entry of distribution) {
+      const rounded = Math.round(Number(entry.overallRating));
+      if (rounded >= 1 && rounded <= 5) {
+        ratingDistribution[rounded] += entry._count;
+      }
+    }
+
+    return {
+      averageRating: Number(aggregate._avg.overallRating ?? 0),
+      averageCommunication: Number(aggregate._avg.communicationRating ?? 0),
+      averageQuality: Number(aggregate._avg.qualityRating ?? 0),
+      averageTimeliness: Number(aggregate._avg.timelinessRating ?? 0),
+      averageProfessionalism: Number(aggregate._avg.professionalismRating ?? 0),
+      totalReviews: aggregate._count,
+      ratingDistribution,
+    };
+  }
+
+  /**
+   * Check whether the viewer has already reviewed this contract.
+   */
+  async hasReviewed(contractId: string, userId: string): Promise<boolean> {
+    const review = await prisma.review.findUnique({
+      where: { contractId_authorId: { contractId, authorId: userId } },
+      select: { id: true },
+    });
+    return !!review;
+  }
+
+  // ── private helpers ────────────────────────────────────────────────
+
+  private canReview(
+    reviews: Array<{ authorId: string }>,
+    viewerId: string | undefined,
+    contract: { clientId: string; freelancerId: string }
+  ): boolean {
+    if (!viewerId) return false;
+    const isParty = contract.clientId === viewerId || contract.freelancerId === viewerId;
+    if (!isParty) return false;
+    return !reviews.some((r) => r.authorId === viewerId);
+  }
+
+  private async updateUserReviewStats(userId: string) {
+    const agg = await prisma.review.aggregate({
+      where: { subjectId: userId, isPublic: true },
+      _avg: { overallRating: true },
+      _count: true,
+    });
+
+    const avgRating = Number(agg._avg.overallRating ?? 0);
+    const totalReviews = agg._count;
+
+    // Update whichever profile exists
+    await prisma.freelancerProfile.updateMany({
+      where: { userId },
+      data: { avgRating, totalReviews },
+    });
+
+    await prisma.clientProfile.updateMany({
+      where: { userId },
+      data: { avgRating, totalReviews },
+    });
+  }
+}
+
+export const reviewService = new ReviewService();
+export default reviewService;
