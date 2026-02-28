@@ -82,8 +82,12 @@ export class ReviewService {
     await this.updateUserReviewStats(subjectId);
 
     // Recalculate trust scores for both parties (SRS Module 4)
-    await trustScoreService.getTrustScoreBreakdown(subjectId).catch(() => {});
-    await trustScoreService.getTrustScoreBreakdown(authorId).catch(() => {});
+    await trustScoreService.getTrustScoreBreakdown(subjectId).catch((err) => {
+      console.error(`[ReviewService] Failed to recalculate trust score for subject ${subjectId}:`, err);
+    });
+    await trustScoreService.getTrustScoreBreakdown(authorId).catch((err) => {
+      console.error(`[ReviewService] Failed to recalculate trust score for author ${authorId}:`, err);
+    });
 
     // Notify the other party
     await notificationService.createNotification({

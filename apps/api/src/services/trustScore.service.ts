@@ -49,6 +49,8 @@ export class TrustScoreService {
     const completionRate = totalContracts > 0 ? (completedContracts / totalContracts) * 100 : 0;
 
     // 3. Dispute Win Rate: disputes resolved in their favor / total disputes
+    //    Default to 50 (neutral) when no disputes exist — a new freelancer
+    //    without any disputes should not be penalized or rewarded.
     const totalDisputes = await prisma.dispute.count({
       where: {
         contract: { freelancerId: userId },
@@ -60,7 +62,8 @@ export class TrustScoreService {
         outcome: 'FREELANCER_WINS',
       },
     });
-    const disputeWinRate = totalDisputes > 0 ? (wonDisputes / totalDisputes) * 100 : 50;
+    const NEUTRAL_DISPUTE_SCORE = 50;
+    const disputeWinRate = totalDisputes > 0 ? (wonDisputes / totalDisputes) * 100 : NEUTRAL_DISPUTE_SCORE;
 
     // 4. Experience: normalize completed jobs (cap at 50 for 100%)
     const experienceScore = Math.min((completedContracts / 50) * 100, 100);

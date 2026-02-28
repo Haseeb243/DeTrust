@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { Button, Card, CardContent, Textarea } from '@/components/ui';
 import { StarRating } from './star-rating';
+import { CLIENT_REVIEW_LABELS, FREELANCER_REVIEW_LABELS } from '@/lib/review-utils';
 import { useSubmitReview } from '@/hooks/queries/use-reviews';
 
 interface ReviewFormProps {
@@ -20,18 +21,18 @@ interface ReviewFormProps {
 
 /** Client reviewing freelancer */
 const CLIENT_RATING_CATEGORIES = [
-  { key: 'communicationRating', label: 'Communication' },
-  { key: 'qualityRating', label: 'Quality of Work' },
-  { key: 'timelinessRating', label: 'Timeliness' },
-  { key: 'professionalismRating', label: 'Professionalism' },
+  { key: 'communicationRating', label: CLIENT_REVIEW_LABELS.communication },
+  { key: 'qualityRating', label: CLIENT_REVIEW_LABELS.quality },
+  { key: 'timelinessRating', label: CLIENT_REVIEW_LABELS.timeliness },
+  { key: 'professionalismRating', label: CLIENT_REVIEW_LABELS.professionalism },
 ] as const;
 
 /** Freelancer reviewing client (SRS FE-2: Job Clarity rating) */
 const FREELANCER_RATING_CATEGORIES = [
-  { key: 'communicationRating', label: 'Communication' },
-  { key: 'qualityRating', label: 'Job Clarity' },
-  { key: 'timelinessRating', label: 'Payment Promptness' },
-  { key: 'professionalismRating', label: 'Responsiveness' },
+  { key: 'communicationRating', label: FREELANCER_REVIEW_LABELS.communication },
+  { key: 'qualityRating', label: FREELANCER_REVIEW_LABELS.quality },
+  { key: 'timelinessRating', label: FREELANCER_REVIEW_LABELS.timeliness },
+  { key: 'professionalismRating', label: FREELANCER_REVIEW_LABELS.professionalism },
 ] as const;
 
 type RatingKey = (typeof CLIENT_RATING_CATEGORIES)[number]['key'];

@@ -5,6 +5,7 @@ import { MessageSquare, Calendar, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
 import { SecureAvatar } from '@/components/secure-avatar';
 import { StarRating } from './star-rating';
+import { getReviewLabels } from '@/lib/review-utils';
 import type { Review } from '@/lib/api/review';
 
 interface ReviewListProps {
@@ -24,17 +25,10 @@ function isClientAuthor(review: Review): boolean {
   return Boolean(review.contract && review.authorId === review.contract.clientId);
 }
 
-/** Category labels differ based on who wrote the review */
-function getCategoryLabels(isClient: boolean) {
-  return isClient
-    ? { communication: 'Communication', quality: 'Quality', timeliness: 'Timeliness', professionalism: 'Professionalism' }
-    : { communication: 'Communication', quality: 'Job Clarity', timeliness: 'Payment Promptness', professionalism: 'Responsiveness' };
-}
-
 function ReviewCard({ review }: { review: Review }) {
   const authorName = review.author?.name || 'Anonymous';
   const clientReview = isClientAuthor(review);
-  const labels = getCategoryLabels(clientReview);
+  const labels = getReviewLabels(clientReview);
 
   return (
     <Card className="border-dt-border bg-dt-surface shadow-sm transition-shadow hover:shadow-md">

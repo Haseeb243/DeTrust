@@ -2,6 +2,7 @@
 
 import { Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { TRUST_SCORE_EXCELLENT, TRUST_SCORE_GOOD } from '@/lib/review-utils';
 import { cn } from '@/lib/utils';
 import type { TrustScoreBreakdown } from '@/lib/api/user';
 
@@ -11,15 +12,15 @@ interface TrustScoreCardProps {
 }
 
 function getScoreColor(score: number): string {
-  if (score > 75) return 'text-emerald-500';
-  if (score >= 50) return 'text-blue-500';
+  if (score > TRUST_SCORE_EXCELLENT) return 'text-emerald-500';
+  if (score >= TRUST_SCORE_GOOD) return 'text-blue-500';
   if (score > 0) return 'text-amber-500';
   return 'text-slate-400';
 }
 
 function getBarColor(score: number): string {
-  if (score > 75) return 'bg-emerald-500';
-  if (score >= 50) return 'bg-blue-500';
+  if (score > TRUST_SCORE_EXCELLENT) return 'bg-emerald-500';
+  if (score >= TRUST_SCORE_GOOD) return 'bg-blue-500';
   if (score > 0) return 'bg-amber-500';
   return 'bg-slate-300';
 }
@@ -42,9 +43,9 @@ export function TrustScoreCard({ breakdown, className }: TrustScoreCardProps) {
           <div>
             <p className="text-sm font-medium text-dt-text">Overall Trust Score</p>
             <p className="text-xs text-dt-text-muted">
-              {breakdown.totalScore > 75
+              {breakdown.totalScore > TRUST_SCORE_EXCELLENT
                 ? 'Excellent — highly trusted'
-                : breakdown.totalScore >= 50
+                : breakdown.totalScore >= TRUST_SCORE_GOOD
                   ? 'Good — building credibility'
                   : breakdown.totalScore > 0
                     ? 'Developing — keep improving'

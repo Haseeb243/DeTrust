@@ -3,6 +3,7 @@
 import { Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
 import { StarRating } from './star-rating';
+import { CLIENT_REVIEW_LABELS, FREELANCER_REVIEW_LABELS } from '@/lib/review-utils';
 import { cn } from '@/lib/utils';
 import type { ReviewSummary as ReviewSummaryType } from '@/lib/api/review';
 
@@ -15,18 +16,18 @@ interface ReviewSummaryProps {
 
 /** Category labels for reviews received by a freelancer (authored by clients) */
 const FREELANCER_CATEGORY_LABELS = [
-  { key: 'averageCommunication', label: 'Communication' },
-  { key: 'averageQuality', label: 'Quality' },
-  { key: 'averageTimeliness', label: 'Timeliness' },
-  { key: 'averageProfessionalism', label: 'Professionalism' },
+  { key: 'averageCommunication', label: CLIENT_REVIEW_LABELS.communication },
+  { key: 'averageQuality', label: CLIENT_REVIEW_LABELS.quality },
+  { key: 'averageTimeliness', label: CLIENT_REVIEW_LABELS.timeliness },
+  { key: 'averageProfessionalism', label: CLIENT_REVIEW_LABELS.professionalism },
 ] as const;
 
 /** Category labels for reviews received by a client (authored by freelancers) */
 const CLIENT_CATEGORY_LABELS = [
-  { key: 'averageCommunication', label: 'Communication' },
-  { key: 'averageQuality', label: 'Job Clarity' },
-  { key: 'averageTimeliness', label: 'Payment Promptness' },
-  { key: 'averageProfessionalism', label: 'Responsiveness' },
+  { key: 'averageCommunication', label: FREELANCER_REVIEW_LABELS.communication },
+  { key: 'averageQuality', label: FREELANCER_REVIEW_LABELS.quality },
+  { key: 'averageTimeliness', label: FREELANCER_REVIEW_LABELS.timeliness },
+  { key: 'averageProfessionalism', label: FREELANCER_REVIEW_LABELS.professionalism },
 ] as const;
 
 export function ReviewSummaryCard({ summary, subjectRole, className }: ReviewSummaryProps) {
