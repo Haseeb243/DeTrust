@@ -9,7 +9,6 @@ import {
   Briefcase,
   Inbox,
   ListChecks,
-  MessageSquareText,
   ShieldCheck,
   Sparkles,
   Star,
@@ -327,27 +326,23 @@ export default function DashboardPage() {
 
       {/* Reputation Snapshot (Module 3) */}
       {reviewSummary && reviewSummary.totalReviews > 0 && (
-        <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base text-dt-text">
-                <Star className="h-4 w-4 text-amber-400" /> Reputation snapshot
-              </CardTitle>
-              <Link
-                href="/reviews"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
-              >
-                View all reviews <ArrowUpRight className="h-3 w-3" />
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ReviewSummaryCard
-              summary={reviewSummary}
-              subjectRole={isFreelancer ? 'FREELANCER' : 'CLIENT'}
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-dt-text">
+              <Star className="h-4 w-4 text-amber-400" /> Reputation snapshot
+            </h2>
+            <Link
+              href="/reviews"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+            >
+              View all reviews <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <ReviewSummaryCard
+            summary={reviewSummary}
+            subjectRole={isFreelancer ? 'FREELANCER' : 'CLIENT'}
+          />
+        </div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -409,7 +404,7 @@ export default function DashboardPage() {
           <CardContent className="space-y-3 text-sm text-dt-text-muted">
             <Link
               href="/reviews"
-              className="block rounded-2xl border border-dt-border bg-dt-surface p-4 shadow-sm transition hover:border-emerald-300 dark:hover:border-emerald-700"
+              className="block rounded-2xl border border-dt-border bg-dt-surface p-4 shadow-sm transition hover:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:hover:border-emerald-700"
             >
               <p className="font-medium text-dt-text">Check your reviews & reputation</p>
               <p className="text-xs text-dt-text-muted">View ratings and feedback from completed contracts.</p>
