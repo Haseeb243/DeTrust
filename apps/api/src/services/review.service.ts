@@ -2,8 +2,6 @@ import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError, ValidationError } from '../middleware';
 import { notificationService } from './notification.service';
 import { trustScoreService } from './trustScore.service';
-import { ipfsService } from './ipfs.service';
-import { blockchainService } from './blockchain.service';
 import type { CreateReviewInput, GetReviewsQuery } from '../validators/review.validator';
 
 // 14-day double-blind window (SRS FR-J7.2)
@@ -78,11 +76,6 @@ export class ReviewService {
         author: { select: { id: true, name: true, avatarUrl: true } },
         subject: { select: { id: true, name: true, avatarUrl: true } },
       },
-    });
-
-    // Upload review content to IPFS (SRS FR-J7.7) — async, non-blocking
-    this.uploadToIpfsAndBlockchain(review.id, input, contract, subjectId).catch((err) => {
-      console.error(`[ReviewService] IPFS/blockchain integration failed for review ${review.id}:`, err);
     });
 
     // Update subject's review count and average rating
@@ -292,56 +285,6 @@ export class ReviewService {
   }
 
   // ── private helpers ────────────────────────────────────────────────
-
-  /**
-   * Upload review content to IPFS and record hash on blockchain.
-   * Runs asynchronously after review creation to avoid blocking the response.
-   */
-  private async uploadToIpfsAndBlockchain(
-    reviewId: string,
-    input: CreateReviewInput,
-    contract: { id: string; clientId: string; freelancerId: string },
-    subjectId: string,
-  ) {
-    // 1. Upload to IPFS
-    const ipfsContent = {
-      contractId: input.contractId,
-      overallRating: input.overallRating,
-      communicationRating: input.communicationRating,
-      qualityRating: input.qualityRating,
-      timelinessRating: input.timelinessRating,
-      professionalismRating: input.professionalismRating,
-      comment: input.comment,
-      timestamp: new Date().toISOString(),
-    };
-
-    const ipfsHash = await ipfsService.uploadJSON(ipfsContent, `review-${reviewId}`);
-
-    // 2. Record on blockchain (requires subject wallet address)
-    let blockchainTxHash: string | null = null;
-    const subjectUser = await prisma.user.findUnique({
-      where: { id: subjectId },
-      select: { walletAddress: true },
-    });
-
-    if (subjectUser?.walletAddress) {
-      blockchainTxHash = await blockchainService.recordFeedback(
-        contract.id,
-        subjectUser.walletAddress,
-        ipfsHash,
-        Math.round(Number(input.overallRating)),
-      );
-    }
-
-    // 3. Update review with hashes
-    await prisma.review.update({
-      where: { id: reviewId },
-      data: {
-        ipfsHash,
-        ...(blockchainTxHash ? { blockchainTxHash } : {}),
-      },
-    });
-  }
 
   private canReview(
     reviews: Array<{ authorId: string }>,
