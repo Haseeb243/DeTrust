@@ -17,7 +17,7 @@ router.get('/contract/:contractId/status', authenticate, reviewController.getRev
 // Get reviews for a specific user (optional auth for double-blind)
 router.get('/user/:userId', optionalAuth, reviewController.getUserReviews);
 
-// Get aggregated review summary for a user
-router.get('/user/:userId/summary', reviewController.getReviewSummary);
+// Get aggregated review summary for a user (public, but log viewer if authenticated)
+router.get('/user/:userId/summary', optionalAuth, reviewController.getReviewSummary);
 
 export default router;
