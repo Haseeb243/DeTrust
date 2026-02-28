@@ -332,7 +332,7 @@ Module 6 ░░░░░░░░░░░░░░░░░░░░  —   —
 Module 7 ░░░░░░░░░░░░░░░░░░░░  0%  — Admin Dashboard
 Module 8 █████████░░░░░░░░░░░ 45%  — Notifications & Communication
 
-Active Modules (excl. M6): ━━━━━━━━━━━━━━━━━━━━ ~63%
+Active Modules (excl. M6): ━━━━━━━━━━━━━━━━━━━━ ~63% (weighted avg of M1-5, M7-8)
 ```
 
 > **Blockchain**: All contracts run on Hardhat local node (chain 31337). No production/testnet deployment is planned for the current phase.
