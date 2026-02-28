@@ -114,7 +114,7 @@ export class ReviewService {
    * reviewed yet and the 14-day window hasn't elapsed.
    */
   async getUserReviews(userId: string, query: GetReviewsQuery, viewerId?: string) {
-    const { role, page, limit } = query;
+    const { role, page, limit, minRating, maxRating, search, sort = 'createdAt', order = 'desc' } = query;
 
     const where: Record<string, unknown> = { subjectId: userId, isPublic: true };
 
@@ -123,6 +123,19 @@ export class ReviewService {
       where.contract = { freelancerId: userId };
     } else if (role === 'as_client') {
       where.contract = { clientId: userId };
+    }
+
+    // Rating filters (M3-I9)
+    if (minRating !== undefined || maxRating !== undefined) {
+      where.overallRating = {
+        ...(minRating !== undefined ? { gte: minRating } : {}),
+        ...(maxRating !== undefined ? { lte: maxRating } : {}),
+      };
+    }
+
+    // Search filter — match against comment text (M3-I9)
+    if (search) {
+      where.comment = { contains: search, mode: 'insensitive' };
     }
 
     const [reviews, total] = await Promise.all([
@@ -141,7 +154,7 @@ export class ReviewService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sort]: order },
         skip: (page - 1) * limit,
         take: limit,
       }),

@@ -39,6 +39,11 @@ export const getReviewsQuerySchema = z.object({
   role: z.enum(['as_client', 'as_freelancer']).optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
+  minRating: z.coerce.number().min(1).max(5).optional(),
+  maxRating: z.coerce.number().min(1).max(5).optional(),
+  search: z.string().max(200).optional(),
+  sort: z.enum(['createdAt', 'overallRating']).default('createdAt'),
+  order: z.enum(['asc', 'desc']).default('desc'),
 });
 
 // =============================================================================

@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { ArrowLeft, BarChart3, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { Button, Card, CardContent } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { ProposalCard, AcceptProposalForm } from '@/components/proposals';
+import { ProposalCard, AcceptProposalForm, ProposalComparison } from '@/components/proposals';
 import type { MilestoneFormItem } from '@/components/proposals';
 import { useJob } from '@/hooks/queries/use-jobs';
 import { useJobProposals, useAcceptProposal, useRejectProposal, useShortlistProposal } from '@/hooks/queries/use-proposals';
@@ -19,6 +19,7 @@ export default function JobProposalsPage() {
   const { user } = useAuthStore();
   const [page, setPage] = useState(1);
   const [acceptingProposal, setAcceptingProposal] = useState<string | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
   const [milestones, setMilestones] = useState<MilestoneFormItem[]>([
     { title: 'Project Completion', description: '', amount: 0, dueDate: '' },
   ]);
@@ -82,6 +83,11 @@ export default function JobProposalsPage() {
           <h1 className="text-2xl font-semibold text-dt-text">Proposals for: {job?.title || 'Loading...'}</h1>
           <p className="text-dt-text-muted">{pg.total} proposal{pg.total !== 1 ? 's' : ''} received</p>
         </div>
+        {proposals.length >= 2 && (
+          <Button variant="outline" size="sm" onClick={() => setShowComparison(!showComparison)} className="ml-auto gap-1 border-dt-border">
+            <BarChart3 className="h-4 w-4" />{showComparison ? 'Hide' : 'Compare'}
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -93,6 +99,9 @@ export default function JobProposalsPage() {
         </CardContent></Card>
       ) : (
         <div className="space-y-4">
+          {showComparison && proposals.length >= 2 && (
+            <ProposalComparison proposals={proposals} onClose={() => setShowComparison(false)} />
+          )}
           {proposals.map((p) => (
             <ProposalCard key={p.id} proposal={p} jobType={job?.type} actionLoading={actionLoading} isAccepting={acceptingProposal === p.id} onStartAccept={setAcceptingProposal} onShortlist={handleShortlist} onReject={handleReject}>
               <AcceptProposalForm milestones={milestones} isLoading={actionLoading === p.id} jobType={job?.type} proposedRate={p.proposedRate} onMilestonesChange={setMilestones} onConfirm={() => handleAccept(p.id)} onConfirmHourly={(whl, dw) => handleAcceptHourly(p.id, whl, dw)} onCancel={() => setAcceptingProposal(null)} />

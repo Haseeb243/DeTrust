@@ -57,6 +57,11 @@ export interface GetUserReviewsParams {
   role?: 'as_client' | 'as_freelancer';
   page?: number;
   limit?: number;
+  minRating?: number;
+  maxRating?: number;
+  search?: string;
+  sort?: 'createdAt' | 'overallRating';
+  order?: 'asc' | 'desc';
 }
 
 interface PaginatedResponse<T> {
