@@ -5,7 +5,7 @@ import { MessageSquareText, Star } from 'lucide-react';
 
 import { Badge, Card, CardContent } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { ReviewSummaryCard, ReviewList, ReviewFilters } from '@/components/reviews';
+import { ReviewSummaryCard, ReviewList, ReviewFilters, ReviewAnalytics } from '@/components/reviews';
 import { useUserReviews, useReviewSummary } from '@/hooks/queries/use-reviews';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
@@ -64,6 +64,11 @@ export default function ReviewsPage() {
       ) : summary ? (
         <ReviewSummaryCard summary={summary} subjectRole={userRole} />
       ) : null}
+
+      {/* Review Analytics Charts (M3-I7) */}
+      {summary && summary.totalReviews > 0 && (
+        <ReviewAnalytics summary={summary} subjectRole={userRole} />
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto border-b border-dt-border pb-2">
