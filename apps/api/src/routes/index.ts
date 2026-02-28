@@ -6,3 +6,4 @@ export { default as proposalRoutes } from './proposal.routes';
 export { default as skillRoutes } from './skill.routes';
 export { default as contractRoutes } from './contract.routes';
 export { default as notificationRoutes } from './notification.routes';
+export { default as reviewRoutes } from './review.routes';

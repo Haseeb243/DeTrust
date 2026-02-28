@@ -20,6 +20,7 @@ import skillRoutes from './routes/skill.routes';
 import uploadRoutes from './routes/upload.routes';
 import contractRoutes from './routes/contract.routes';
 import notificationRoutes from './routes/notification.routes';
+import reviewRoutes from './routes/review.routes';
 
 // Create Express app
 const app: Application = express();
@@ -103,6 +104,9 @@ app.use(`${API_PREFIX}/uploads`, uploadRoutes);
 
 // Notification routes
 app.use(`${API_PREFIX}/notifications`, notificationRoutes);
+
+// Review routes
+app.use(`${API_PREFIX}/reviews`, reviewRoutes);
 
 // =============================================================================
 // ERROR HANDLING
