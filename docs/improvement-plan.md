@@ -2,7 +2,11 @@
 
 **Created:** 2026-02-28
 
-This document outlines recommended improvements across all four implemented modules, prioritized by severity and impact. Items are organized by module, with cross-cutting improvements listed separately.
+This document outlines recommended improvements across all implemented modules, prioritized by severity and impact. Items are organized by module, with cross-cutting improvements listed separately.
+
+> **Note:** Module 6 (AI Capability Prediction) is **deferred** to a future phase. All M6 items have been removed from the roadmap. The Python AI service scaffolding remains in the repo for future use.
+>
+> **Blockchain:** All smart contracts use **Hardhat local node** (chain 31337). Production blockchain deployment is not planned for the current phase.
 
 ---
 
@@ -11,7 +15,6 @@ This document outlines recommended improvements across all four implemented modu
 | Priority | ID | Improvement | Status | Details |
 |----------|----|-------------|--------|---------|
 | HIGH | M1-I1 | PPR / cacheComponents for dashboard pages | ❌ Pending | Dashboard pages still use `'use client'`; convert to Server Components with `use cache` directives for faster TTFB |
-| HIGH | M1-I2 | Production contract addresses | ❌ Pending | Blockchain contract addresses are zero/placeholder — need real deployment for testnet/mainnet |
 | MEDIUM | M1-I3 | Offline/PWA support | ❌ Pending | Add service worker for offline dashboard access and push notifications |
 | MEDIUM | M1-I4 | E2E test coverage expansion | ⚠️ Partial | 34 tests in module 1; expand to cover wallet flows, profile editing, and contract interactions |
 | LOW | M1-I5 | Image optimization for profile avatars | ❌ Pending | Use Next.js `<Image>` with width/height hints + blur placeholder for avatar and portfolio images |
@@ -23,7 +26,7 @@ This document outlines recommended improvements across all four implemented modu
 
 | Priority | ID | Improvement | Status | Details |
 |----------|----|-------------|--------|---------|
-| HIGH | M2-I1 | Escrow integration with real smart contract calls | ⚠️ Partial | `JobEscrow.sol` deployed but frontend wagmi `useWriteContract` calls need verification on live chain |
+| HIGH | M2-I1 | Escrow integration with smart contract calls | ⚠️ Partial | `JobEscrow.sol` deployed on Hardhat local node; frontend wagmi `useWriteContract` calls need verification |
 | HIGH | M2-I2 | Job listing blockchain anchoring | ❌ Pending | Job hashes should be stored on-chain for tamper-proof job records |
 | MEDIUM | M2-I3 | Advanced job search (semantic / AI-powered) | ❌ Pending | Current search is keyword-based; integrate AI service for skill-matching recommendations |
 | MEDIUM | M2-I4 | Proposal comparison view for clients | ❌ Pending | Side-by-side comparison of top proposals with trust scores and AI capability badges |
@@ -82,16 +85,9 @@ This document outlines recommended improvements across all four implemented modu
 
 ---
 
-## Module 6: AI Capability Prediction System
+## Module 6: AI Capability Prediction System — 🔜 DEFERRED
 
-| Priority | ID | Improvement | Status | Details |
-|----------|----|-------------|--------|---------|
-| **CRITICAL** | M6-I1 | TypeScript AI bridge service | ❌ Pending | Implement `ai.service.ts` to call Python AI service endpoints |
-| **CRITICAL** | M6-I2 | Skill verification test UI | ❌ Pending | Frontend page for users to take skill verification tests |
-| HIGH | M6-I3 | Skill test cooldown (30 days) | ❌ Pending | One attempt per skill per 30 days (SRS business rule 12) |
-| HIGH | M6-I4 | Dynamic ML prediction integration | ❌ Pending | Replace static `calculateAiCapabilityScore()` with ML model predictions |
-| MEDIUM | M6-I5 | AI capability badges on profiles | ⚠️ Partial | Badge exists but needs tooltip explaining AI-estimated nature |
-| MEDIUM | M6-I6 | Skill test results page | ❌ Pending | Show test history, scores, and next available attempt date |
+> Module 6 is deferred to a future phase. The Python AI service scaffolding (`apps/ai-service/`) and `aiCapabilityScore` database field remain for future implementation. No active improvement items.
 
 ---
 
@@ -160,12 +156,10 @@ This document outlines recommended improvements across all four implemented modu
 - [ ] M8-I3: Messaging frontend page
 - [ ] CC-I1: BullMQ job framework
 
-### Phase 3 — Module 7 & 6 Core
+### Phase 3 — Module 7 Core
 - [ ] M7-I1: Admin service + analytics
 - [ ] M7-I2: Admin API routes + controller
 - [ ] M7-I3: Admin dashboard page
-- [ ] M6-I1: TypeScript AI bridge service
-- [ ] M6-I2: Skill verification test UI
 - [ ] M8-I4: Email service implementation
 
 ### Phase 4 — Module 5 & 8 Advanced
@@ -175,20 +169,17 @@ This document outlines recommended improvements across all four implemented modu
 - [ ] M8-I5: Email notification job
 - [ ] M4-I4: Trust score trend chart
 
-### Phase 5 — Polish & Production Readiness
+### Phase 5 — Polish & Refinement
 - [ ] M1-I1: PPR/cacheComponents adoption
-- [ ] M1-I2: Production contract deployment
-- [ ] M2-I1: Live escrow integration testing
+- [ ] M2-I1: Escrow integration testing on Hardhat
 - [ ] M7-I4: User management
 - [ ] M7-I5: Dispute monitoring
-- [ ] M6-I3: Skill test cooldown
 - [ ] CC-I2: Error tracking setup
 
 ### Phase 6 — Enhancement & Nice-to-Have
 - [ ] M2-I3: AI-powered job search
 - [ ] M3-I6: Review response mechanism
 - [ ] M4-I5: Juror eligibility
-- [ ] M6-I5: AI capability badges
 - [ ] M8-I6: Push notifications
 - [ ] CC-I5: Redis caching
 - [ ] CC-I6: Swagger documentation

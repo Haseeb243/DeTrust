@@ -11,13 +11,17 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | # | Module | Backend | Frontend | Contracts | Overall |
 |---|--------|---------|----------|-----------|---------|
 | 1 | Client & Freelancer Web App | ✅ Complete | ✅ Complete | — | **95%** |
-| 2 | Smart Contract Job Board | ✅ Complete | ✅ Complete | ✅ Deployed | **90%** |
-| 3 | Review & Feedback System | ✅ Complete | ✅ Complete | ✅ Deployed | **95%** |
+| 2 | Smart Contract Job Board | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **90%** |
+| 3 | Review & Feedback System | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **95%** |
 | 4 | Trust Scoring Module | ✅ Complete | ✅ Complete | — | **90%** |
-| 5 | Dispute Resolution | ❌ Empty | ⚠️ Partial | ✅ Deployed | **25%** |
-| 6 | AI Capability Prediction | ❌ Empty (TS) | ❌ Not started | — | **35%** |
+| 5 | Dispute Resolution | ❌ Empty | ⚠️ Partial | ✅ Deployed (Hardhat) | **25%** |
+| 6 | AI Capability Prediction | 🔜 **Deferred** | 🔜 **Deferred** | — | **Deferred** |
 | 7 | Admin Dashboard | ❌ Empty | ❌ Not started | — | **0%** |
 | 8 | Notifications & Communication | ⚠️ Partial | ⚠️ Partial | — | **45%** |
+
+> **Note:** Module 6 (AI Capability Prediction) is deferred to a future phase and will not be implemented now. The Python AI service scaffolding (`apps/ai-service/`) remains in the repo for future use.
+>
+> **Blockchain:** All smart contracts are deployed and tested on **Hardhat local node** (chain 31337). Production blockchain deployment (Polygon/testnet) is not planned for the current phase.
 
 ---
 
@@ -46,7 +50,6 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | Item | Priority | Details |
 |------|----------|---------|
 | PPR / cacheComponents | HIGH | Dashboard pages still use `'use client'`; convert to Server Components |
-| Production contract addresses | HIGH | Blockchain contract addresses are zero/placeholder |
 | Mandatory SIWE | MEDIUM | Wallet login is optional; should be enforced per SRS |
 | PWA / Offline support | LOW | Service worker for offline dashboard + push notifications |
 
@@ -75,7 +78,6 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 ### What's Left
 | Item | Priority | Details |
 |------|----------|---------|
-| Live escrow integration | HIGH | Frontend wagmi `useWriteContract` calls need verification on live chain |
 | Job blockchain anchoring | MEDIUM | Job hashes should be stored on-chain for tamper-proof records |
 | AI-powered job search | MEDIUM | Current search is keyword-based; integrate AI for skill-matching |
 | Milestone auto-release via contract | MEDIUM | Auto-approve updates DB but doesn't trigger smart contract release |
@@ -177,39 +179,15 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 
 ---
 
-## Module 6: AI Capability Prediction System (SRS 1.7.6) — ⚠️ PARTIALLY IMPLEMENTED
+## Module 6: AI Capability Prediction System (SRS 1.7.6) — 🔜 DEFERRED
 
-### SRS Requirements
-
-| SRS ID | Requirement | Status | Implementation Details |
-|--------|-------------|--------|----------------------|
-| **FE-1** | Extract profile data (skills, certs, projects, education) | ⚠️ **Partial** | Python service has prediction router, but TypeScript integration service (`ai.service.ts`) is empty |
-| **FE-2** | Microtask and skill verification tests | ⚠️ **Partial** | Python `skill_verifier.py` exists, but no frontend test UI |
-| **FE-3** | Classification model for capability levels | ⚠️ **Partial** | Python `capability_predictor.py` exists with Beginner/Intermediate/Expert classification |
-| **FE-4** | Display AI capability score on dashboard | ⚠️ **Partial** | `aiCapabilityScore` field exists in Prisma + shown on dashboard, but not dynamically computed |
-
-### What Exists
-- ✅ **Python AI Service** (`apps/ai-service/`):
-  - `routers/prediction.py` — prediction endpoints
-  - `routers/verification.py` — skill verification endpoints
-  - `models/capability_predictor.py` — ML model for capability prediction
-  - `models/skill_verifier.py` — skill verification logic
-  - `services/ml_service.py` — core ML operations
-  - `app/main.py` — FastAPI app with health check
-- ✅ **Database**: `aiCapabilityScore` Decimal field on `FreelancerProfile` (0–100)
-- ✅ **Dashboard Display**: Score shown in freelancer dashboard stats
-- ✅ **AI Capability Calculation**: Basic `calculateAiCapabilityScore()` in `user.service.ts` (skills breadth, completed jobs, success rate, avg rating, certifications, profile completeness)
-- ❌ **TypeScript Integration**: `ai.service.ts` — EMPTY (no bridge to Python service)
-
-### What's Left
-| Item | Priority | Details |
-|------|----------|---------|
-| TypeScript AI bridge service | **CRITICAL** | Implement `ai.service.ts` to call Python AI endpoints |
-| Skill verification test UI | **CRITICAL** | Frontend page for users to take skill tests |
-| Skill test cooldown | HIGH | One attempt per skill per 30 days (SRS rule) |
-| Dynamic prediction integration | HIGH | Replace static calculation with ML model predictions from Python service |
-| AI capability badges | MEDIUM | Display AI-predicted capability level (Beginner/Intermediate/Advanced/Expert) on profiles |
-| Skill test results page | MEDIUM | Show test history and scores |
+> **This module is deferred to a future phase.** The Python AI service scaffolding (`apps/ai-service/`) and the `aiCapabilityScore` database field remain in the codebase for future implementation. A basic static `calculateAiCapabilityScore()` function in `user.service.ts` provides a placeholder score based on profile data.
+>
+> **What exists for future use:**
+> - Python AI service (`apps/ai-service/`): FastAPI app with prediction/verification routers, ML models
+> - `aiCapabilityScore` Decimal field on `FreelancerProfile` in Prisma schema
+> - Basic static scoring in `user.service.ts` (skills breadth, completed jobs, success rate)
+> - Dashboard displays the static score when available
 
 ---
 
@@ -287,7 +265,7 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | **Authentication** | ✅ Complete | JWT httpOnly cookies, SIWE, 2FA, token refresh |
 | **API Framework** | ✅ Complete | Express + TypeScript, Zod validation, error handling middleware |
 | **Real-time** | ✅ Complete | Socket.IO with JWT auth, user rooms, contract/notification events |
-| **Blockchain** | ✅ Complete | Hardhat + ethers.js, 3 contracts deployed (JobEscrow, ReputationRegistry, DisputeResolution) |
+| **Blockchain** | ✅ Complete | Hardhat local node (chain 31337) + ethers.js, 3 contracts deployed (JobEscrow, ReputationRegistry, DisputeResolution) |
 | **File Storage** | ✅ Complete | Lighthouse IPFS with AES-256-GCM encryption |
 | **Cron Jobs** | ✅ Complete | Milestone auto-approve (hourly), trust score recalc (daily), blockchain retry (6h) |
 | **Frontend Framework** | ✅ Complete | Next.js 16.1 + React 19.2 + TanStack Query + Zustand + wagmi v2 |
@@ -320,7 +298,6 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | M7 | Admin dashboard frontend | 2-3 days |
 | M8 | Messaging service + API routes | 3-4 days |
 | M8 | Messaging frontend (chat UI) | 2-3 days |
-| M6 | TypeScript AI bridge service | 1-2 days |
 
 ### 🟡 HIGH (Important for production)
 
@@ -328,7 +305,6 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 |--------|------|--------|
 | M5 | Juror selection + voting UI | 2-3 days |
 | M5 | Smart contract integration | 1-2 days |
-| M6 | Skill verification test UI | 2-3 days |
 | M8 | Email service + notification job | 1-2 days |
 | M4 | Trust score trend chart | 1 day |
 | CC | BullMQ job framework | 1-2 days |
@@ -339,7 +315,6 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 |--------|------|--------|
 | M1 | Mandatory SIWE enforcement | 0.5 days |
 | M2 | Milestone auto-release via contract | 1 day |
-| M6 | AI capability badges on profiles | 0.5 days |
 | M7 | User management + flagging | 1-2 days |
 | M8 | Push notification support | 1-2 days |
 
@@ -353,11 +328,13 @@ Module 2 ██████████████████░░ 90%  — S
 Module 3 ████████████████████░ 95%  — Review & Feedback System
 Module 4 ██████████████████░░ 90%  — Trust Scoring Module
 Module 5 █████░░░░░░░░░░░░░░░ 25%  — Dispute Resolution
-Module 6 ███████░░░░░░░░░░░░░ 35%  — AI Capability Prediction
+Module 6 ░░░░░░░░░░░░░░░░░░░░  —   — AI Capability Prediction (DEFERRED)
 Module 7 ░░░░░░░░░░░░░░░░░░░░  0%  — Admin Dashboard
 Module 8 █████████░░░░░░░░░░░ 45%  — Notifications & Communication
 
-Overall Platform: ━━━━━━━━━━━━━━━━━━━━ ~60%
+Active Modules (excl. M6): ━━━━━━━━━━━━━━━━━━━━ ~63%
 ```
 
-**Estimated remaining effort**: ~25-35 development days to reach full MVP across all 8 modules.
+> **Blockchain**: All contracts run on Hardhat local node (chain 31337). No production/testnet deployment is planned for the current phase.
+
+**Estimated remaining effort**: ~20-28 development days to reach full MVP across active modules (excl. Module 6).
