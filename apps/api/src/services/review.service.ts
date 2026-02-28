@@ -135,43 +135,41 @@ export class ReviewService {
     // Apply double-blind filter: hide review if counterpart hasn't reviewed yet
     // and 14-day window hasn't closed, UNLESS the viewer is the author
     const now = Date.now();
-    type ReviewItem = (typeof reviews)[number];
-    const visibleReviews = await Promise.all(
-      reviews.map(async (review: ReviewItem) => {
-        const completedAt = review.contract.completedAt
-          ? new Date(review.contract.completedAt).getTime()
-          : 0;
-        const windowClosed = now - completedAt > DOUBLE_BLIND_WINDOW_MS;
 
-        // Always visible if window closed or viewer is the author
-        if (windowClosed || review.authorId === viewerId) {
-          return review;
-        }
-
-        // Check if the counterpart has also submitted their review
-        const counterpartReview = await prisma.review.findUnique({
-          where: {
-            contractId_authorId: {
-              contractId: review.contractId,
-              authorId: review.subjectId,
-            },
-          },
-          select: { id: true },
-        });
-
-        // Both submitted → visible
-        if (counterpartReview) return review;
-
-        // Within window and counterpart hasn't reviewed → hide unless viewer is the subject
-        if (review.subjectId === viewerId) {
-          return null; // Don't show to the subject yet
-        }
-
-        return review;
-      })
+    // Batch-fetch counterpart reviews to avoid N+1 queries
+    const contractIds = [...new Set(reviews.map((r: { contractId: string }) => r.contractId))];
+    const counterpartReviews = await prisma.review.findMany({
+      where: { contractId: { in: contractIds } },
+      select: { contractId: true, authorId: true },
+    });
+    const counterpartSet = new Set(
+      counterpartReviews.map((r: { contractId: string; authorId: string }) => `${r.contractId}:${r.authorId}`)
     );
 
-    const filtered = visibleReviews.filter(Boolean);
+    type ReviewItem = (typeof reviews)[number];
+    const filtered = reviews.filter((review: ReviewItem) => {
+      const completedAt = review.contract.completedAt
+        ? new Date(review.contract.completedAt).getTime()
+        : 0;
+      const windowClosed = now - completedAt > DOUBLE_BLIND_WINDOW_MS;
+
+      // Always visible if window closed or viewer is the author
+      if (windowClosed || review.authorId === viewerId) {
+        return true;
+      }
+
+      // Both submitted → visible
+      if (counterpartSet.has(`${review.contractId}:${review.subjectId}`)) {
+        return true;
+      }
+
+      // Within window and counterpart hasn't reviewed → hide from the subject
+      if (review.subjectId === viewerId) {
+        return false;
+      }
+
+      return true;
+    });
 
     return {
       items: filtered,

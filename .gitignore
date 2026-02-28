@@ -28,6 +28,9 @@ coverage/
 # Turborepo
 .turbo/
 
+# TypeScript
+*.tsbuildinfo
+
 # Next.js
 .next/
 out/

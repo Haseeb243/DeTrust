@@ -3,6 +3,7 @@
 import { Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
 import { StarRating } from './star-rating';
+import { cn } from '@/lib/utils';
 import type { ReviewSummary as ReviewSummaryType } from '@/lib/api/review';
 
 interface ReviewSummaryProps {
@@ -21,7 +22,7 @@ export function ReviewSummaryCard({ summary, className }: ReviewSummaryProps) {
   const maxCount = Math.max(...Object.values(summary.ratingDistribution), 1);
 
   return (
-    <Card className={`border-dt-border bg-dt-surface shadow-lg ${className ?? ''}`}>
+    <Card className={cn('border-dt-border bg-dt-surface shadow-lg', className)}>
       <CardContent className="p-6">
         <div className="flex flex-col gap-6 sm:flex-row">
           {/* Average Score */}

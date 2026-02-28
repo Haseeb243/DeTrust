@@ -53,7 +53,6 @@ export function StarRating({
       {Array.from({ length: max }, (_, i) => {
         const star = i + 1;
         const filled = star <= value;
-        const halfFilled = !filled && star - 0.5 <= value;
 
         return (
           <button
@@ -76,9 +75,7 @@ export function StarRating({
                 'transition-colors',
                 filled
                   ? 'fill-amber-400 text-amber-400'
-                  : halfFilled
-                    ? 'fill-amber-200 text-amber-400'
-                    : 'fill-transparent text-slate-300 dark:text-slate-600'
+                  : 'fill-transparent text-slate-300 dark:text-slate-600'
               )}
             />
           </button>
