@@ -49,9 +49,12 @@ export default function DashboardPage() {
   });
 
   // Auto-sync wallet address to backend when connected but not saved
+  // Also re-sync when client has no paymentVerified yet (wallet linked before feature existed)
   useEffect(() => {
     if (!isConnected || !address || !user) return;
-    if (user.walletAddress === address) return;
+    const walletMatches = user.walletAddress?.toLowerCase() === address.toLowerCase();
+    const clientNeedsVerification = user.role === 'CLIENT' && !user.clientProfile?.paymentVerified;
+    if (walletMatches && !clientNeedsVerification) return;
     userApi.updateMe({ walletAddress: address }).then((res) => {
       if (res.success && res.data) {
         setUser(res.data);
@@ -97,7 +100,7 @@ export default function DashboardPage() {
         {
           label: 'Payment status',
           value: clientProfile?.paymentVerified ? 'Verified' : 'Pending',
-          helper: clientProfile?.paymentVerified ? 'Escrow ready' : 'Fund your first escrow',
+          helper: clientProfile?.paymentVerified ? 'Escrow ready' : 'Connect a wallet to auto-verify',
         },
       ], [isFreelancer, freelancerProfile, clientProfile]);
 
@@ -141,9 +144,9 @@ export default function DashboardPage() {
     if (!isFreelancer && !clientProfile?.paymentVerified) {
       entries.push({
         title: 'Verify payment method',
-        detail: 'Fund an escrow or connect a wallet to earn the verified badge.',
+        detail: 'Connect a wallet from the navigation bar to auto-verify your payment status.',
         tone: 'warning',
-        action: { label: 'Fund escrow', href: '/jobs/new' },
+        action: { label: 'Edit profile', href: '/profile' },
       });
     }
 

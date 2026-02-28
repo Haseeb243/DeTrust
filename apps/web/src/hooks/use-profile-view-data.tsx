@@ -86,7 +86,7 @@ export function useProfileViewData() {
     : [
         { label: 'Trust score', value: `${clientProfile?.trustScore ?? 0}%`, detail: `${clientProfile?.totalReviews ?? 0} talent reviews`, icon: <Shield className="h-4 w-4 text-emerald-500" /> },
         { label: 'Hire rate', value: `${clientProfile?.hireRate ?? 0}%`, detail: `${clientProfile?.jobsPosted ?? 0} jobs posted`, icon: <Building2 className="h-4 w-4 text-cyan-500" /> },
-        { label: 'Payment status', value: clientProfile?.paymentVerified ? 'Verified' : 'Pending', detail: clientProfile?.paymentVerified ? 'Escrow ready' : 'Verify inside edit view', icon: <WalletMinimal className="h-4 w-4 text-slate-500" /> },
+        { label: 'Payment status', value: clientProfile?.paymentVerified ? 'Verified' : 'Pending', detail: clientProfile?.paymentVerified ? 'Escrow ready' : 'Connect wallet to auto-verify', icon: <WalletMinimal className="h-4 w-4 text-slate-500" /> },
       ];
 
   const taskList = isFreelancer
@@ -110,10 +110,10 @@ export function useProfileViewData() {
     ? [
         { label: 'Latest resume status', body: resumeUploaded ? 'Resume ready to share with curated clients.' : 'Upload a polished PDF to boost match quality.' },
         { label: 'Certification pipeline', body: certificationCount ? `${certificationCount} credential${certificationCount === 1 ? '' : 's'} pinned to your dossier.` : 'Add a credential to your dossier to elevate trust signals.' },
-        { label: 'Wallet syncing', body: walletDisplayAddress ? 'Wallet connected \u2014 finalize sync inside edit mode.' : 'Connect a wallet from the editor to unlock escrow.' },
+        { label: 'Wallet syncing', body: walletDisplayAddress ? 'Wallet connected and synced to your profile.' : 'Connect a wallet from the navigation bar to unlock escrow.' },
       ]
     : [
-        { label: 'Payment verification', body: clientProfile?.paymentVerified ? 'Payment method verified \u2014 escrow releases are unlocked for upcoming contracts.' : 'Verify a payment method in the editor to unlock escrow-backed hires.' },
+        { label: 'Payment verification', body: clientProfile?.paymentVerified ? 'Payment method verified \u2014 escrow releases are unlocked for upcoming contracts.' : 'Connect a wallet from the navigation bar to auto-verify your payment method and unlock escrow-backed hires.' },
         { label: 'Company dossier', body: clientProfile?.description ? 'Your narrative is live. Refresh it as the roadmap evolves to keep talent aligned.' : 'Add a short company narrative so senior talent understands the mission.' },
         { label: 'Opportunities pipeline', body: clientProfile?.jobsPosted ? `You've posted ${clientProfile.jobsPosted} job${clientProfile.jobsPosted === 1 ? '' : 's'}. Keep momentum by updating briefs regularly.` : 'Publish your first scoped opportunity to surface in curated freelancer feeds.' },
       ];

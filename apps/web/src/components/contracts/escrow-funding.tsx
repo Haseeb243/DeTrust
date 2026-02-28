@@ -91,6 +91,11 @@ export function EscrowFunding({ contract, onFunded, autoFund }: EscrowFundingPro
       return;
     }
 
+    if (freelancerAddress.toLowerCase() === address.toLowerCase()) {
+      toast.error('Cannot fund escrow: your wallet address matches the freelancer. The client and freelancer must use different wallets.');
+      return;
+    }
+
     if (!isEscrowReady) {
       toast.error('Smart contract not available on this network. Switch to a supported chain.');
       return;
@@ -218,6 +223,13 @@ export function EscrowFunding({ contract, onFunded, autoFund }: EscrowFundingPro
           </div>
         )}
 
+        {freelancerAddress && address && freelancerAddress.toLowerCase() === address.toLowerCase() && (
+          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>Your wallet address matches the freelancer&apos;s address. The client and freelancer must use different wallets to create an escrow.</span>
+          </div>
+        )}
+
         {!isEscrowReady && isConnected && (
           <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -267,7 +279,7 @@ export function EscrowFunding({ contract, onFunded, autoFund }: EscrowFundingPro
         {/* Fund Button */}
         <Button
           onClick={handleFundEscrow}
-          disabled={funding || escrowLoading || !isConnected || !freelancerAddress || !isEscrowReady}
+          disabled={funding || escrowLoading || !isConnected || !freelancerAddress || !isEscrowReady || (!!freelancerAddress && !!address && freelancerAddress.toLowerCase() === address.toLowerCase())}
           className="w-full bg-amber-500 py-6 text-base font-semibold text-white shadow-lg shadow-amber-200/70 hover:bg-amber-600 disabled:opacity-50"
         >
           {funding || escrowLoading ? (

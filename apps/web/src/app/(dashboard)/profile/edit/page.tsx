@@ -34,9 +34,12 @@ export default function ProfileEditPage() {
   }, [profileData, setUser]);
 
   // Auto-sync wallet address to backend when connected but not saved
+  // Also re-sync when client has no paymentVerified yet (wallet linked before feature existed)
   useEffect(() => {
     if (!isConnected || !connectedAddress || !user) return;
-    if (user.walletAddress === connectedAddress) return; // Already synced
+    const walletMatches = user.walletAddress?.toLowerCase() === connectedAddress.toLowerCase();
+    const clientNeedsVerification = user.role === 'CLIENT' && !user.clientProfile?.paymentVerified;
+    if (walletMatches && !clientNeedsVerification) return;
     userApi.updateMe({ walletAddress: connectedAddress }).then((res) => {
       if (res.success && res.data) {
         setUser(res.data);
@@ -203,7 +206,7 @@ export default function ProfileEditPage() {
         {
           label: 'Payment Status',
           value: clientProfile?.paymentVerified ? 'Verified' : 'Pending',
-          detail: clientProfile?.paymentVerified ? 'Escrow ready' : 'Connect wallet on dashboard',
+          detail: clientProfile?.paymentVerified ? 'Escrow ready' : 'Connect wallet to auto-verify',
           icon: <WalletMinimal className="h-4 w-4 text-dt-text-muted" />,
         },
       ], [isFreelancer, freelancerProfile, clientProfile]);
@@ -383,7 +386,9 @@ export default function ProfileEditPage() {
                 <p className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Wallet</p>
                 <p className="font-mono text-dt-text">{walletDisplayAddress ? shortWallet(walletDisplayAddress) : 'Not paired yet'}</p>
                 {!user.walletAddress && walletDisplayAddress ? (
-                  <p className="text-xs text-dt-text-muted">Connected this session — save it in account basics to persist.</p>
+                  <p className="text-xs text-dt-text-muted">Connected this session — syncing automatically.</p>
+                ) : !walletDisplayAddress ? (
+                  <p className="text-xs text-dt-text-muted">Connect a wallet from the navigation bar.</p>
                 ) : null}
               </div>
               <div className="rounded-2xl border border-emerald-100 bg-dt-surface/70 p-4">
