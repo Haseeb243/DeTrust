@@ -66,6 +66,63 @@ This document outlines recommended improvements across all four implemented modu
 
 ---
 
+## Module 5: Dispute Resolution
+
+| Priority | ID | Improvement | Status | Details |
+|----------|----|-------------|--------|---------|
+| **CRITICAL** | M5-I1 | Dispute service backend (create, evidence, lifecycle) | ❌ Pending | Implement `dispute.service.ts` — create dispute, submit evidence, manage OPEN→VOTING→RESOLVED lifecycle |
+| **CRITICAL** | M5-I2 | Dispute API routes + controller | ❌ Pending | Implement `dispute.routes.ts` + `dispute.controller.ts` with RESTful endpoints |
+| **CRITICAL** | M5-I3 | Evidence upload to IPFS | ❌ Pending | Wire evidence files through `ipfsService` for immutable storage |
+| **CRITICAL** | M5-I4 | Juror selection algorithm | ❌ Pending | Select jurors with trust score > 50 and no prior work with either party |
+| HIGH | M5-I5 | Juror voting frontend | ❌ Pending | UI for jurors to review evidence and cast trust-weighted votes |
+| HIGH | M5-I6 | DisputeResolution.sol integration | ❌ Pending | Connect existing smart contract voting functions to backend API |
+| HIGH | M5-I7 | Dispute dashboard page | ❌ Pending | List active disputes, status tracking, voting deadlines |
+| MEDIUM | M5-I8 | Dispute notifications | ❌ Pending | Notify parties and jurors at each dispute lifecycle stage |
+| MEDIUM | M5-I9 | Dispute history/archive | ❌ Pending | View past disputes with outcomes and evidence |
+
+---
+
+## Module 6: AI Capability Prediction System
+
+| Priority | ID | Improvement | Status | Details |
+|----------|----|-------------|--------|---------|
+| **CRITICAL** | M6-I1 | TypeScript AI bridge service | ❌ Pending | Implement `ai.service.ts` to call Python AI service endpoints |
+| **CRITICAL** | M6-I2 | Skill verification test UI | ❌ Pending | Frontend page for users to take skill verification tests |
+| HIGH | M6-I3 | Skill test cooldown (30 days) | ❌ Pending | One attempt per skill per 30 days (SRS business rule 12) |
+| HIGH | M6-I4 | Dynamic ML prediction integration | ❌ Pending | Replace static `calculateAiCapabilityScore()` with ML model predictions |
+| MEDIUM | M6-I5 | AI capability badges on profiles | ⚠️ Partial | Badge exists but needs tooltip explaining AI-estimated nature |
+| MEDIUM | M6-I6 | Skill test results page | ❌ Pending | Show test history, scores, and next available attempt date |
+
+---
+
+## Module 7: Admin Dashboard
+
+| Priority | ID | Improvement | Status | Details |
+|----------|----|-------------|--------|---------|
+| **CRITICAL** | M7-I1 | Admin service + analytics | ❌ Pending | User counts, job stats, dispute rates, revenue metrics, platform health |
+| **CRITICAL** | M7-I2 | Admin API routes + controller | ❌ Pending | Implement `admin.routes.ts` + `admin.controller.ts` |
+| **CRITICAL** | M7-I3 | Admin dashboard page | ❌ Pending | Main analytics overview page with charts and key metrics |
+| HIGH | M7-I4 | User management | ❌ Pending | View, suspend, flag users; search by role/status |
+| HIGH | M7-I5 | Dispute monitoring | ❌ Pending | List all disputes, override stale disputes, review evidence |
+| MEDIUM | M7-I6 | Smart contract parameter config | ❌ Pending | Update platform fee, pause/unpause contracts via admin interface |
+| MEDIUM | M7-I7 | Flagged account auto-detection | ❌ Pending | Auto-flag based on dispute rate, low trust score, suspicious patterns |
+
+---
+
+## Module 8: Notifications & Communication
+
+| Priority | ID | Improvement | Status | Details |
+|----------|----|-------------|--------|---------|
+| **CRITICAL** | M8-I1 | Messaging service backend | ❌ Pending | Implement `message.service.ts` — send/receive, conversation threads |
+| **CRITICAL** | M8-I2 | Messaging API routes | ❌ Pending | RESTful endpoints + Socket.IO events for real-time chat |
+| **CRITICAL** | M8-I3 | Messaging frontend page | ❌ Pending | `/dashboard/messages` with conversation list, chat UI |
+| HIGH | M8-I4 | Email service implementation | ❌ Pending | SMTP integration with templates for contract events, disputes |
+| HIGH | M8-I5 | Email notification job | ❌ Pending | Background job for batched email delivery |
+| MEDIUM | M8-I6 | Push notification support | ❌ Pending | Service worker registration, push subscription, notification display |
+| LOW | M8-I7 | Notification preferences | ❌ Pending | User settings for which notifications to receive via which channels |
+
+---
+
 ## Cross-Cutting Improvements
 
 | Priority | ID | Improvement | Modules | Details |
@@ -84,7 +141,7 @@ This document outlines recommended improvements across all four implemented modu
 
 ## Implementation Roadmap
 
-### Phase 1 — Critical Fixes (Current Sprint)
+### Phase 1 — Critical Fixes (Current Sprint) ✅ COMPLETE
 - [x] M3-I1: IPFS service implementation
 - [x] M3-I2: Blockchain service implementation
 - [x] M3-I3: Review flow integration
@@ -93,25 +150,45 @@ This document outlines recommended improvements across all four implemented modu
 - [x] M4-I2: Background recalculation job
 - [x] M4-I3: Trust score history endpoint
 
-### Phase 2 — High Priority (Next Sprint)
+### Phase 2 — Module 5 & 8 Core (Next Sprint)
+- [ ] M5-I1: Dispute service backend
+- [ ] M5-I2: Dispute API routes + controller
+- [ ] M5-I3: Evidence IPFS upload
+- [ ] M5-I4: Juror selection algorithm
+- [ ] M8-I1: Messaging service backend
+- [ ] M8-I2: Messaging API routes
+- [ ] M8-I3: Messaging frontend page
+- [ ] CC-I1: BullMQ job framework
+
+### Phase 3 — Module 7 & 6 Core
+- [ ] M7-I1: Admin service + analytics
+- [ ] M7-I2: Admin API routes + controller
+- [ ] M7-I3: Admin dashboard page
+- [ ] M6-I1: TypeScript AI bridge service
+- [ ] M6-I2: Skill verification test UI
+- [ ] M8-I4: Email service implementation
+
+### Phase 4 — Module 5 & 8 Advanced
+- [ ] M5-I5: Juror voting frontend
+- [ ] M5-I6: DisputeResolution.sol integration
+- [ ] M5-I7: Dispute dashboard page
+- [ ] M8-I5: Email notification job
+- [ ] M4-I4: Trust score trend chart
+
+### Phase 5 — Polish & Production Readiness
 - [ ] M1-I1: PPR/cacheComponents adoption
 - [ ] M1-I2: Production contract deployment
 - [ ] M2-I1: Live escrow integration testing
-- [ ] CC-I1: BullMQ job framework
+- [ ] M7-I4: User management
+- [ ] M7-I5: Dispute monitoring
+- [ ] M6-I3: Skill test cooldown
 - [ ] CC-I2: Error tracking setup
 
-### Phase 3 — Medium Priority
+### Phase 6 — Enhancement & Nice-to-Have
 - [ ] M2-I3: AI-powered job search
-- [ ] M2-I4: Proposal comparison view
 - [ ] M3-I6: Review response mechanism
-- [ ] M4-I4: Trust score trend chart
 - [ ] M4-I5: Juror eligibility
-- [ ] CC-I5: Redis caching for trust scores
+- [ ] M6-I5: AI capability badges
+- [ ] M8-I6: Push notifications
+- [ ] CC-I5: Redis caching
 - [ ] CC-I6: Swagger documentation
-
-### Phase 4 — Low Priority / Nice-to-Have
-- [ ] M1-I3: PWA support
-- [ ] M2-I6: Job templates
-- [ ] M3-I8: Review PDF export
-- [ ] M4-I8: Trust score threshold notifications
-- [ ] M4-I9: On-chain trust score anchoring
