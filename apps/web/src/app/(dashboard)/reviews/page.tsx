@@ -21,6 +21,7 @@ type TabValue = (typeof TABS)[number]['value'];
 export default function ReviewsPage() {
   const { user } = useAuthStore();
   const userId = user?.id ?? '';
+  const userRole = user?.role as 'CLIENT' | 'FREELANCER' | undefined;
   const [activeTab, setActiveTab] = useState<TabValue>('');
 
   const params = activeTab
@@ -51,7 +52,7 @@ export default function ReviewsPage() {
           <Spinner size="md" />
         </div>
       ) : summary ? (
-        <ReviewSummaryCard summary={summary} />
+        <ReviewSummaryCard summary={summary} subjectRole={userRole} />
       ) : null}
 
       {/* Tabs */}

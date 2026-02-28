@@ -24,7 +24,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { SecureAvatar } from '@/components/secure-avatar';
 import { useClientProfile } from '@/hooks/queries/use-client-profile';
 import { useUserReviews, useReviewSummary } from '@/hooks/queries/use-reviews';
+import { useTrustScore } from '@/hooks/queries/use-trust-score';
 import { ReviewSummaryCard, ReviewList } from '@/components/reviews';
+import { TrustScoreCard } from '@/components/trust-score';
 
 export default function ClientProfilePage() {
   const router = useRouter();
@@ -33,6 +35,7 @@ export default function ClientProfilePage() {
   const { data: profile, isLoading } = useClientProfile(clientId);
   const { data: reviewSummary } = useReviewSummary(clientId);
   const { data: reviewsData } = useUserReviews(clientId, { page: 1, limit: 10 });
+  const { data: trustScoreBreakdown } = useTrustScore(clientId);
 
   const cp = profile?.user.clientProfile;
 
@@ -104,7 +107,7 @@ export default function ClientProfilePage() {
       </Button>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-white via-slate-50 to-slate-100 p-8 shadow-[0_35px_120px_rgba(15,23,42,0.12)]">
+      <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-white via-slate-50 to-slate-100 p-8 shadow-[0_35px_120px_rgba(15,23,42,0.12)] dark:from-slate-900 dark:via-slate-800/80 dark:to-slate-900 dark:shadow-[0_35px_120px_rgba(0,0,0,0.4)]">
         <div className="absolute inset-0 opacity-90" aria-hidden>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(59,130,246,0.12),transparent_55%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(16,185,129,0.14),transparent_45%)]" />
@@ -144,7 +147,7 @@ export default function ClientProfilePage() {
                 <Badge
                   variant="secondary"
                   className={cp?.paymentVerified
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
                     : 'bg-dt-surface-alt text-dt-text-muted'}
                 >
                   {cp?.paymentVerified ? 'Payment Verified' : 'Payment Pending'}
@@ -160,7 +163,7 @@ export default function ClientProfilePage() {
             <p className="text-sm text-dt-text-muted">Trust indicators help freelancers evaluate opportunities.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               {highlightStats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-white/40 bg-dt-surface/70 p-4 text-left shadow-inner">
+                <div key={stat.label} className="rounded-2xl border border-white/40 bg-dt-surface/70 p-4 text-left shadow-inner dark:border-slate-700">
                   <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-dt-text-muted">
                     {stat.icon}
                     <span>{stat.label}</span>
@@ -212,7 +215,7 @@ export default function ClientProfilePage() {
                   {recentContracts.map((c) => (
                     <div
                       key={c.id}
-                      className="rounded-2xl border border-slate-100 bg-dt-surface-alt/70 p-4 transition hover:border-emerald-200"
+                      className="rounded-2xl border border-slate-100 bg-dt-surface-alt/70 p-4 transition hover:border-emerald-200 dark:border-slate-700 dark:hover:border-emerald-700"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
@@ -253,7 +256,7 @@ export default function ClientProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-4">
+                <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-4 dark:border-emerald-900/50 dark:from-emerald-950/30 dark:via-transparent dark:to-transparent">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className={`h-5 w-5 ${cp?.paymentVerified ? 'text-emerald-500' : 'text-slate-300'}`} />
                     <span className="text-sm font-semibold text-dt-text">Payment method</span>
@@ -262,7 +265,7 @@ export default function ClientProfilePage() {
                     {cp?.paymentVerified ? 'Verified — escrow releases unlocked' : 'Not yet verified'}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-white p-4">
+                <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-white p-4 dark:border-blue-900/50 dark:from-blue-950/30 dark:via-transparent dark:to-transparent">
                   <div className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-blue-500" />
                     <span className="text-sm font-semibold text-dt-text">Talent reviews</span>
@@ -273,7 +276,7 @@ export default function ClientProfilePage() {
                       : 'No reviews yet — be the first to collaborate'}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-white p-4">
+                <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-white p-4 dark:border-amber-900/50 dark:from-amber-950/30 dark:via-transparent dark:to-transparent">
                   <div className="flex items-center gap-2">
                     <Star className="h-5 w-5 text-amber-500" />
                     <span className="text-sm font-semibold text-dt-text">Average rating</span>
@@ -284,7 +287,7 @@ export default function ClientProfilePage() {
                       : 'No ratings recorded'}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 via-white to-white p-4">
+                <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 via-white to-white p-4 dark:border-emerald-900/50 dark:from-emerald-950/30 dark:via-transparent dark:to-transparent">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-5 w-5 text-emerald-500" />
                     <span className="text-sm font-semibold text-dt-text">Spending history</span>
@@ -346,7 +349,7 @@ export default function ClientProfilePage() {
                   href={cp.companyWebsite.startsWith('http') ? cp.companyWebsite : `https://${cp.companyWebsite}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-2xl border border-slate-100 bg-dt-surface-alt/80 px-4 py-3 text-emerald-700 transition hover:border-emerald-200 hover:bg-dt-surface"
+                  className="flex items-center justify-between rounded-2xl border border-slate-100 bg-dt-surface-alt/80 px-4 py-3 text-emerald-700 transition hover:border-emerald-200 hover:bg-dt-surface dark:border-slate-700 dark:text-emerald-400 dark:hover:border-emerald-700"
                 >
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4" />
@@ -387,6 +390,11 @@ export default function ClientProfilePage() {
         </div>
       </div>
 
+      {/* Trust Score Breakdown (Module 4) */}
+      {trustScoreBreakdown && trustScoreBreakdown.components.length > 0 && (
+        <TrustScoreCard breakdown={trustScoreBreakdown} />
+      )}
+
       {/* Reviews Section */}
       <Card className="border-dt-border bg-dt-surface text-dt-text shadow-xl">
         <CardHeader className="space-y-3">
@@ -396,7 +404,7 @@ export default function ClientProfilePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {reviewSummary && <ReviewSummaryCard summary={reviewSummary} />}
+          {reviewSummary && <ReviewSummaryCard summary={reviewSummary} subjectRole="CLIENT" />}
           <ReviewList
             reviews={reviewsData?.items ?? []}
             emptyMessage="No reviews yet. Reviews will appear here once contracts are completed."

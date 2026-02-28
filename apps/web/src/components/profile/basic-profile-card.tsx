@@ -10,6 +10,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/compo
 import { Spinner } from '@/components/ui/spinner';
 import { uploadApi, userApi, type User } from '@/lib/api';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
+import { useSafeAccount } from '@/hooks/use-safe-account';
 
 interface BasicProfileCardProps {
   user?: User | null;
@@ -21,6 +22,8 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(user?.avatarUrl || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { address: connectedAddress, isConnected } = useSafeAccount();
+  const displayedWalletAddress = user?.walletAddress || (isConnected ? connectedAddress : null);
 
   const {
     register,
@@ -106,8 +109,9 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
   };
 
   const copyWallet = async () => {
-    if (!user?.walletAddress || typeof navigator === 'undefined') return;
-    await navigator.clipboard.writeText(user.walletAddress);
+    const addressToCopy = user?.walletAddress || displayedWalletAddress;
+    if (!addressToCopy || typeof navigator === 'undefined') return;
+    await navigator.clipboard.writeText(addressToCopy);
     toast.success('Wallet address copied');
   };
 
@@ -162,13 +166,16 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
             <div>
               <label className="text-sm text-dt-text-muted">Wallet</label>
               <div className="mt-2 flex items-center gap-2">
-                <Input value={user?.walletAddress || 'Not paired yet'} disabled />
-                {user?.walletAddress && (
+                <Input value={displayedWalletAddress || 'Not paired yet'} disabled />
+                {(user?.walletAddress || displayedWalletAddress) && (
                   <Button type="button" variant="secondary" size="icon" onClick={copyWallet}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 )}
               </div>
+              {!user?.walletAddress && displayedWalletAddress && (
+                <p className="mt-1 text-xs text-amber-600">Connected this session — save profile to persist.</p>
+              )}
             </div>
           </div>
           <div className="flex justify-end">

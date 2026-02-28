@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError, ValidationError } from '../middleware';
 import { notificationService } from './notification.service';
+import { trustScoreService } from './trustScore.service';
 import type { CreateReviewInput, GetReviewsQuery } from '../validators/review.validator';
 
 // 14-day double-blind window (SRS FR-J7.2)
@@ -79,6 +80,14 @@ export class ReviewService {
 
     // Update subject's review count and average rating
     await this.updateUserReviewStats(subjectId);
+
+    // Recalculate trust scores for both parties (SRS Module 4)
+    await trustScoreService.getTrustScoreBreakdown(subjectId).catch((err) => {
+      console.error(`[ReviewService] Failed to recalculate trust score for subject ${subjectId}:`, err);
+    });
+    await trustScoreService.getTrustScoreBreakdown(authorId).catch((err) => {
+      console.error(`[ReviewService] Failed to recalculate trust score for author ${authorId}:`, err);
+    });
 
     // Notify the other party
     await notificationService.createNotification({

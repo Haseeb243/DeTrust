@@ -3,22 +3,35 @@
 import { Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
 import { StarRating } from './star-rating';
+import { CLIENT_REVIEW_LABELS, FREELANCER_REVIEW_LABELS } from '@/lib/review-utils';
 import { cn } from '@/lib/utils';
 import type { ReviewSummary as ReviewSummaryType } from '@/lib/api/review';
 
 interface ReviewSummaryProps {
   summary: ReviewSummaryType;
+  /** Role of the user whose reviews are being summarized */
+  subjectRole?: 'FREELANCER' | 'CLIENT';
   className?: string;
 }
 
-const CATEGORY_LABELS = [
-  { key: 'averageCommunication', label: 'Communication' },
-  { key: 'averageQuality', label: 'Quality' },
-  { key: 'averageTimeliness', label: 'Timeliness' },
-  { key: 'averageProfessionalism', label: 'Professionalism' },
+/** Category labels for reviews received by a freelancer (authored by clients) */
+const FREELANCER_CATEGORY_LABELS = [
+  { key: 'averageCommunication', label: CLIENT_REVIEW_LABELS.communication },
+  { key: 'averageQuality', label: CLIENT_REVIEW_LABELS.quality },
+  { key: 'averageTimeliness', label: CLIENT_REVIEW_LABELS.timeliness },
+  { key: 'averageProfessionalism', label: CLIENT_REVIEW_LABELS.professionalism },
 ] as const;
 
-export function ReviewSummaryCard({ summary, className }: ReviewSummaryProps) {
+/** Category labels for reviews received by a client (authored by freelancers) */
+const CLIENT_CATEGORY_LABELS = [
+  { key: 'averageCommunication', label: FREELANCER_REVIEW_LABELS.communication },
+  { key: 'averageQuality', label: FREELANCER_REVIEW_LABELS.quality },
+  { key: 'averageTimeliness', label: FREELANCER_REVIEW_LABELS.timeliness },
+  { key: 'averageProfessionalism', label: FREELANCER_REVIEW_LABELS.professionalism },
+] as const;
+
+export function ReviewSummaryCard({ summary, subjectRole, className }: ReviewSummaryProps) {
+  const categoryLabels = subjectRole === 'CLIENT' ? CLIENT_CATEGORY_LABELS : FREELANCER_CATEGORY_LABELS;
   const maxCount = Math.max(...Object.values(summary.ratingDistribution), 1);
 
   return (
@@ -65,7 +78,7 @@ export function ReviewSummaryCard({ summary, className }: ReviewSummaryProps) {
         {/* Category Averages */}
         {summary.totalReviews > 0 && (
           <div className="mt-6 grid grid-cols-2 gap-4 border-t border-dt-border pt-4 sm:grid-cols-4">
-            {CATEGORY_LABELS.map(({ key, label }) => {
+            {categoryLabels.map(({ key, label }) => {
               const val = summary[key];
               return (
                 <div key={key} className="text-center">

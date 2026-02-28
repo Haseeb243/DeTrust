@@ -7,3 +7,4 @@ export { proposalService, ProposalService } from './proposal.service';
 export { contractService, ContractService } from './contract.service';
 export { notificationService, NotificationService } from './notification.service';
 export { reviewService, ReviewService } from './review.service';
+export { trustScoreService, TrustScoreService } from './trustScore.service';
