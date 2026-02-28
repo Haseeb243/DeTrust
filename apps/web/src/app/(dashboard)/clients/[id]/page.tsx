@@ -23,12 +23,16 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/compo
 import { Spinner } from '@/components/ui/spinner';
 import { SecureAvatar } from '@/components/secure-avatar';
 import { useClientProfile } from '@/hooks/queries/use-client-profile';
+import { useUserReviews, useReviewSummary } from '@/hooks/queries/use-reviews';
+import { ReviewSummaryCard, ReviewList } from '@/components/reviews';
 
 export default function ClientProfilePage() {
   const router = useRouter();
   const params = useParams();
   const clientId = params.id as string;
   const { data: profile, isLoading } = useClientProfile(clientId);
+  const { data: reviewSummary } = useReviewSummary(clientId);
+  const { data: reviewsData } = useUserReviews(clientId, { page: 1, limit: 10 });
 
   const cp = profile?.user.clientProfile;
 
@@ -382,6 +386,23 @@ export default function ClientProfilePage() {
           </Card>
         </div>
       </div>
+
+      {/* Reviews Section */}
+      <Card className="border-dt-border bg-dt-surface text-dt-text shadow-xl">
+        <CardHeader className="space-y-3">
+          <p className="text-xs uppercase tracking-[0.45em] text-dt-text-muted">Reputation</p>
+          <CardTitle className="flex items-center gap-3 text-2xl text-dt-text">
+            <Star className="h-6 w-6 text-amber-400" /> Reviews & Ratings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {reviewSummary && <ReviewSummaryCard summary={reviewSummary} />}
+          <ReviewList
+            reviews={reviewsData?.items ?? []}
+            emptyMessage="No reviews yet. Reviews will appear here once contracts are completed."
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

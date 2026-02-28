@@ -16,3 +16,5 @@ export { notificationApi } from './notification';
 export type { GetNotificationsParams } from './notification';
 export { clientProfileApi } from './client-profile';
 export type { ClientPublicProfile } from './client-profile';
+export { reviewApi } from './review';
+export type { Review, ReviewSummary, CreateReviewInput, GetUserReviewsParams } from './review';

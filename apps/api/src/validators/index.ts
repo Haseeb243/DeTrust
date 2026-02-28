@@ -3,3 +3,4 @@ export * from './user.validator';
 export * from './job.validator';
 export * from './proposal.validator';
 export * from './timeEntry.validator';
+export * from './review.validator';
