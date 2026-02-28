@@ -169,7 +169,6 @@ model User {
   notifications       Notification[]
   sessions            Session[]
   secureFiles         SecureFile[]
-  trustScoreHistory   TrustScoreHistory[]
 
   @@index([walletAddress])
   @@index([email])
@@ -264,22 +263,6 @@ model ClientProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([trustScore])
-}
-
-// =============================================================================
-// TRUST SCORE HISTORY (Module 4 — SRS FE-4 Historical Trends)
-// =============================================================================
-
-model TrustScoreHistory {
-  id        String   @id @default(cuid())
-  userId    String
-  score     Decimal  @db.Decimal(5, 2) // 0-100
-  breakdown Json?    // Snapshot of component breakdown at this point in time
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt])
 }
 
 // =============================================================================

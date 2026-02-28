@@ -8,5 +8,3 @@ export { contractService, ContractService } from './contract.service';
 export { notificationService, NotificationService } from './notification.service';
 export { reviewService, ReviewService } from './review.service';
 export { trustScoreService, TrustScoreService } from './trustScore.service';
-export { ipfsService, IpfsService } from './ipfs.service';
-export { blockchainService, BlockchainService } from './blockchain.service';

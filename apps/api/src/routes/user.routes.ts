@@ -183,13 +183,6 @@ router.get('/clients/:id/profile', optionalAuth, userController.getClientProfile
 router.get('/:id/trust-score', optionalAuth, userController.getTrustScore);
 
 /**
- * @route   GET /users/:id/trust-score/history
- * @desc    Get trust score history (trend data) for a user
- * @access  Public
- */
-router.get('/:id/trust-score/history', optionalAuth, userController.getTrustScoreHistory);
-
-/**
  * @route   GET /users/:id
  * @desc    Get public profile
  * @access  Public
