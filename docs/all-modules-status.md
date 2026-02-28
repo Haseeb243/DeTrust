@@ -11,9 +11,9 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | # | Module | Backend | Frontend | Contracts | Overall |
 |---|--------|---------|----------|-----------|---------|
 | 1 | Client & Freelancer Web App | ✅ Complete | ✅ Complete | — | **95%** |
-| 2 | Smart Contract Job Board | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **90%** |
-| 3 | Review & Feedback System | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **95%** |
-| 4 | Trust Scoring Module | ✅ Complete | ✅ Complete | — | **90%** |
+| 2 | Smart Contract Job Board | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **92%** |
+| 3 | Review & Feedback System | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **98%** |
+| 4 | Trust Scoring Module | ✅ Complete | ✅ Complete | — | **95%** |
 | 5 | Dispute Resolution | ❌ Empty | ⚠️ Partial | ✅ Deployed (Hardhat) | **25%** |
 | 6 | AI Capability Prediction | 🔜 **Deferred** | 🔜 **Deferred** | — | **Deferred** |
 | 7 | Admin Dashboard | ❌ Empty | ❌ Not started | — | **0%** |
@@ -81,6 +81,9 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | Job blockchain anchoring | MEDIUM | Job hashes should be stored on-chain for tamper-proof records |
 | AI-powered job search | MEDIUM | Current search is keyword-based; integrate AI for skill-matching |
 
+### What's Recently Added
+- **Proposal Comparison**: Side-by-side comparison of proposals with trust scores, ratings, skills, rates
+
 ---
 
 ## Module 3: Review & Feedback System (SRS 1.7.3)
@@ -104,14 +107,15 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 - **Background Retry**: `blockchain.job.ts` retries failed IPFS uploads and blockchain writes every 6 hours
 - **IPFS Service**: Pinata JSON upload with SHA-256 fallback when API key not configured
 - **Blockchain Service**: ReputationRegistry `recordFeedback()` via relayer pattern (RELAYER_PRIVATE_KEY)
-- **UI Components**: `ReviewForm`, `ReviewList`, `ReviewSummaryCard`, `StarRating`, review-utils for role-aware labels
+- **UI Components**: `ReviewForm`, `ReviewList`, `ReviewSummaryCard`, `StarRating`, `ReviewResponseForm`, `ReviewFilters`, `ReviewAnalytics`, review-utils for role-aware labels
+- **Review Response**: One-time immutable rebuttal from reviewed party (`responseText` + `responseAt` fields)
+- **Search & Filtering**: Search by keyword, filter by rating range, sort by date/rating
+- **Analytics**: Category averages bar chart + rating distribution chart using recharts
 
 ### What's Left
 | Item | Priority | Details |
 |------|----------|---------|
-| Review response/rebuttal | MEDIUM | Allow reviewed party to add one-time immutable response |
-| Review analytics dashboard | MEDIUM | Trend charts for review scores over time |
-| Review search/filtering | LOW | Search by keyword, filter by rating/date range |
+| Review export to PDF | LOW | Allow users to export review history as a PDF report |
 
 ---
 
@@ -124,7 +128,7 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | **FE-1** | Collect performance data (ratings, completion, disputes) | ✅ **Complete** | Queries Prisma for avg ratings, completion rates, dispute outcomes, hire rates, payment punctuality |
 | **FE-2** | Rule-based freelancer trust score | ✅ **Complete** | `(0.4 × AvgRating) + (0.3 × CompletionRate) + (0.2 × DisputeWinRate) + (0.1 × Experience)` |
 | **FE-3** | Rule-based client trust score | ✅ **Complete** | `(0.4 × AvgRating) + (0.3 × PaymentPunctuality) + (0.2 × HireRate) + (0.1 × JobClarityRating)` |
-| **FE-4** | Real-time scores and historical trends | ⚠️ **Partial** | Real-time score + breakdown displayed; historical trends API exists but no frontend chart yet |
+| **FE-4** | Real-time scores and historical trends | ✅ **Complete** | Real-time score + breakdown displayed; historical trend chart with recharts LineChart on dashboard |
 
 ### What's Implemented
 - **Freelancer Formula**: AvgRating (0.4) + CompletionRate (0.3) + DisputeWinRate (0.2) + Experience (0.1)
@@ -132,17 +136,18 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 - **API**: `GET /api/users/:id/trust-score` (breakdown) + `GET /api/users/:id/trust-score/history` (trend data)
 - **Background Job**: `trustScore.job.ts` runs daily (24h) to recalculate all user scores
 - **History Model**: `TrustScoreHistory` Prisma model stores score snapshots with component breakdowns
-- **Frontend**: `TrustScoreCard` with color-coded display, `useTrustScore` + `useTrustScoreHistory` hooks
+- **Frontend**: `TrustScoreCard` with color-coded display, `TrustScoreTrendChart` with recharts LineChart, `useTrustScore` + `useTrustScoreHistory` hooks
 - **Profile Integration**: Trust score displayed on dashboard, talent profiles, client profiles
+- **Inactivity Decay**: Users inactive > 90 days get gradual score reduction (min 50% of raw score)
 
 ### What's Left
 | Item | Priority | Details |
 |------|----------|---------|
-| Frontend trend chart | HIGH | Line chart for trust score history (needs charting library) |
 | Juror eligibility enforcement | MEDIUM | Trust score > 50 check for dispute voting (Module 5 dependency) |
-| Score decay for inactivity | MEDIUM | Gradual reduction for users inactive > 90 days |
+| Weighted recency in ratings | MEDIUM | Recent reviews should have higher weight than older ones |
 | Trust score notifications | LOW | Notify when score crosses 50/75 thresholds |
 | On-chain trust anchoring | LOW | Periodically anchor score hashes to ReputationRegistry |
+| Comparative trust analytics | LOW | Show user's score relative to platform average and percentile |
 
 ---
 
@@ -323,15 +328,15 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 
 ```
 Module 1 ████████████████████░ 95%  — Client & Freelancer Web App
-Module 2 ██████████████████░░ 90%  — Smart Contract Job Board
-Module 3 ████████████████████░ 95%  — Review & Feedback System
-Module 4 ██████████████████░░ 90%  — Trust Scoring Module
+Module 2 ███████████████████░ 92%  — Smart Contract Job Board
+Module 3 █████████████████████ 98%  — Review & Feedback System
+Module 4 ████████████████████░ 95%  — Trust Scoring Module
 Module 5 █████░░░░░░░░░░░░░░░ 25%  — Dispute Resolution
 Module 6 ░░░░░░░░░░░░░░░░░░░░  —   — AI Capability Prediction (DEFERRED)
 Module 7 ░░░░░░░░░░░░░░░░░░░░  0%  — Admin Dashboard
 Module 8 █████████░░░░░░░░░░░ 45%  — Notifications & Communication
 
-Active Modules (excl. M6): ━━━━━━━━━━━━━━━━━━━━ ~63% (weighted avg of M1-5, M7-8)
+Active Modules (excl. M6): ━━━━━━━━━━━━━━━━━━━━ ~64% (weighted avg of M1-5, M7-8)
 ```
 
 > **Blockchain**: All contracts run on Hardhat local node (chain 31337). No production/testnet deployment is planned for the current phase.
