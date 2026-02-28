@@ -80,7 +80,6 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 |------|----------|---------|
 | Job blockchain anchoring | MEDIUM | Job hashes should be stored on-chain for tamper-proof records |
 | AI-powered job search | MEDIUM | Current search is keyword-based; integrate AI for skill-matching |
-| Milestone auto-release via contract | MEDIUM | Auto-approve updates DB but doesn't trigger smart contract release |
 
 ---
 

@@ -16,8 +16,6 @@ This document outlines recommended improvements across all implemented modules, 
 |----------|----|-------------|--------|---------|
 | HIGH | M1-I1 | PPR / cacheComponents for dashboard pages | ❌ Pending | Dashboard pages still use `'use client'`; convert to Server Components with `use cache` directives for faster TTFB |
 | MEDIUM | M1-I3 | Offline/PWA support | ❌ Pending | Add service worker for offline dashboard access and push notifications |
-| MEDIUM | M1-I4 | E2E test coverage expansion | ⚠️ Partial | 34 tests in module 1; expand to cover wallet flows, profile editing, and contract interactions |
-| LOW | M1-I5 | Image optimization for profile avatars | ❌ Pending | Use Next.js `<Image>` with width/height hints + blur placeholder for avatar and portfolio images |
 | LOW | M1-I6 | Session refresh UX | ✅ Done | 401 auto-retry with deduplication already implemented (H-4) |
 
 ---
