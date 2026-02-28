@@ -91,10 +91,29 @@ const getReviewStatus = async (req: Request, res: Response, next: NextFunction):
   }
 };
 
+/**
+ * Submit a response (rebuttal) to a review
+ * POST /api/reviews/:reviewId/response
+ */
+const submitResponse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.userId!;
+    const { reviewId } = req.params;
+    const { responseText } = req.body;
+
+    const review = await reviewService.submitResponse(reviewId, userId, responseText);
+    res.json({ success: true, data: review, message: 'Response submitted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const reviewController = {
   submitReview,
   getUserReviews,
   getContractReviews,
   getReviewSummary,
   getReviewStatus,
+  submitResponse,
 };

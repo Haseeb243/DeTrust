@@ -24,6 +24,14 @@ export const createReviewSchema = z.object({
 });
 
 // =============================================================================
+// REVIEW RESPONSE / REBUTTAL (M3-I6)
+// =============================================================================
+
+export const createReviewResponseSchema = z.object({
+  responseText: safeText(z.string().min(10, 'Response must be at least 10 characters').max(2000)),
+});
+
+// =============================================================================
 // QUERY REVIEWS
 // =============================================================================
 
@@ -38,4 +46,5 @@ export const getReviewsQuerySchema = z.object({
 // =============================================================================
 
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;
+export type CreateReviewResponseInput = z.infer<typeof createReviewResponseSchema>;
 export type GetReviewsQuery = z.infer<typeof getReviewsQuerySchema>;

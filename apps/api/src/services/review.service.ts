@@ -291,6 +291,44 @@ export class ReviewService {
     return !!review;
   }
 
+  /**
+   * Submit a one-time immutable response (rebuttal) to a review.
+   * Only the review subject (the person who was reviewed) can respond.
+   * Response cannot be edited or deleted once submitted (SRS M3-I6).
+   */
+  async submitResponse(reviewId: string, userId: string, responseText: string) {
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { id: true, subjectId: true, responseText: true },
+    });
+
+    if (!review) {
+      throw new NotFoundError('Review not found');
+    }
+
+    if (review.subjectId !== userId) {
+      throw new ForbiddenError('Only the reviewed party can respond to a review');
+    }
+
+    if (review.responseText) {
+      throw new ValidationError('A response has already been submitted for this review');
+    }
+
+    const updated = await prisma.review.update({
+      where: { id: reviewId },
+      data: {
+        responseText,
+        responseAt: new Date(),
+      },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        subject: { select: { id: true, name: true, avatarUrl: true } },
+      },
+    });
+
+    return updated;
+  }
+
   // ── private helpers ────────────────────────────────────────────────
 
   /**
