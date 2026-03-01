@@ -23,6 +23,13 @@ function getBarWidth(value: number, max: number): string {
   return max > 0 ? `${(value / max) * 100}%` : '0%';
 }
 
+function getBarColorClass(score: number): string {
+  if (score > 75) return 'bg-emerald-400';
+  if (score >= 50) return 'bg-blue-400';
+  if (score > 0) return 'bg-amber-400';
+  return 'bg-slate-300';
+}
+
 function ComparisonRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[140px,1fr] items-center gap-4 border-b border-dt-border py-3 last:border-b-0">
@@ -140,7 +147,7 @@ export function ProposalComparison({ proposals, onClose }: ProposalComparisonPro
                 <span className={cn('font-semibold', getScoreColor(score))}>{score}%</span>
                 <div className="ml-2 h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                   <div
-                    className={cn('h-full rounded-full', score > 75 ? 'bg-emerald-400' : score >= 50 ? 'bg-blue-400' : 'bg-amber-400')}
+                    className={cn('h-full rounded-full', getBarColorClass(score))}
                     style={{ width: getBarWidth(score, maxTrust) }}
                   />
                 </div>

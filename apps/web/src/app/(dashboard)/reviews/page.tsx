@@ -27,10 +27,14 @@ export default function ReviewsPage() {
   const [filters, setFilters] = useState<GetUserReviewsParams>({});
 
   const params: GetUserReviewsParams = {
-    ...filters,
-    ...(activeTab ? { role: activeTab as 'as_client' | 'as_freelancer' } : {}),
     page: filters.page ?? 1,
     limit: filters.limit ?? 50,
+    minRating: filters.minRating,
+    maxRating: filters.maxRating,
+    search: filters.search,
+    sort: filters.sort,
+    order: filters.order,
+    ...(activeTab ? { role: activeTab as 'as_client' | 'as_freelancer' } : {}),
   };
 
   const { data: reviewsData, isLoading: loadingReviews } = useUserReviews(userId, params);

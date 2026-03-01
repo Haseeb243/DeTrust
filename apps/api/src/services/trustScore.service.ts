@@ -17,6 +17,7 @@ import { prisma } from '../config/database';
 const INACTIVITY_THRESHOLD_DAYS = 90;
 const MAX_DECAY_DAYS = 365;
 const MIN_DECAY_FACTOR = 0.5;
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export interface TrustScoreBreakdown {
   totalScore: number;
@@ -228,7 +229,7 @@ export class TrustScoreService {
     if (!latestContract) return 1.0; // New user, no decay
 
     const daysSinceActivity = Math.floor(
-      (Date.now() - new Date(latestContract.updatedAt).getTime()) / (1000 * 60 * 60 * 24),
+      (Date.now() - new Date(latestContract.updatedAt).getTime()) / MS_PER_DAY,
     );
 
     if (daysSinceActivity <= INACTIVITY_THRESHOLD_DAYS) return 1.0;
