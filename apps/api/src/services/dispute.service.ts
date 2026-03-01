@@ -353,7 +353,7 @@ export class DisputeService {
   /**
    * Get a single dispute by ID.
    */
-  async getDispute(disputeId: string, _userId: string) {
+  async getDispute(disputeId: string, userId: string) {
     const dispute = await prisma.dispute.findUnique({
       where: { id: disputeId },
       include: {
@@ -378,6 +378,19 @@ export class DisputeService {
 
     if (!dispute) {
       throw new NotFoundError('Dispute not found');
+    }
+
+    // Verify user is a party to the dispute or admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    const contract = dispute.contract;
+    const isParty = contract.clientId === userId || contract.freelancerId === userId;
+    const isAdmin = user?.role === 'ADMIN';
+
+    if (!isParty && !isAdmin) {
+      throw new ForbiddenError('You do not have access to this dispute');
     }
 
     return dispute;

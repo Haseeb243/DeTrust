@@ -5,10 +5,12 @@ import { z } from 'zod';
 
 const router: Router = Router();
 
+const stripHtml = (val: string) => val.replace(/<[^>]*>/g, '').trim();
+
 // Validation schema for sending a message
 const sendMessageSchema = z.object({
   receiverId: z.string().min(1, 'Receiver ID is required'),
-  content: z.string().min(1, 'Message content is required').max(5000),
+  content: z.string().min(1, 'Message content is required').max(5000).transform(stripHtml),
   jobId: z.string().optional(),
   attachments: z.array(z.string().url()).max(10).optional(),
 });

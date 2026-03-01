@@ -6,6 +6,16 @@ import { config } from '../config';
  * Gracefully degrades when SMTP is not configured.
  */
 
+/** Escape user-controlled values before embedding in HTML templates. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 let transporter: nodemailer.Transporter | null = null;
 
 function getTransporter(): nodemailer.Transporter | null {
@@ -60,8 +70,8 @@ export const emailTemplates = {
   disputeOpened: (contractTitle: string, reason: string) =>
     baseTemplate(
       'Dispute Opened',
-      `<p style="color:#3f3f46;line-height:1.6;">A dispute has been raised on contract <strong>"${contractTitle}"</strong>.</p>
-       <p style="color:#3f3f46;"><strong>Reason:</strong> ${reason}</p>
+      `<p style="color:#3f3f46;line-height:1.6;">A dispute has been raised on contract <strong>"${escapeHtml(contractTitle)}"</strong>.</p>
+       <p style="color:#3f3f46;"><strong>Reason:</strong> ${escapeHtml(reason)}</p>
        <p style="color:#3f3f46;">Please review the dispute details and submit any evidence within the allowed time frame.</p>
        <a href="${config.server.frontendUrl}/dashboard/disputes" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;margin-top:16px;">View Dispute</a>`,
     ),
@@ -69,23 +79,23 @@ export const emailTemplates = {
   disputeResolved: (contractTitle: string, outcome: string) =>
     baseTemplate(
       'Dispute Resolved',
-      `<p style="color:#3f3f46;line-height:1.6;">The dispute on contract <strong>"${contractTitle}"</strong> has been resolved.</p>
-       <p style="color:#3f3f46;"><strong>Outcome:</strong> ${outcome}</p>
+      `<p style="color:#3f3f46;line-height:1.6;">The dispute on contract <strong>"${escapeHtml(contractTitle)}"</strong> has been resolved.</p>
+       <p style="color:#3f3f46;"><strong>Outcome:</strong> ${escapeHtml(outcome)}</p>
        <a href="${config.server.frontendUrl}/dashboard/disputes" style="display:inline-block;padding:12px 24px;background:#22c55e;color:#fff;text-decoration:none;border-radius:8px;margin-top:16px;">View Details</a>`,
     ),
 
   newMessage: (senderName: string) =>
     baseTemplate(
       'New Message',
-      `<p style="color:#3f3f46;line-height:1.6;">You have received a new message from <strong>${senderName}</strong>.</p>
+      `<p style="color:#3f3f46;line-height:1.6;">You have received a new message from <strong>${escapeHtml(senderName)}</strong>.</p>
        <a href="${config.server.frontendUrl}/dashboard/messages" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;margin-top:16px;">View Messages</a>`,
     ),
 
   milestoneSubmitted: (contractTitle: string, milestoneTitle: string) =>
     baseTemplate(
       'Milestone Submitted',
-      `<p style="color:#3f3f46;line-height:1.6;">A milestone has been submitted for review on <strong>"${contractTitle}"</strong>.</p>
-       <p style="color:#3f3f46;"><strong>Milestone:</strong> ${milestoneTitle}</p>
+      `<p style="color:#3f3f46;line-height:1.6;">A milestone has been submitted for review on <strong>"${escapeHtml(contractTitle)}"</strong>.</p>
+       <p style="color:#3f3f46;"><strong>Milestone:</strong> ${escapeHtml(milestoneTitle)}</p>
        <p style="color:#3f3f46;">You have 7 days to review and approve. If no action is taken, the milestone will be auto-approved.</p>
        <a href="${config.server.frontendUrl}/dashboard/contracts" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;margin-top:16px;">Review Milestone</a>`,
     ),
@@ -93,7 +103,7 @@ export const emailTemplates = {
   welcome: (name: string) =>
     baseTemplate(
       'Welcome to DeTrust!',
-      `<p style="color:#3f3f46;line-height:1.6;">Hi <strong>${name}</strong>,</p>
+      `<p style="color:#3f3f46;line-height:1.6;">Hi <strong>${escapeHtml(name)}</strong>,</p>
        <p style="color:#3f3f46;line-height:1.6;">Welcome to DeTrust — the decentralized freelance marketplace with trustless payments, transparent reputation, and fair dispute resolution.</p>
        <a href="${config.server.frontendUrl}/dashboard" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;margin-top:16px;">Go to Dashboard</a>`,
     ),
