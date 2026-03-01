@@ -18,3 +18,7 @@ export { clientProfileApi } from './client-profile';
 export type { ClientPublicProfile } from './client-profile';
 export { reviewApi } from './review';
 export type { Review, ReviewSummary, CreateReviewInput, GetUserReviewsParams } from './review';
+export { disputeApi } from './dispute';
+export type { GetDisputesParams, CreateDisputeInput, CastVoteInput, AdminResolveInput } from './dispute';
+export { messageApi } from './message';
+export type { SendMessageInput } from './message';
