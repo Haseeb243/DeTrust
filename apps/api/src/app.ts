@@ -21,6 +21,8 @@ import uploadRoutes from './routes/upload.routes';
 import contractRoutes from './routes/contract.routes';
 import notificationRoutes from './routes/notification.routes';
 import reviewRoutes from './routes/review.routes';
+import disputeRoutes from './routes/dispute.routes';
+import messageRoutes from './routes/message.routes';
 
 // Create Express app
 const app: Application = express();
@@ -107,6 +109,12 @@ app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 
 // Review routes
 app.use(`${API_PREFIX}/reviews`, reviewRoutes);
+
+// Dispute routes
+app.use(`${API_PREFIX}/disputes`, disputeRoutes);
+
+// Message routes
+app.use(`${API_PREFIX}/messages`, messageRoutes);
 
 // =============================================================================
 // ERROR HANDLING

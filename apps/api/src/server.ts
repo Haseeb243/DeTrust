@@ -8,6 +8,7 @@ import { initSocketIO } from './config/socket';
 import { startCronJobs, stopCronJobs } from './services/cron.service';
 import { startTrustScoreJob, stopTrustScoreJob } from './jobs/trustScore.job';
 import { startBlockchainJob, stopBlockchainJob } from './jobs/blockchain.job';
+import { startEmailJob, stopEmailJob } from './jobs/email.job';
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -28,6 +29,7 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
       stopCronJobs();
       stopTrustScoreJob();
       stopBlockchainJob();
+      stopEmailJob();
       console.log('✅ Graceful shutdown completed');
       process.exit(0);
     } catch (error) {
@@ -72,6 +74,7 @@ const startServer = async (): Promise<void> => {
     startCronJobs();
     startTrustScoreJob();
     startBlockchainJob();
+    startEmailJob();
 
     // Start listening
     server.listen(config.server.port, () => {
