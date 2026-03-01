@@ -18,9 +18,20 @@ import {
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
+import type { DisputeVote } from '@detrust/types';
 import { useDispute, useCastVote, useAdminResolve, useStartVoting } from '@/hooks/queries/use-disputes';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
+
+interface DisputeContract {
+  id: string;
+  title: string;
+  totalAmount: number;
+  clientId?: string;
+  freelancerId?: string;
+  client?: { id: string; name: string | null; avatarUrl: string | null };
+  freelancer?: { id: string; name: string | null; avatarUrl: string | null };
+}
 
 const statusConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
   OPEN: { icon: <AlertTriangle className="h-4 w-4" />, color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', label: 'Open' },
@@ -53,8 +64,9 @@ export default function DisputeDetailPage() {
   const [resolveOutcome, setResolveOutcome] = useState<'CLIENT_WINS' | 'FREELANCER_WINS' | 'SPLIT'>('CLIENT_WINS');
 
   const isAdmin = user?.role === 'ADMIN';
-  const isParty = dispute?.contract
-    && (user?.id === (dispute.contract as any).clientId || user?.id === (dispute.contract as any).freelancerId);
+  const disputeContract = dispute?.contract as DisputeContract | undefined;
+  const isParty = disputeContract
+    && (user?.id === disputeContract.clientId || user?.id === disputeContract.freelancerId);
 
   if (isLoading) {
     return (
@@ -77,7 +89,7 @@ export default function DisputeDetailPage() {
   }
 
   const status = statusConfig[dispute.status] ?? statusConfig.OPEN;
-  const contract = dispute.contract as any;
+  const contract = dispute.contract as DisputeContract;
 
   const handleCastVote = async () => {
     if (!voteChoice) {
@@ -262,7 +274,7 @@ export default function DisputeDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {dispute.votes.map((vote: any) => (
+              {dispute.votes.map((vote: DisputeVote) => (
                 <div
                   key={vote.id}
                   className="flex items-start justify-between rounded-lg border border-dt-border p-3"

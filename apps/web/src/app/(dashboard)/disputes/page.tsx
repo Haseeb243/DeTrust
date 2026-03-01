@@ -6,6 +6,7 @@ import { Shield, AlertTriangle, CheckCircle2, Clock, Scale } from 'lucide-react'
 
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
+import type { Dispute } from '@detrust/types';
 import { useDisputes } from '@/hooks/queries/use-disputes';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
@@ -95,7 +96,7 @@ export default function DisputesPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {disputes.map((dispute: any) => {
+          {disputes.map((dispute: Dispute & { _count?: { votes: number }; contract?: { title?: string; totalAmount?: number; client?: { name?: string | null }; freelancer?: { name?: string | null } } }) => {
             const status = statusConfig[dispute.status] ?? statusConfig.OPEN;
             const contract = dispute.contract;
 

@@ -6,6 +6,7 @@ import { MessageCircle, Send, Search, ArrowLeft } from 'lucide-react';
 
 import { Badge, Button, Card, CardContent, Input } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
+import type { Conversation, Message } from '@detrust/types';
 import {
   useConversations,
   useMessages,
@@ -36,7 +37,7 @@ export default function MessagesPage() {
 
   // Filter conversations by search
   const filteredConversations = searchTerm
-    ? conversations.filter((c: any) =>
+    ? conversations.filter((c: { participant?: { name?: string | null } }) =>
         c.participant?.name?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : conversations;
@@ -77,8 +78,8 @@ export default function MessagesPage() {
   };
 
   const selectedConversation = conversations.find(
-    (c: any) => c.participantId === selectedPartner
-  ) as any;
+    (c: { participantId: string }) => c.participantId === selectedPartner
+  );
 
   return (
     <div className="space-y-4">
@@ -133,7 +134,7 @@ export default function MessagesPage() {
                   <p>No conversations yet</p>
                 </div>
               ) : (
-                filteredConversations.map((conv: any) => (
+                filteredConversations.map((conv: Conversation) => (
                   <button
                     key={conv.participantId}
                     onClick={() => setSelectedPartner(conv.participantId)}
@@ -209,7 +210,7 @@ export default function MessagesPage() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {messages.map((msg: any) => {
+                      {messages.map((msg: Message) => {
                         const isOwn = msg.senderId === userId;
                         return (
                           <div

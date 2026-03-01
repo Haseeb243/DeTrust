@@ -394,7 +394,7 @@ export class DisputeService {
 
     const isAdmin = user?.role === 'ADMIN';
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (!isAdmin) {
       where.contract = {
