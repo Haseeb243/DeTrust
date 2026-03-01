@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { trustScoreService } from '../services/trustScore.service';
 
@@ -33,7 +34,7 @@ async function recalculateAllTrustScores(): Promise<void> {
           data: {
             userId: f.userId,
             score: breakdown.totalScore,
-            breakdown: breakdown.components as unknown as Record<string, unknown>[],
+            breakdown: breakdown.components as unknown as Prisma.InputJsonValue,
           },
         });
 
@@ -58,7 +59,7 @@ async function recalculateAllTrustScores(): Promise<void> {
           data: {
             userId: c.userId,
             score: breakdown.totalScore,
-            breakdown: breakdown.components as unknown as Record<string, unknown>[],
+            breakdown: breakdown.components as unknown as Prisma.InputJsonValue,
           },
         });
 
