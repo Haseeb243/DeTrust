@@ -1,16 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { MessageSquare, Calendar, ExternalLink } from 'lucide-react';
+import { MessageSquare, MessageSquareReply, Calendar, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
 import { SecureAvatar } from '@/components/secure-avatar';
 import { StarRating } from './star-rating';
+import { ReviewResponseForm } from './review-response-form';
 import { getReviewLabels } from '@/lib/review-utils';
 import type { Review } from '@/lib/api/review';
 
 interface ReviewListProps {
   reviews: Review[];
   emptyMessage?: string;
+  /** ID of the current user, used to show response form for the reviewed party */
+  currentUserId?: string;
 }
 
 const formatDate = (date: string) =>
@@ -25,10 +28,11 @@ function isClientAuthor(review: Review): boolean {
   return Boolean(review.contract && review.authorId === review.contract.clientId);
 }
 
-function ReviewCard({ review }: { review: Review }) {
+function ReviewCard({ review, currentUserId }: { review: Review; currentUserId?: string }) {
   const authorName = review.author?.name || 'Anonymous';
   const clientReview = isClientAuthor(review);
   const labels = getReviewLabels(clientReview);
+  const canRespond = currentUserId && review.subjectId === currentUserId && !review.responseText;
 
   return (
     <Card className="border-dt-border bg-dt-surface shadow-sm transition-shadow hover:shadow-md">
@@ -100,6 +104,20 @@ function ReviewCard({ review }: { review: Review }) {
                 ✓ On-chain verified
               </div>
             )}
+
+            {/* Response / Rebuttal (M3-I6) */}
+            {review.responseText && (
+              <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-900/30 dark:bg-blue-950/20">
+                <div className="flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400">
+                  <MessageSquareReply className="h-3 w-3" />
+                  Response from {review.subject?.name || 'the reviewed party'}
+                </div>
+                <p className="mt-1 text-sm text-dt-text">{review.responseText}</p>
+              </div>
+            )}
+
+            {/* Response Form (only for subject who hasn't responded yet) */}
+            {canRespond && <ReviewResponseForm reviewId={review.id} />}
           </div>
         </div>
       </CardContent>
@@ -107,7 +125,7 @@ function ReviewCard({ review }: { review: Review }) {
   );
 }
 
-export function ReviewList({ reviews, emptyMessage = 'No reviews yet' }: ReviewListProps) {
+export function ReviewList({ reviews, emptyMessage = 'No reviews yet', currentUserId }: ReviewListProps) {
   if (reviews.length === 0) {
     return (
       <Card className="border-dt-border bg-dt-surface shadow-sm">
@@ -122,7 +140,7 @@ export function ReviewList({ reviews, emptyMessage = 'No reviews yet' }: ReviewL
   return (
     <div className="space-y-3">
       {reviews.map((review) => (
-        <ReviewCard key={review.id} review={review} />
+        <ReviewCard key={review.id} review={review} currentUserId={currentUserId} />
       ))}
     </div>
   );

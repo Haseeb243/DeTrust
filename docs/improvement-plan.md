@@ -27,7 +27,7 @@ This document outlines recommended improvements across all implemented modules, 
 | HIGH | M2-I1 | Escrow integration with smart contract calls | ⚠️ Partial | `JobEscrow.sol` deployed on Hardhat local node; frontend wagmi `useWriteContract` calls need verification |
 | HIGH | M2-I2 | Job listing blockchain anchoring | ❌ Pending | Job hashes should be stored on-chain for tamper-proof job records |
 | MEDIUM | M2-I3 | Advanced job search (semantic / AI-powered) | ❌ Pending | Current search is keyword-based; integrate AI service for skill-matching recommendations |
-| MEDIUM | M2-I4 | Proposal comparison view for clients | ❌ Pending | Side-by-side comparison of top proposals with trust scores and AI capability badges |
+| MEDIUM | M2-I4 | Proposal comparison view for clients | ✅ **Done** | Side-by-side comparison of top proposals with trust scores and AI capability badges |
 | MEDIUM | M2-I5 | Milestone payment automation | ⚠️ Partial | Auto-approve implemented (7-day cron), but auto-release via smart contract not wired |
 | LOW | M2-I6 | Job templates for recurring projects | ❌ Pending | Allow clients to save and reuse job templates |
 | LOW | M2-I7 | Bulk milestone management | ❌ Pending | Enable batch approval/rejection of milestones |
@@ -43,10 +43,10 @@ This document outlines recommended improvements across all implemented modules, 
 | **CRITICAL** | M3-I3 | Wire IPFS + blockchain into review submission flow | ✅ **Done** | `reviewService.submitReview()` now uploads to IPFS, records on-chain, and stores hashes in DB |
 | HIGH | M3-I4 | Blockchain retry job for failed transactions | ✅ **Done** | `blockchain.job.ts` retries reviews with missing blockchain tx hashes |
 | HIGH | M3-I5 | Frontend blockchain verification badge | ⚠️ Partial | Badge exists in `ReviewList` but only shows when `blockchainTxHash` is present (now populated) |
-| MEDIUM | M3-I6 | Review response / rebuttal mechanism | ❌ Pending | Allow reviewed party to add a one-time response (stored separately, also immutable) |
-| MEDIUM | M3-I7 | Review analytics dashboard | ❌ Pending | Trends in review scores over time, category comparison charts |
+| MEDIUM | M3-I6 | Review response / rebuttal mechanism | ✅ **Done** | Allow reviewed party to add a one-time response (stored separately, also immutable) |
+| MEDIUM | M3-I7 | Review analytics dashboard | ✅ **Done** | Trends in review scores over time, category comparison charts |
 | LOW | M3-I8 | Review export to PDF | ❌ Pending | Allow users to export their review history as a PDF report |
-| LOW | M3-I9 | Review search and filtering | ❌ Pending | Search reviews by keyword, filter by rating, date range |
+| LOW | M3-I9 | Review search and filtering | ✅ **Done** | Search reviews by keyword, filter by rating, date range |
 
 ---
 
@@ -57,9 +57,9 @@ This document outlines recommended improvements across all implemented modules, 
 | **CRITICAL** | M4-I1 | Trust score history tracking (Prisma model) | ✅ **Done** | `TrustScoreHistory` model added with time-series data |
 | **CRITICAL** | M4-I2 | Background recalculation job | ✅ **Done** | `trustScore.job.ts` runs daily to recalculate all user trust scores |
 | HIGH | M4-I3 | Trust score trend API endpoint | ✅ **Done** | `GET /api/users/:id/trust-score/history` returns historical trend data |
-| HIGH | M4-I4 | Frontend trend visualization | ❌ Pending | Line chart component for trust score history (requires charting library) |
+| HIGH | M4-I4 | Frontend trend visualization | ✅ **Done** | Line chart component for trust score history (recharts) |
 | MEDIUM | M4-I5 | Juror eligibility enforcement | ❌ Pending | Check trust score > 50 in dispute voting flow (Module 5 dependency) |
-| MEDIUM | M4-I6 | Trust score decay for inactivity | ❌ Pending | Gradually reduce scores for users inactive > 90 days |
+| MEDIUM | M4-I6 | Trust score decay for inactivity | ✅ **Done** | Gradually reduce scores for users inactive > 90 days |
 | MEDIUM | M4-I7 | Weighted recency in ratings | ❌ Pending | Recent reviews should have higher weight than older ones |
 | LOW | M4-I8 | Trust score notifications | ❌ Pending | Notify users when score crosses thresholds (50, 75) |
 | LOW | M4-I9 | On-chain trust score anchoring | ❌ Pending | Periodically anchor score hashes to ReputationRegistry for decentralized proof |
@@ -165,7 +165,7 @@ This document outlines recommended improvements across all implemented modules, 
 - [ ] M5-I6: DisputeResolution.sol integration
 - [ ] M5-I7: Dispute dashboard page
 - [ ] M8-I5: Email notification job
-- [ ] M4-I4: Trust score trend chart
+- [x] M4-I4: Trust score trend chart
 
 ### Phase 5 — Polish & Refinement
 - [ ] M1-I1: PPR/cacheComponents adoption

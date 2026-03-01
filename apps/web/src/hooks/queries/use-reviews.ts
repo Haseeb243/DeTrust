@@ -72,3 +72,17 @@ export function useSubmitReview() {
     },
   });
 }
+
+export function useSubmitReviewResponse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reviewId, responseText }: { reviewId: string; responseText: string }) => {
+      const res = await reviewApi.submitResponse(reviewId, responseText);
+      if (!res.success || !res.data) throw new Error(res.error?.message ?? 'Failed to submit response');
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: reviewKeys.all });
+    },
+  });
+}

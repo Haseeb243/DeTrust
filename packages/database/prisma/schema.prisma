@@ -596,6 +596,10 @@ model Review {
   
   comment             String?  @db.Text
   
+  // Rebuttal: one-time immutable response from the reviewed party (SRS M3-I6)
+  responseText        String?  @db.Text
+  responseAt          DateTime?
+  
   // Blockchain Data
   ipfsHash            String?  // Review content stored on IPFS
   blockchainTxHash    String?  // Transaction hash on ReputationRegistry

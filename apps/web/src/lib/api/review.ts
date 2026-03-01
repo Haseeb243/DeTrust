@@ -15,6 +15,8 @@ export interface Review {
   timelinessRating: number | null;
   professionalismRating: number | null;
   comment: string | null;
+  responseText: string | null;
+  responseAt: string | null;
   ipfsHash: string | null;
   blockchainTxHash: string | null;
   isPublic: boolean;
@@ -55,6 +57,11 @@ export interface GetUserReviewsParams {
   role?: 'as_client' | 'as_freelancer';
   page?: number;
   limit?: number;
+  minRating?: number;
+  maxRating?: number;
+  search?: string;
+  sort?: 'createdAt' | 'overallRating';
+  order?: 'asc' | 'desc';
 }
 
 interface PaginatedResponse<T> {
@@ -79,6 +86,9 @@ interface ContractReviewsResponse {
 export const reviewApi = {
   submitReview: (data: CreateReviewInput) =>
     api.post<Review>('/reviews', data),
+
+  submitResponse: (reviewId: string, responseText: string) =>
+    api.post<Review>(`/reviews/${reviewId}/response`, { responseText }),
 
   getContractReviews: (contractId: string) =>
     api.get<ContractReviewsResponse>(`/reviews/contract/${contractId}`),

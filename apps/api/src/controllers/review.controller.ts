@@ -34,6 +34,11 @@ const getUserReviews = async (req: Request, res: Response, next: NextFunction): 
       role: req.query.role as GetReviewsQuery['role'],
       page: parseInt(req.query.page as string, 10) || 1,
       limit: Math.min(parseInt(req.query.limit as string, 10) || 20, 100),
+      minRating: req.query.minRating ? parseFloat(req.query.minRating as string) : undefined,
+      maxRating: req.query.maxRating ? parseFloat(req.query.maxRating as string) : undefined,
+      search: (req.query.search as string) || undefined,
+      sort: (req.query.sort as GetReviewsQuery['sort']) || 'createdAt',
+      order: (req.query.order as GetReviewsQuery['order']) || 'desc',
     };
 
     const reviews = await reviewService.getUserReviews(userId, query, viewerId);
@@ -91,10 +96,29 @@ const getReviewStatus = async (req: Request, res: Response, next: NextFunction):
   }
 };
 
+/**
+ * Submit a response (rebuttal) to a review
+ * POST /api/reviews/:reviewId/response
+ */
+const submitResponse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.userId!;
+    const { reviewId } = req.params;
+    const { responseText } = req.body;
+
+    const review = await reviewService.submitResponse(reviewId, userId, responseText);
+    res.json({ success: true, data: review, message: 'Response submitted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const reviewController = {
   submitReview,
   getUserReviews,
   getContractReviews,
   getReviewSummary,
   getReviewStatus,
+  submitResponse,
 };

@@ -7,7 +7,17 @@ import { prisma } from '../config/database';
  * Client:     (0.4 × AvgRating) + (0.3 × PaymentPunctuality) + (0.2 × HireRate) + (0.1 × JobClarityRating)
  *
  * All components are normalized to 0–100 scale before weighting.
+ *
+ * Inactivity Decay (M4-I6):
+ * If user has no contract activity for > 90 days, apply a gradual decay:
+ * decayFactor = max(0.5, 1 - (inactiveDays - 90) / 365)
+ * Final score = rawScore × decayFactor
  */
+
+const INACTIVITY_THRESHOLD_DAYS = 90;
+const MAX_DECAY_DAYS = 365;
+const MIN_DECAY_FACTOR = 0.5;
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export interface TrustScoreBreakdown {
   totalScore: number;
@@ -78,7 +88,11 @@ export class TrustScoreService {
       weightedValue: Math.round((c.normalizedValue * c.weight) * 100) / 100,
     }));
 
-    const totalScore = Math.round(components.reduce((sum, c) => sum + c.weightedValue, 0) * 100) / 100;
+    const rawScore = Math.round(components.reduce((sum, c) => sum + c.weightedValue, 0) * 100) / 100;
+
+    // Apply inactivity decay (M4-I6)
+    const decayFactor = await this.getInactivityDecayFactor(userId);
+    const totalScore = Math.round(rawScore * decayFactor * 100) / 100;
 
     // Persist
     await prisma.freelancerProfile.update({
@@ -149,7 +163,11 @@ export class TrustScoreService {
       weightedValue: Math.round((c.normalizedValue * c.weight) * 100) / 100,
     }));
 
-    const totalScore = Math.round(components.reduce((sum, c) => sum + c.weightedValue, 0) * 100) / 100;
+    const rawScore = Math.round(components.reduce((sum, c) => sum + c.weightedValue, 0) * 100) / 100;
+
+    // Apply inactivity decay (M4-I6)
+    const decayFactor = await this.getInactivityDecayFactor(userId);
+    const totalScore = Math.round(rawScore * decayFactor * 100) / 100;
 
     // Persist
     await prisma.clientProfile.update({
@@ -191,6 +209,33 @@ export class TrustScoreService {
 
   private emptyBreakdown(): TrustScoreBreakdown {
     return { totalScore: 0, components: [] };
+  }
+
+  /**
+   * Calculate inactivity decay factor (M4-I6).
+   * Returns 1.0 for active users, gradually decreasing to MIN_DECAY_FACTOR
+   * for users inactive > 90 days.
+   */
+  private async getInactivityDecayFactor(userId: string): Promise<number> {
+    // Find most recent contract activity (created, updated, or completed)
+    const latestContract = await prisma.contract.findFirst({
+      where: {
+        OR: [{ clientId: userId }, { freelancerId: userId }],
+      },
+      orderBy: { updatedAt: 'desc' },
+      select: { updatedAt: true },
+    });
+
+    if (!latestContract) return 1.0; // New user, no decay
+
+    const daysSinceActivity = Math.floor(
+      (Date.now() - new Date(latestContract.updatedAt).getTime()) / MS_PER_DAY,
+    );
+
+    if (daysSinceActivity <= INACTIVITY_THRESHOLD_DAYS) return 1.0;
+
+    const excessDays = daysSinceActivity - INACTIVITY_THRESHOLD_DAYS;
+    return Math.max(MIN_DECAY_FACTOR, 1 - excessDays / MAX_DECAY_DAYS);
   }
 }
 

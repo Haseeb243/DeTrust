@@ -5,10 +5,11 @@ import { MessageSquareText, Star } from 'lucide-react';
 
 import { Badge, Card, CardContent } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { ReviewSummaryCard, ReviewList } from '@/components/reviews';
+import { ReviewSummaryCard, ReviewList, ReviewFilters, ReviewAnalytics } from '@/components/reviews';
 import { useUserReviews, useReviewSummary } from '@/hooks/queries/use-reviews';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
+import type { GetUserReviewsParams } from '@/lib/api/review';
 
 const TABS = [
   { value: '', label: 'All Reviews' },
@@ -23,15 +24,28 @@ export default function ReviewsPage() {
   const userId = user?.id ?? '';
   const userRole = user?.role as 'CLIENT' | 'FREELANCER' | undefined;
   const [activeTab, setActiveTab] = useState<TabValue>('');
+  const [filters, setFilters] = useState<GetUserReviewsParams>({});
 
-  const params = activeTab
-    ? { role: activeTab as 'as_client' | 'as_freelancer', page: 1, limit: 50 }
-    : { page: 1, limit: 50 };
+  const params: GetUserReviewsParams = {
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 50,
+    minRating: filters.minRating,
+    maxRating: filters.maxRating,
+    search: filters.search,
+    sort: filters.sort,
+    order: filters.order,
+    ...(activeTab ? { role: activeTab as 'as_client' | 'as_freelancer' } : {}),
+  };
 
   const { data: reviewsData, isLoading: loadingReviews } = useUserReviews(userId, params);
   const { data: summary, isLoading: loadingSummary } = useReviewSummary(userId);
 
   const reviews = reviewsData?.items ?? [];
+
+  const handleTabChange = (tab: TabValue) => {
+    setActiveTab(tab);
+    setFilters({ ...filters, page: 1 });
+  };
 
   return (
     <div className="space-y-6">
@@ -55,12 +69,17 @@ export default function ReviewsPage() {
         <ReviewSummaryCard summary={summary} subjectRole={userRole} />
       ) : null}
 
+      {/* Review Analytics Charts (M3-I7) */}
+      {summary && summary.totalReviews > 0 && (
+        <ReviewAnalytics summary={summary} subjectRole={userRole} />
+      )}
+
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto border-b border-dt-border pb-2">
         {TABS.map((tab) => (
           <button
             key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
+            onClick={() => handleTabChange(tab.value)}
             className={cn(
               'whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition',
               activeTab === tab.value
@@ -78,6 +97,9 @@ export default function ReviewsPage() {
         ))}
       </div>
 
+      {/* Search & Filters (M3-I9) */}
+      <ReviewFilters filters={filters} onFiltersChange={setFilters} />
+
       {/* Reviews List */}
       {loadingReviews ? (
         <div className="flex min-h-[200px] items-center justify-center">
@@ -86,6 +108,7 @@ export default function ReviewsPage() {
       ) : (
         <ReviewList
           reviews={reviews}
+          currentUserId={userId}
           emptyMessage={
             activeTab
               ? `No reviews ${activeTab === 'as_freelancer' ? 'as a freelancer' : 'as a client'} yet`

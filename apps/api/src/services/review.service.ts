@@ -114,7 +114,7 @@ export class ReviewService {
    * reviewed yet and the 14-day window hasn't elapsed.
    */
   async getUserReviews(userId: string, query: GetReviewsQuery, viewerId?: string) {
-    const { role, page, limit } = query;
+    const { role, page, limit, minRating, maxRating, search, sort = 'createdAt', order = 'desc' } = query;
 
     const where: Record<string, unknown> = { subjectId: userId, isPublic: true };
 
@@ -123,6 +123,19 @@ export class ReviewService {
       where.contract = { freelancerId: userId };
     } else if (role === 'as_client') {
       where.contract = { clientId: userId };
+    }
+
+    // Rating filters (M3-I9)
+    if (minRating !== undefined || maxRating !== undefined) {
+      where.overallRating = {
+        ...(minRating !== undefined ? { gte: minRating } : {}),
+        ...(maxRating !== undefined ? { lte: maxRating } : {}),
+      };
+    }
+
+    // Search filter — match against comment text (M3-I9)
+    if (search) {
+      where.comment = { contains: search, mode: 'insensitive' };
     }
 
     const [reviews, total] = await Promise.all([
@@ -141,7 +154,7 @@ export class ReviewService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sort]: order },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -289,6 +302,44 @@ export class ReviewService {
       select: { id: true },
     });
     return !!review;
+  }
+
+  /**
+   * Submit a one-time immutable response (rebuttal) to a review.
+   * Only the review subject (the person who was reviewed) can respond.
+   * Response cannot be edited or deleted once submitted (SRS M3-I6).
+   */
+  async submitResponse(reviewId: string, userId: string, responseText: string) {
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { id: true, subjectId: true, responseText: true },
+    });
+
+    if (!review) {
+      throw new NotFoundError('Review not found');
+    }
+
+    if (review.subjectId !== userId) {
+      throw new ForbiddenError('Only the reviewed party can respond to a review');
+    }
+
+    if (review.responseText) {
+      throw new ValidationError('A response has already been submitted for this review');
+    }
+
+    const updated = await prisma.review.update({
+      where: { id: reviewId },
+      data: {
+        responseText,
+        responseAt: new Date(),
+      },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        subject: { select: { id: true, name: true, avatarUrl: true } },
+      },
+    });
+
+    return updated;
   }
 
   // ── private helpers ────────────────────────────────────────────────

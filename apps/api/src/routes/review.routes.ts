@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate, optionalAuth, validateBody } from '../middleware';
 import { reviewController } from '../controllers/review.controller';
-import { createReviewSchema } from '../validators/review.validator';
+import { createReviewSchema, createReviewResponseSchema } from '../validators/review.validator';
 
 const router: Router = Router();
 
@@ -19,5 +19,8 @@ router.get('/user/:userId', optionalAuth, reviewController.getUserReviews);
 
 // Get aggregated review summary for a user (public, but log viewer if authenticated)
 router.get('/user/:userId/summary', optionalAuth, reviewController.getReviewSummary);
+
+// Submit a response/rebuttal to a review (M3-I6)
+router.post('/:reviewId/response', authenticate, validateBody(createReviewResponseSchema), reviewController.submitResponse);
 
 export default router;

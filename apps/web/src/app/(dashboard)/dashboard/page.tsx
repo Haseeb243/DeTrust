@@ -18,11 +18,11 @@ import {
 
 import { useAuthStore } from '@/store';
 import { ProfileProgressRing } from '@/components/profile/profile-progress-ring';
-import { TrustScoreCard } from '@/components/trust-score';
+import { TrustScoreCard, TrustScoreTrendChart } from '@/components/trust-score';
 import { ReviewSummaryCard } from '@/components/reviews';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
-import { useTrustScore } from '@/hooks/queries/use-trust-score';
+import { useTrustScore, useTrustScoreHistory } from '@/hooks/queries/use-trust-score';
 import { useReviewSummary } from '@/hooks/queries/use-reviews';
 
 const ratingLabel = (value?: number | string | null) => {
@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const isFreelancer = user?.role === 'FREELANCER';
   const completion = computeProfileCompletion(user);
   const { data: trustScoreBreakdown } = useTrustScore(user?.id ?? '');
+  const { data: trustScoreHistory } = useTrustScoreHistory(user?.id ?? '', 30);
   const { data: reviewSummary } = useReviewSummary(user?.id ?? '');
   const freelancerProfile = user?.freelancerProfile;
   const clientProfile = user?.clientProfile;
@@ -310,6 +311,11 @@ export default function DashboardPage() {
       {/* Trust Score Breakdown (Module 4) */}
       {trustScoreBreakdown && trustScoreBreakdown.components.length > 0 && (
         <TrustScoreCard breakdown={trustScoreBreakdown} />
+      )}
+
+      {/* Trust Score Trend (Module 4 - M4-I4) */}
+      {trustScoreHistory && trustScoreHistory.items.length >= 2 && (
+        <TrustScoreTrendChart history={trustScoreHistory.items} />
       )}
 
       {/* Reputation Snapshot (Module 3) */}
