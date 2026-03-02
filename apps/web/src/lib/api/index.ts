@@ -22,3 +22,5 @@ export { disputeApi } from './dispute';
 export type { GetDisputesParams, CreateDisputeInput, CastVoteInput, AdminResolveInput } from './dispute';
 export { messageApi } from './message';
 export type { SendMessageInput } from './message';
+export { adminApi } from './admin';
+export type { PlatformStats, MonthlyTrend, AdminUser, AdminJob, ActivityItem, AdminUserListParams, AdminJobListParams } from './admin';

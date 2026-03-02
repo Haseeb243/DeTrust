@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import {
+  BarChart3,
   Briefcase,
   CreditCard,
   Crown,
@@ -24,6 +25,9 @@ import {
   Users,
   Wallet,
   Zap,
+  Activity,
+  TrendingUp,
+  Scale,
 } from 'lucide-react';
 
 import { useAuthStore } from '@/store';
@@ -63,10 +67,13 @@ const navigation = {
   ],
   ADMIN: [
     { name: 'Dashboard', href: '/admin', icon: Home },
+    { name: 'Analytics', href: '/admin/reports', icon: BarChart3 },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Jobs', href: '/admin/jobs', icon: Briefcase },
+    { name: 'Contracts', href: '/admin/contracts', icon: FileText },
     { name: 'Disputes', href: '/admin/disputes', icon: Shield },
-    { name: 'Reports', href: '/admin/reports', icon: FileText },
+    { name: 'Reviews', href: '/admin/reviews', icon: Star },
+    { name: 'Messages', href: '/admin/messages', icon: MessageSquare },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ],
 };
