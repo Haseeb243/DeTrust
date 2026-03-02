@@ -2,17 +2,18 @@
 
 > Last updated: 2026-03-02
 
-## Progress: 80% ✅
+## Progress: 90% ✅
 
 ---
 
 ## Overview
 
-Module 7 implements the **Admin Dashboard** — a comprehensive platform management interface for DeTrust administrators. The admin panel provides real-time analytics, user management, dispute monitoring, and platform configuration — all accessible only to users with the ADMIN role.
+Module 7 implements the **Admin Dashboard** — a comprehensive platform management interface for DeTrust administrators. The admin panel provides real-time analytics, user management, dispute monitoring, flagged account auto-detection, and platform configuration — all accessible only to users with the ADMIN role.
 
 ### Key Features
 - **Dashboard Home** — 8 KPI cards, area/pie/bar charts, recent activity feed, platform health metrics
 - **User Management** — Search, filter by role/status, suspend/activate users
+- **Flagged Accounts** — Auto-detection of suspicious activity (SUSPENDED, LOW_TRUST, HIGH_DISPUTE_RATE, MULTIPLE_DISPUTES) with HIGH/MEDIUM/LOW risk levels
 - **Job Oversight** — Browse all jobs with status filters, budget info, client details
 - **Dispute Monitoring** — Status tabs, quick stats, links to dispute detail/resolution
 - **Contract Overview** — Total value tracking, status distribution, individual contract details
@@ -31,7 +32,7 @@ Module 7 implements the **Admin Dashboard** — a comprehensive platform managem
 |---|---|---|
 | Service | `apps/api/src/services/admin.service.ts` | Analytics aggregation, user/job management |
 | Controller | `apps/api/src/controllers/admin.controller.ts` | Request/response handlers |
-| Routes | `apps/api/src/routes/admin.routes.ts` | 6 RESTful admin-only endpoints |
+| Routes | `apps/api/src/routes/admin.routes.ts` | 7 RESTful admin-only endpoints |
 | Middleware | `apps/api/src/middleware/admin.middleware.ts` | `requireAdmin` role guard |
 
 ### API Endpoints
@@ -44,6 +45,7 @@ Module 7 implements the **Admin Dashboard** — a comprehensive platform managem
 | `GET` | `/api/admin/users` | Paginated user list with search/filter/sort |
 | `PATCH` | `/api/admin/users/:userId/status` | Suspend or activate a user |
 | `GET` | `/api/admin/jobs` | Paginated job list with search/filter/sort |
+| `GET` | `/api/admin/flagged` | Auto-detected flagged accounts with risk levels |
 
 ### Frontend
 
@@ -51,6 +53,7 @@ Module 7 implements the **Admin Dashboard** — a comprehensive platform managem
 |---|---|---|
 | Dashboard | `/admin` | Main KPI dashboard with charts and activity |
 | Users | `/admin/users` | User management table with actions |
+| Flagged | `/admin/flagged` | Flagged accounts with risk levels and actions |
 | Jobs | `/admin/jobs` | Job oversight table |
 | Disputes | `/admin/disputes` | Dispute monitoring with status tabs |
 | Contracts | `/admin/contracts` | Contract overview with value stats |
@@ -64,8 +67,8 @@ Module 7 implements the **Admin Dashboard** — a comprehensive platform managem
 | File | Purpose |
 |---|---|
 | `apps/web/src/lib/api/admin.ts` | Typed API client for admin endpoints |
-| `apps/web/src/hooks/queries/use-admin.ts` | TanStack Query hooks (stats, trends, activity, users, jobs) |
-| `apps/web/src/app/(dashboard)/layout.tsx` | Sidebar navigation (9 admin items) |
+| `apps/web/src/hooks/queries/use-admin.ts` | TanStack Query hooks (stats, trends, activity, users, jobs, flagged) |
+| `apps/web/src/app/(dashboard)/layout.tsx` | Sidebar navigation (10 admin items) |
 
 ---
 
@@ -78,6 +81,13 @@ Module 7 implements the **Admin Dashboard** — a comprehensive platform managem
 - **Bar chart** for monthly revenue
 - **Activity feed** with type-coded icons and time-ago labels
 - **Platform health sidebar** — dispute rate, completion rate, avg rating, active disputes
+
+### Flagged Account Detection
+- **Auto-detection rules**: SUSPENDED, LOW_TRUST (< 30), HIGH_DISPUTE_RATE (> 30%), MULTIPLE_DISPUTES (≥ 3)
+- **Risk levels**: HIGH (3+ flags or suspended), MEDIUM (2 flags), LOW (1 flag)
+- **Risk summary cards** with color-coded counts (red/amber/yellow)
+- One-click suspend/activate directly from flagged list
+- Links to full user management for detailed investigation
 
 ### User Management
 - Searchable table with name/email/wallet columns
@@ -118,7 +128,7 @@ Module 7 implements the **Admin Dashboard** — a comprehensive platform managem
 
 | Item | Status | Notes |
 |---|---|---|
-| Auto-flag accounts | 🔲 Planned | Flag users with high dispute rate or low trust score |
+| Auto-flag accounts | ✅ Done | Risk detection with HIGH/MEDIUM/LOW levels |
 | Smart contract parameter config | 🔲 Planned | UI to configure platform fees (on-chain) |
 | Export reports to CSV/PDF | 🔲 Planned | Download analytics data |
 | Email template management | 🔲 Planned | Configure notification email templates |

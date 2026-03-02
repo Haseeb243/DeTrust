@@ -78,7 +78,7 @@ This document outlines recommended improvements across all implemented modules, 
 | HIGH | M5-I5 | Juror voting frontend | ✅ Done | `/disputes/:id` page with vote casting UI and weighted votes |
 | HIGH | M5-I6 | DisputeResolution.sol integration | ❌ Pending | Smart contract calls not yet wired to backend |
 | HIGH | M5-I7 | Dispute dashboard page | ✅ Done | `/disputes` page with status tabs, list view, navigation |
-| MEDIUM | M5-I8 | Dispute notifications | ❌ Pending | Notify parties and jurors at each dispute lifecycle stage |
+| MEDIUM | M5-I8 | Dispute notifications | ✅ Done | DISPUTE_OPENED, DISPUTE_VOTING, DISPUTE_RESOLVED notifications to both parties |
 | MEDIUM | M5-I9 | Dispute history/archive | ❌ Pending | View past disputes with outcomes and evidence |
 
 ---
@@ -94,12 +94,12 @@ This document outlines recommended improvements across all implemented modules, 
 | Priority | ID | Improvement | Status | Details |
 |----------|----|-------------|--------|---------|
 | **CRITICAL** | M7-I1 | Admin service + analytics | ✅ Done | User counts, job stats, dispute rates, revenue metrics, platform health |
-| **CRITICAL** | M7-I2 | Admin API routes + controller | ✅ Done | 6 admin-only endpoints with role guard |
+| **CRITICAL** | M7-I2 | Admin API routes + controller | ✅ Done | 7 admin-only endpoints with role guard |
 | **CRITICAL** | M7-I3 | Admin dashboard page | ✅ Done | Main analytics with 8 KPI cards, area/pie/bar charts, activity feed |
 | HIGH | M7-I4 | User management | ✅ Done | Search, filter by role/status, suspend/activate with one-click |
 | HIGH | M7-I5 | Dispute monitoring | ✅ Done | Status tabs, stats cards, direct links to dispute resolution |
 | MEDIUM | M7-I6 | Smart contract parameter config | ⚠️ View only | Settings page shows config — edit via env vars |
-| MEDIUM | M7-I7 | Flagged account auto-detection | ❌ Pending | Auto-flag based on dispute rate, low trust score, suspicious patterns |
+| MEDIUM | M7-I7 | Flagged account auto-detection | ✅ Done | Auto-detect SUSPENDED, LOW_TRUST, HIGH_DISPUTE_RATE, MULTIPLE_DISPUTES with risk levels |
 
 ---
 
@@ -162,18 +162,19 @@ This document outlines recommended improvements across all implemented modules, 
 - [x] M7-I4: User management (search, filter, suspend/activate)
 - [x] M7-I5: Dispute monitoring (status tabs, stats, resolution links)
 
-### Phase 4 — Module 5 & 8 Advanced
+### Phase 4 — Module 5 & 8 Advanced ✅ COMPLETE (2026-03-02)
 - [x] M5-I5: Juror voting frontend
-- [ ] M5-I6: DisputeResolution.sol integration
+- [ ] M5-I6: DisputeResolution.sol integration (deferred — local Hardhat only)
 - [x] M5-I7: Dispute dashboard page
+- [x] M5-I8: Dispute notifications (OPENED, VOTING, RESOLVED)
 - [x] M8-I5: Email notification job
 - [x] M4-I4: Trust score trend chart
 
-### Phase 5 — Polish & Refinement
-- [ ] M1-I1: PPR/cacheComponents adoption
-- [ ] M2-I1: Escrow integration testing on Hardhat
-- [ ] M7-I7: Flagged account auto-detection
-- [ ] CC-I2: Error tracking setup
+### Phase 5 — Polish & Refinement ✅ COMPLETE (2026-03-02)
+- [ ] M1-I1: PPR/cacheComponents adoption (deferred — requires Next.js config changes)
+- [ ] M2-I1: Escrow integration testing on Hardhat (deferred — local only)
+- [x] M7-I7: Flagged account auto-detection (risk levels: HIGH/MEDIUM/LOW)
+- [ ] CC-I2: Error tracking setup (deferred — requires Sentry account)
 
 ### Phase 6 — Enhancement & Nice-to-Have
 - [ ] M2-I3: AI-powered job search

@@ -1,6 +1,6 @@
 # Module 5: Dispute Resolution — Implementation Status
 
-**Updated:** 2026-03-01
+**Updated:** 2026-03-02
 
 ---
 
@@ -123,7 +123,7 @@ OPEN → VOTING → RESOLVED
 | Smart contract integration | HIGH | Wire `DisputeResolution.sol` calls to backend service |
 | Evidence IPFS upload | MEDIUM | Upload evidence files to IPFS via ipfsService (currently URLs) |
 | Juror selection algorithm | MEDIUM | Auto-select qualified jurors when voting starts |
-| Dispute notifications | MEDIUM | Email notifications at each lifecycle stage |
+| Dispute notifications | ✅ Done | DISPUTE_OPENED, DISPUTE_VOTING, DISPUTE_RESOLVED to both parties |
 | Dispute history/archive | LOW | View past disputes with full details |
 
 ---
