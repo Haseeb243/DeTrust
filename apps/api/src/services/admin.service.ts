@@ -2,6 +2,15 @@ import { prisma } from '../config/database';
 import type { Prisma } from '@prisma/client';
 
 // =============================================================================
+// FLAGGED ACCOUNTS THRESHOLDS
+// =============================================================================
+
+const LOW_TRUST_THRESHOLD = 30;
+const HIGH_DISPUTE_RATE_THRESHOLD = 0.3;
+const HIGH_DISPUTE_RATE_MIN_DISPUTES = 2;
+const MULTIPLE_DISPUTES_THRESHOLD = 3;
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -453,10 +462,10 @@ export class AdminService {
         OR: [
           // Suspended users
           { status: 'SUSPENDED' },
-          // Low trust score freelancers (below 30)
-          { freelancerProfile: { trustScore: { lt: 30 } } },
-          // Low trust score clients (below 30)
-          { clientProfile: { trustScore: { lt: 30 } } },
+          // Low trust score freelancers
+          { freelancerProfile: { trustScore: { lt: LOW_TRUST_THRESHOLD } } },
+          // Low trust score clients
+          { clientProfile: { trustScore: { lt: LOW_TRUST_THRESHOLD } } },
         ],
       },
       orderBy: { createdAt: 'desc' },
@@ -522,9 +531,9 @@ export class AdminService {
 
       const riskFlags: string[] = [];
       if (u.status === 'SUSPENDED') riskFlags.push('SUSPENDED');
-      if (trustScore < 30 && trustScore > 0) riskFlags.push('LOW_TRUST');
-      if (disputeRate > 0.3 && totalDisputes >= 2) riskFlags.push('HIGH_DISPUTE_RATE');
-      if (totalDisputes >= 3) riskFlags.push('MULTIPLE_DISPUTES');
+      if (trustScore < LOW_TRUST_THRESHOLD && trustScore > 0) riskFlags.push('LOW_TRUST');
+      if (disputeRate > HIGH_DISPUTE_RATE_THRESHOLD && totalDisputes >= HIGH_DISPUTE_RATE_MIN_DISPUTES) riskFlags.push('HIGH_DISPUTE_RATE');
+      if (totalDisputes >= MULTIPLE_DISPUTES_THRESHOLD) riskFlags.push('MULTIPLE_DISPUTES');
 
       // Only include if flagged
       if (riskFlags.length === 0) return;

@@ -40,9 +40,11 @@ const riskFlagLabels: Record<string, { label: string; color: string }> = {
 // PAGE
 // =============================================================================
 
+const FLAGGED_PAGE_LIMIT = 50;
+
 export default function AdminFlaggedPage() {
   const [page] = useState(1);
-  const { data, isLoading } = useAdminFlaggedAccounts({ page, limit: 50 });
+  const { data, isLoading } = useAdminFlaggedAccounts({ page, limit: FLAGGED_PAGE_LIMIT });
   const updateStatus = useUpdateUserStatus();
 
   const handleToggleStatus = (user: FlaggedUser) => {
