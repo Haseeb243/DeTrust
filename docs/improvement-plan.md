@@ -93,12 +93,12 @@ This document outlines recommended improvements across all implemented modules, 
 
 | Priority | ID | Improvement | Status | Details |
 |----------|----|-------------|--------|---------|
-| **CRITICAL** | M7-I1 | Admin service + analytics | ❌ Pending | User counts, job stats, dispute rates, revenue metrics, platform health |
-| **CRITICAL** | M7-I2 | Admin API routes + controller | ❌ Pending | Implement `admin.routes.ts` + `admin.controller.ts` |
-| **CRITICAL** | M7-I3 | Admin dashboard page | ❌ Pending | Main analytics overview page with charts and key metrics |
-| HIGH | M7-I4 | User management | ❌ Pending | View, suspend, flag users; search by role/status |
-| HIGH | M7-I5 | Dispute monitoring | ❌ Pending | List all disputes, override stale disputes, review evidence |
-| MEDIUM | M7-I6 | Smart contract parameter config | ❌ Pending | Update platform fee, pause/unpause contracts via admin interface |
+| **CRITICAL** | M7-I1 | Admin service + analytics | ✅ Done | User counts, job stats, dispute rates, revenue metrics, platform health |
+| **CRITICAL** | M7-I2 | Admin API routes + controller | ✅ Done | 6 admin-only endpoints with role guard |
+| **CRITICAL** | M7-I3 | Admin dashboard page | ✅ Done | Main analytics with 8 KPI cards, area/pie/bar charts, activity feed |
+| HIGH | M7-I4 | User management | ✅ Done | Search, filter by role/status, suspend/activate with one-click |
+| HIGH | M7-I5 | Dispute monitoring | ✅ Done | Status tabs, stats cards, direct links to dispute resolution |
+| MEDIUM | M7-I6 | Smart contract parameter config | ⚠️ View only | Settings page shows config — edit via env vars |
 | MEDIUM | M7-I7 | Flagged account auto-detection | ❌ Pending | Auto-flag based on dispute rate, low trust score, suspicious patterns |
 
 ---
@@ -156,10 +156,11 @@ This document outlines recommended improvements across all implemented modules, 
 - [x] M8-I5: Email notification job
 
 ### Phase 3 — Module 7 Core
-- [ ] M7-I1: Admin service + analytics
-- [ ] M7-I2: Admin API routes + controller
-- [ ] M7-I3: Admin dashboard page
-- [ ] M8-I4: Email service implementation
+- [x] M7-I1: Admin service + analytics
+- [x] M7-I2: Admin API routes + controller
+- [x] M7-I3: Admin dashboard page (KPI cards, charts, activity feed)
+- [x] M7-I4: User management (search, filter, suspend/activate)
+- [x] M7-I5: Dispute monitoring (status tabs, stats, resolution links)
 
 ### Phase 4 — Module 5 & 8 Advanced
 - [x] M5-I5: Juror voting frontend
@@ -171,8 +172,7 @@ This document outlines recommended improvements across all implemented modules, 
 ### Phase 5 — Polish & Refinement
 - [ ] M1-I1: PPR/cacheComponents adoption
 - [ ] M2-I1: Escrow integration testing on Hardhat
-- [ ] M7-I4: User management
-- [ ] M7-I5: Dispute monitoring
+- [ ] M7-I7: Flagged account auto-detection
 - [ ] CC-I2: Error tracking setup
 
 ### Phase 6 — Enhancement & Nice-to-Have
