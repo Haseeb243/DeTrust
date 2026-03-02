@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthenticatedRequest } from '../middleware';
 import { adminService } from '../services/admin.service';
 
 /**
