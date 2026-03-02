@@ -138,6 +138,23 @@ const listDisputes = async (req: Request, res: Response, next: NextFunction): Pr
   }
 };
 
+/**
+ * Check juror eligibility for a dispute
+ * GET /api/disputes/:disputeId/eligibility
+ */
+const checkEligibility = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.userId!;
+    const { disputeId } = req.params;
+
+    const eligibility = await disputeService.checkJurorEligibility(userId, disputeId);
+    res.json({ success: true, data: eligibility });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const disputeController = {
   createDispute,
   submitEvidence,
@@ -146,4 +163,5 @@ export const disputeController = {
   adminResolve,
   getDispute,
   listDisputes,
+  checkEligibility,
 };

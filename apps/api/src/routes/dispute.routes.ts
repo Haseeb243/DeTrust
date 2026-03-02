@@ -16,6 +16,9 @@ router.get('/', authenticate, disputeController.listDisputes);
 // Get a single dispute by ID
 router.get('/:disputeId', authenticate, disputeController.getDispute);
 
+// Check juror eligibility for a dispute (M4-I5)
+router.get('/:disputeId/eligibility', authenticate, disputeController.checkEligibility);
+
 // Create a new dispute (M5-I1)
 router.post('/', authenticate, validateBody(createDisputeSchema), disputeController.createDispute);
 

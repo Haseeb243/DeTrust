@@ -19,7 +19,7 @@ import {
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
 import type { DisputeVote } from '@detrust/types';
-import { useDispute, useCastVote, useAdminResolve, useStartVoting } from '@/hooks/queries/use-disputes';
+import { useDispute, useCastVote, useAdminResolve, useStartVoting, useJurorEligibility } from '@/hooks/queries/use-disputes';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +54,7 @@ export default function DisputeDetailPage() {
   const disputeId = params.id as string;
 
   const { data: dispute, isLoading } = useDispute(disputeId);
+  const { data: eligibility } = useJurorEligibility(disputeId);
   const castVoteMutation = useCastVote();
   const adminResolveMutation = useAdminResolve();
   const startVotingMutation = useStartVoting();
@@ -313,39 +314,68 @@ export default function DisputeDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-3">
-              <Button
-                variant={voteChoice === 'CLIENT_WINS' ? 'default' : 'outline'}
-                onClick={() => setVoteChoice('CLIENT_WINS')}
-                className={cn(
-                  voteChoice === 'CLIENT_WINS' && 'bg-blue-600 text-white hover:bg-blue-700'
-                )}
-              >
-                <ThumbsUp className="mr-2 h-4 w-4" /> Client Wins
-              </Button>
-              <Button
-                variant={voteChoice === 'FREELANCER_WINS' ? 'default' : 'outline'}
-                onClick={() => setVoteChoice('FREELANCER_WINS')}
-                className={cn(
-                  voteChoice === 'FREELANCER_WINS' && 'bg-emerald-600 text-white hover:bg-emerald-700'
-                )}
-              >
-                <ThumbsDown className="mr-2 h-4 w-4" /> Freelancer Wins
-              </Button>
-            </div>
-            <Textarea
-              value={reasoning}
-              onChange={(e) => setReasoning(e.target.value)}
-              placeholder="Optional: explain your reasoning..."
-              rows={3}
-              className="border-dt-border"
-            />
-            <Button
-              onClick={handleCastVote}
-              disabled={!voteChoice || castVoteMutation.isPending}
-            >
-              {castVoteMutation.isPending ? <Spinner size="sm" /> : 'Submit Vote'}
-            </Button>
+            {/* Juror eligibility check (M4-I5) */}
+            {eligibility && !eligibility.eligible && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium text-amber-800 dark:text-amber-300">Not eligible to vote</p>
+                    {!eligibility.meetsScoreRequirement && (
+                      <p className="text-amber-700 dark:text-amber-400">
+                        Your trust score ({eligibility.trustScore.toFixed(1)}) is below the minimum
+                        required ({eligibility.minimumRequired}). Build your reputation to participate
+                        in dispute resolution.
+                      </p>
+                    )}
+                    {eligibility.hasVoted && (
+                      <p className="text-amber-700 dark:text-amber-400">You have already voted on this dispute.</p>
+                    )}
+                    {!eligibility.withinDeadline && (
+                      <p className="text-amber-700 dark:text-amber-400">The voting deadline has passed.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(!eligibility || eligibility.eligible) && (
+              <>
+                <div className="flex gap-3">
+                  <Button
+                    variant={voteChoice === 'CLIENT_WINS' ? 'default' : 'outline'}
+                    onClick={() => setVoteChoice('CLIENT_WINS')}
+                    className={cn(
+                      voteChoice === 'CLIENT_WINS' && 'bg-blue-600 text-white hover:bg-blue-700'
+                    )}
+                  >
+                    <ThumbsUp className="mr-2 h-4 w-4" /> Client Wins
+                  </Button>
+                  <Button
+                    variant={voteChoice === 'FREELANCER_WINS' ? 'default' : 'outline'}
+                    onClick={() => setVoteChoice('FREELANCER_WINS')}
+                    className={cn(
+                      voteChoice === 'FREELANCER_WINS' && 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    )}
+                  >
+                    <ThumbsDown className="mr-2 h-4 w-4" /> Freelancer Wins
+                  </Button>
+                </div>
+                <Textarea
+                  value={reasoning}
+                  onChange={(e) => setReasoning(e.target.value)}
+                  placeholder="Optional: explain your reasoning..."
+                  rows={3}
+                  className="border-dt-border"
+                />
+                <Button
+                  onClick={handleCastVote}
+                  disabled={!voteChoice || castVoteMutation.isPending}
+                >
+                  {castVoteMutation.isPending ? <Spinner size="sm" /> : 'Submit Vote'}
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       )}

@@ -13,6 +13,9 @@ import type {
 // Voting window: 7 days (SRS)
 const VOTING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
+// Minimum trust score required to serve as a juror (SRS M4-I5)
+const JUROR_MIN_TRUST_SCORE = 50;
+
 export class DisputeService {
   /**
    * Create a dispute on an active, funded contract.
@@ -250,15 +253,27 @@ export class DisputeService {
     // Determine vote weight (default 1, could be trust-score-weighted)
     const voter = await prisma.user.findUnique({
       where: { id: voterId },
-      select: { role: true, freelancerProfile: { select: { trustScore: true } } },
+      select: {
+        role: true,
+        freelancerProfile: { select: { trustScore: true } },
+        clientProfile: { select: { trustScore: true } },
+      },
     });
 
-    // Admin always has weight 10
+    // Admin always has weight 10; non-admin must have trust score > 50 (SRS M4-I5)
     let weight = 1;
     if (voter?.role === 'ADMIN') {
       weight = 10;
-    } else if (voter?.freelancerProfile?.trustScore) {
-      weight = Math.max(1, Math.floor(Number(voter.freelancerProfile.trustScore) / 10));
+    } else {
+      const trustScore = Number(
+        voter?.freelancerProfile?.trustScore ?? voter?.clientProfile?.trustScore ?? 0,
+      );
+      if (trustScore < JUROR_MIN_TRUST_SCORE) {
+        throw new ForbiddenError(
+          `Jurors must have a trust score of at least ${JUROR_MIN_TRUST_SCORE} to vote on disputes. Your current score is ${trustScore.toFixed(1)}.`,
+        );
+      }
+      weight = Math.max(1, Math.floor(trustScore / 10));
     }
 
     const vote = await prisma.disputeVote.create({
@@ -462,6 +477,60 @@ export class DisputeService {
       totalPages: Math.ceil(total / query.limit),
       hasNext: query.page * query.limit < total,
       hasPrev: query.page > 1,
+    };
+  }
+
+  /**
+   * Check whether a user is eligible to serve as a juror on a specific dispute.
+   * Requirements (SRS M4-I5):
+   * - Trust score >= 50
+   * - Not a party to the dispute
+   * - Has not already voted
+   * - Admin users are always eligible
+   */
+  async checkJurorEligibility(userId: string, disputeId: string) {
+    const dispute = await prisma.dispute.findUnique({
+      where: { id: disputeId },
+      include: {
+        contract: { select: { clientId: true, freelancerId: true } },
+        votes: { select: { jurorId: true } },
+      },
+    });
+
+    if (!dispute) {
+      throw new NotFoundError('Dispute not found');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: true,
+        freelancerProfile: { select: { trustScore: true } },
+        clientProfile: { select: { trustScore: true } },
+      },
+    });
+
+    const isAdmin = user?.role === 'ADMIN';
+    const trustScore = Number(
+      user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0,
+    );
+    const isParty =
+      dispute.contract.clientId === userId || dispute.contract.freelancerId === userId;
+    const hasVoted = dispute.votes.some((v: { jurorId: string }) => v.jurorId === userId);
+    const meetsScoreRequirement = isAdmin || trustScore >= JUROR_MIN_TRUST_SCORE;
+    const isVotingOpen = dispute.status === 'VOTING';
+    const withinDeadline = !dispute.votingDeadline || new Date() <= dispute.votingDeadline;
+
+    return {
+      eligible: !isParty && !hasVoted && meetsScoreRequirement && isVotingOpen && withinDeadline,
+      trustScore,
+      minimumRequired: JUROR_MIN_TRUST_SCORE,
+      meetsScoreRequirement,
+      isParty,
+      hasVoted,
+      isAdmin,
+      isVotingOpen,
+      withinDeadline,
     };
   }
 }

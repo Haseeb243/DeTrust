@@ -34,6 +34,18 @@ export interface AdminResolveInput {
   resolution: string;
 }
 
+export interface JurorEligibility {
+  eligible: boolean;
+  trustScore: number;
+  minimumRequired: number;
+  meetsScoreRequirement: boolean;
+  isParty: boolean;
+  hasVoted: boolean;
+  isAdmin: boolean;
+  isVotingOpen: boolean;
+  withinDeadline: boolean;
+}
+
 interface PaginatedResponse<T> {
   items: T[];
   total: number;
@@ -86,6 +98,10 @@ export const disputeApi = {
   // Admin resolve
   adminResolve: (disputeId: string, input: AdminResolveInput) =>
     api.post<Dispute>(`/disputes/${disputeId}/resolve`, input),
+
+  // Check juror eligibility (M4-I5)
+  checkEligibility: (disputeId: string) =>
+    api.get<JurorEligibility>(`/disputes/${disputeId}/eligibility`),
 };
 
 export default disputeApi;

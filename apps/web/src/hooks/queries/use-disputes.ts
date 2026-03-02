@@ -6,6 +6,7 @@ export const disputeKeys = {
   lists: () => [...disputeKeys.all, 'list'] as const,
   list: (params?: GetDisputesParams) => [...disputeKeys.lists(), params] as const,
   detail: (id: string) => [...disputeKeys.all, 'detail', id] as const,
+  eligibility: (id: string) => [...disputeKeys.all, 'eligibility', id] as const,
 };
 
 export function useDisputes(params?: GetDisputesParams) {
@@ -81,5 +82,17 @@ export function useAdminResolve() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: disputeKeys.all });
     },
+  });
+}
+
+export function useJurorEligibility(disputeId: string) {
+  return useQuery({
+    queryKey: disputeKeys.eligibility(disputeId),
+    queryFn: async () => {
+      const res = await disputeApi.checkEligibility(disputeId);
+      if (!res.success || !res.data) throw new Error(res.error?.message ?? 'Failed to check eligibility');
+      return res.data;
+    },
+    enabled: !!disputeId,
   });
 }

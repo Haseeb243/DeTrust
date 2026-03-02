@@ -5,9 +5,11 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
 
 import { config } from './config';
 import corsConfig from './config/cors';
+import { swaggerSpec } from './config/swagger';
 import { errorHandler, notFoundHandler, defaultLimiter } from './middleware';
 
 // Import routes
@@ -119,6 +121,18 @@ app.use(`${API_PREFIX}/messages`, messageRoutes);
 
 // Admin routes
 app.use(`${API_PREFIX}/admin`, adminRoutes);
+
+// API documentation (Swagger UI)
+app.use(`${API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'DeTrust API Docs',
+}));
+
+// OpenAPI JSON spec
+app.get(`${API_PREFIX}/docs.json`, (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.json(swaggerSpec);
+});
 
 // =============================================================================
 // ERROR HANDLING
