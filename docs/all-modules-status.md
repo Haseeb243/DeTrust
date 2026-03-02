@@ -14,7 +14,7 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | 2 | Smart Contract Job Board | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **92%** |
 | 3 | Review & Feedback System | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **98%** |
 | 4 | Trust Scoring Module | ✅ Complete | ✅ Complete | — | **95%** |
-| 5 | Dispute Resolution | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **75%** |
+| 5 | Dispute Resolution | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **80%** |
 | 6 | AI Capability Prediction | 🔜 **Deferred** | 🔜 **Deferred** | — | **Deferred** |
 | 7 | Admin Dashboard | ✅ Complete | ✅ Complete | — | **90%** |
 | 8 | Notifications & Communication | ✅ Complete | ✅ Complete | — | **90%** |
@@ -143,11 +143,13 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 ### What's Left
 | Item | Priority | Details |
 |------|----------|---------|
-| Juror eligibility enforcement | MEDIUM | Trust score > 50 check for dispute voting (Module 5 dependency) |
 | Weighted recency in ratings | MEDIUM | Recent reviews should have higher weight than older ones |
 | Trust score notifications | LOW | Notify when score crosses 50/75 thresholds |
 | On-chain trust anchoring | LOW | Periodically anchor score hashes to ReputationRegistry |
 | Comparative trust analytics | LOW | Show user's score relative to platform average and percentile |
+
+### What's Recently Added
+- **Juror eligibility enforcement** (M4-I5): Trust score >= 50 check in `castVote()`, `checkJurorEligibility()` API endpoint, frontend eligibility banner in dispute detail page
 
 ---
 
@@ -163,17 +165,18 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 
 ### What Exists
 - ✅ **Smart Contract**: `DisputeResolution.sol` — full dispute lifecycle (OPEN → VOTING → RESOLVED), juror voting with trust score weighting
-- ✅ **Backend Service**: `dispute.service.ts` — create dispute, submit evidence, start voting, cast votes, admin resolve, list/get
-- ✅ **API Routes**: `dispute.routes.ts` — 7 RESTful endpoints with Zod validation + auth
+- ✅ **Backend Service**: `dispute.service.ts` — create dispute, submit evidence, start voting, cast votes, admin resolve, list/get, juror eligibility check
+- ✅ **API Routes**: `dispute.routes.ts` — 8 RESTful endpoints with Zod validation + auth (including eligibility check)
 - ✅ **Controller**: `dispute.controller.ts` — Express request handlers
 - ✅ **Validators**: `dispute.validator.ts` — Zod schemas for all inputs
 - ✅ **Events**: `dispute.events.ts` — Socket.IO events for dispute opened/voting/resolved
-- ✅ **Frontend Pages**: `/disputes` (list + tabs) and `/disputes/:id` (detail + voting + admin actions)
-- ✅ **API Client**: `dispute.ts` API module + `use-disputes.ts` TanStack Query hooks
+- ✅ **Frontend Pages**: `/disputes` (list + tabs) and `/disputes/:id` (detail + voting + eligibility banner + admin actions)
+- ✅ **API Client**: `dispute.ts` API module + `use-disputes.ts` TanStack Query hooks (including `useJurorEligibility`)
 - ✅ **Types**: `packages/types/src/dispute.ts` — Status/Outcome enums, voting interfaces
 - ✅ **Prisma Models**: `Dispute` and `DisputeVote` models with full schema
 - ✅ **Navigation**: Disputes added to sidebar for all roles
 - ✅ **Notifications**: DISPUTE_OPENED, DISPUTE_VOTING, DISPUTE_RESOLVED notifications to both parties
+- ✅ **Juror Eligibility**: Trust score >= 50 enforcement in castVote, eligibility check endpoint, frontend banner
 
 ### What's Left
 | Item | Priority | Details |
@@ -282,10 +285,15 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | **BullMQ Job Framework** | HIGH | `email.job.ts`, `notification.job.ts` are empty; need proper job queue |
 | **Error Tracking** | HIGH | No Sentry or equivalent for production monitoring |
 | **API Rate Limiting** | MEDIUM | Global only; need per-endpoint limits for sensitive operations |
-| **Swagger/OpenAPI Docs** | MEDIUM | No API documentation generated from Zod schemas |
 | **Integration Tests** | MEDIUM | No end-to-end test covering full review → trust score → profile flow |
 | **Database Backups** | LOW | No automated PostgreSQL backup strategy |
 | **Performance Budgets** | LOW | No Lighthouse CI checks in PR pipeline |
+
+### What's Recently Added ✅
+| Component | Details |
+|-----------|---------|
+| **Swagger/OpenAPI Docs** | Swagger UI at `/api/docs`, OpenAPI JSON at `/api/docs.json` |
+| **Juror Eligibility** | Trust score >= 50 enforcement in dispute voting + eligibility check API |
 
 ---
 
@@ -329,15 +337,15 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 Module 1 ████████████████████░ 95%  — Client & Freelancer Web App
 Module 2 ███████████████████░ 92%  — Smart Contract Job Board
 Module 3 █████████████████████ 98%  — Review & Feedback System
-Module 4 ████████████████████░ 95%  — Trust Scoring Module
-Module 5 ███████████████░░░░░ 75%  — Dispute Resolution
+Module 4 ████████████████████░ 96%  — Trust Scoring Module
+Module 5 ████████████████░░░░ 80%  — Dispute Resolution
 Module 6 ░░░░░░░░░░░░░░░░░░░░  —   — AI Capability Prediction (DEFERRED)
 Module 7 ██████████████████░░ 90%  — Admin Dashboard
 Module 8 ██████████████████░░ 90%  — Notifications & Communication
 
-Active Modules (excl. M6): ━━━━━━━━━━━━━━━━━━━━ ~91% (weighted avg of M1-5, M7-8)
+Active Modules (excl. M6): ━━━━━━━━━━━━━━━━━━━━ ~92% (weighted avg of M1-5, M7-8)
 ```
 
 > **Blockchain**: All contracts run on Hardhat local node (chain 31337). No production/testnet deployment is planned for the current phase.
 
-**Estimated remaining effort**: ~12-16 development days to reach full MVP across active modules (excl. Module 6).
+**Estimated remaining effort**: ~10-14 development days to reach full MVP across active modules (excl. Module 6).

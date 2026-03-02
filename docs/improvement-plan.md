@@ -58,7 +58,7 @@ This document outlines recommended improvements across all implemented modules, 
 | **CRITICAL** | M4-I2 | Background recalculation job | ✅ **Done** | `trustScore.job.ts` runs daily to recalculate all user trust scores |
 | HIGH | M4-I3 | Trust score trend API endpoint | ✅ **Done** | `GET /api/users/:id/trust-score/history` returns historical trend data |
 | HIGH | M4-I4 | Frontend trend visualization | ✅ **Done** | Line chart component for trust score history (recharts) |
-| MEDIUM | M4-I5 | Juror eligibility enforcement | ❌ Pending | Check trust score > 50 in dispute voting flow (Module 5 dependency) |
+| MEDIUM | M4-I5 | Juror eligibility enforcement | ✅ **Done** | Trust score > 50 check in dispute voting flow + eligibility API endpoint |
 | MEDIUM | M4-I6 | Trust score decay for inactivity | ✅ **Done** | Gradually reduce scores for users inactive > 90 days |
 | MEDIUM | M4-I7 | Weighted recency in ratings | ❌ Pending | Recent reviews should have higher weight than older ones |
 | LOW | M4-I8 | Trust score notifications | ❌ Pending | Notify users when score crosses thresholds (50, 75) |
@@ -126,7 +126,7 @@ This document outlines recommended improvements across all implemented modules, 
 | HIGH | CC-I3 | API rate limiting per endpoint | All | Current rate limiting is global; add endpoint-specific limits for sensitive operations |
 | MEDIUM | CC-I4 | Database connection pooling | All | Configure Prisma connection pool for production (min 5, max 20) |
 | MEDIUM | CC-I5 | Redis caching for trust scores | 3, 4 | Cache trust score breakdowns in Redis (5 min TTL) to reduce DB queries |
-| MEDIUM | CC-I6 | API documentation (Swagger/OpenAPI) | All | Generate from Zod schemas; publish at `/api/docs` |
+| MEDIUM | CC-I6 | API documentation (Swagger/OpenAPI) | ✅ **Done** | Swagger UI at `/api/docs`; OpenAPI JSON at `/api/docs.json` |
 | MEDIUM | CC-I7 | Integration test suite | All | End-to-end tests covering review → trust score → profile update flow |
 | LOW | CC-I8 | Performance budget enforcement | All | Add Lighthouse CI checks to PR pipeline |
 | LOW | CC-I9 | Database backup strategy | All | Automated PostgreSQL backups with point-in-time recovery |
@@ -176,10 +176,10 @@ This document outlines recommended improvements across all implemented modules, 
 - [x] M7-I7: Flagged account auto-detection (risk levels: HIGH/MEDIUM/LOW)
 - [ ] CC-I2: Error tracking setup (deferred — requires Sentry account)
 
-### Phase 6 — Enhancement & Nice-to-Have
-- [ ] M2-I3: AI-powered job search
-- [ ] M3-I6: Review response mechanism
-- [ ] M4-I5: Juror eligibility
-- [ ] M8-I6: Push notifications
-- [ ] CC-I5: Redis caching
-- [ ] CC-I6: Swagger documentation
+### Phase 6 — Enhancement & Nice-to-Have ✅ PARTIAL (2026-03-02)
+- [ ] M2-I3: AI-powered job search (deferred — requires AI service activation)
+- [x] M3-I6: Review response mechanism (already implemented in prior phase)
+- [x] M4-I5: Juror eligibility enforcement (trust score >= 50 check + eligibility API)
+- [ ] M8-I6: Push notifications (deferred — requires service worker setup)
+- [ ] CC-I5: Redis caching (deferred — Redis already connected, caching layer pending)
+- [x] CC-I6: Swagger documentation (Swagger UI at /api/docs + OpenAPI JSON at /api/docs.json)

@@ -46,10 +46,11 @@ User → Create Dispute → OPEN → Admin reviews evidence
 |--------|----------|------|-------------|
 | `GET` | `/api/disputes` | User/Admin | List disputes (own for users, all for admin) |
 | `GET` | `/api/disputes/:id` | User | Get dispute detail |
+| `GET` | `/api/disputes/:id/eligibility` | User | Check juror eligibility (M4-I5) |
 | `POST` | `/api/disputes` | User | Create a new dispute |
 | `POST` | `/api/disputes/:id/evidence` | User | Submit additional evidence |
 | `POST` | `/api/disputes/:id/start-voting` | Admin | Move dispute to VOTING phase |
-| `POST` | `/api/disputes/:id/vote` | User/Admin | Cast a weighted vote |
+| `POST` | `/api/disputes/:id/vote` | User/Admin | Cast a weighted vote (trust score >= 50 for non-admin) |
 | `POST` | `/api/disputes/:id/resolve` | Admin | Directly resolve a dispute |
 
 ### Dispute Lifecycle
@@ -70,6 +71,7 @@ OPEN → VOTING → RESOLVED
 - Disputes only on ACTIVE contracts
 - One active dispute per contract at a time
 - Contract parties cannot vote on their own dispute
+- **Juror eligibility**: Non-admin voters must have trust score >= 50 (M4-I5)
 - Admin has vote weight of 10; users weighted by trust score / 10
 - 7-day voting deadline (SRS)
 - Admin cannot overturn jury but can resolve directly (hybrid model)
@@ -124,6 +126,7 @@ OPEN → VOTING → RESOLVED
 | Evidence IPFS upload | MEDIUM | Upload evidence files to IPFS via ipfsService (currently URLs) |
 | Juror selection algorithm | MEDIUM | Auto-select qualified jurors when voting starts |
 | Dispute notifications | ✅ Done | DISPUTE_OPENED, DISPUTE_VOTING, DISPUTE_RESOLVED to both parties |
+| Juror eligibility enforcement | ✅ Done | Trust score >= 50 required, eligibility API + frontend banner |
 | Dispute history/archive | LOW | View past disputes with full details |
 
 ---

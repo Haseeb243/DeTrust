@@ -128,8 +128,8 @@ totalReviews    Int      @default(0)
 | 3 | No trend visualization on frontend | **MEDIUM** | Add line chart showing score over time (requires history model) |
 | 4 | Scores only computed on-demand via `getTrustScoreBreakdown()` | **MEDIUM** | Scores should be proactively recalculated via background job |
 | 5 | No blockchain anchoring of trust scores | **LOW** | Future: anchor score hashes on ReputationRegistry for decentralized verification |
-| 6 | Juror eligibility not enforced | **LOW** | Trust score > 50 check needed in dispute flow (Module 5 dependency) |
+| 6 | ~~Juror eligibility not enforced~~ | ✅ **Done** | Trust score >= 50 now enforced in `castVote()` + eligibility API |
 
 ## Build Status
 
-**Last verified:** 2026-02-28 — Service layer functional, API endpoint responding, frontend components integrated across profiles and dashboard.
+**Last verified:** 2026-03-02 — Service layer functional, API endpoint responding, frontend components integrated across profiles and dashboard. Juror eligibility enforcement added.
