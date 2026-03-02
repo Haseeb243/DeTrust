@@ -72,9 +72,8 @@ const options: swaggerJsdoc.Options = {
       { name: 'Health', description: 'Health and readiness checks' },
     ],
   },
-  // Scan route files for JSDoc annotations
+  // Centralized API documentation file
   apis: [
-    './src/routes/*.ts',
     './src/config/swagger-paths.ts',
   ],
 };

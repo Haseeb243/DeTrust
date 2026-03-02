@@ -316,24 +316,26 @@ export default function DisputeDetailPage() {
           <CardContent className="space-y-4">
             {/* Juror eligibility check (M4-I5) */}
             {eligibility && !eligibility.eligible && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+              <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
-                  <div className="space-y-1 text-sm">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" aria-hidden="true" />
+                  <div className="text-sm">
                     <p className="font-medium text-amber-800 dark:text-amber-300">Not eligible to vote</p>
-                    {!eligibility.meetsScoreRequirement && (
-                      <p className="text-amber-700 dark:text-amber-400">
-                        Your trust score ({eligibility.trustScore.toFixed(1)}) is below the minimum
-                        required ({eligibility.minimumRequired}). Build your reputation to participate
-                        in dispute resolution.
-                      </p>
-                    )}
-                    {eligibility.hasVoted && (
-                      <p className="text-amber-700 dark:text-amber-400">You have already voted on this dispute.</p>
-                    )}
-                    {!eligibility.withinDeadline && (
-                      <p className="text-amber-700 dark:text-amber-400">The voting deadline has passed.</p>
-                    )}
+                    <ul className="mt-1 list-disc space-y-1 pl-4 text-amber-700 dark:text-amber-400">
+                      {!eligibility.meetsScoreRequirement && (
+                        <li>
+                          Your trust score ({eligibility.trustScore.toFixed(1)}) is below the minimum
+                          required ({eligibility.minimumRequired}). Build your reputation to participate
+                          in dispute resolution.
+                        </li>
+                      )}
+                      {eligibility.hasVoted && (
+                        <li>You have already voted on this dispute.</li>
+                      )}
+                      {!eligibility.withinDeadline && (
+                        <li>The voting deadline has passed.</li>
+                      )}
+                    </ul>
                   </div>
                 </div>
               </div>

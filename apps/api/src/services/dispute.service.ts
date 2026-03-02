@@ -265,9 +265,7 @@ export class DisputeService {
     if (voter?.role === 'ADMIN') {
       weight = 10;
     } else {
-      const trustScore = Number(
-        voter?.freelancerProfile?.trustScore ?? voter?.clientProfile?.trustScore ?? 0,
-      );
+      const trustScore = this.getUserTrustScore(voter);
       if (trustScore < JUROR_MIN_TRUST_SCORE) {
         throw new ForbiddenError(
           `Jurors must have a trust score of at least ${JUROR_MIN_TRUST_SCORE} to vote on disputes. Your current score is ${trustScore.toFixed(1)}.`,
@@ -511,9 +509,7 @@ export class DisputeService {
     });
 
     const isAdmin = user?.role === 'ADMIN';
-    const trustScore = Number(
-      user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0,
-    );
+    const trustScore = this.getUserTrustScore(user);
     const isParty =
       dispute.contract.clientId === userId || dispute.contract.freelancerId === userId;
     const hasVoted = dispute.votes.some((v: { jurorId: string }) => v.jurorId === userId);
@@ -532,6 +528,18 @@ export class DisputeService {
       isVotingOpen,
       withinDeadline,
     };
+  }
+
+  /**
+   * Extract trust score from a user's profile (freelancer or client).
+   */
+  private getUserTrustScore(user: {
+    freelancerProfile?: { trustScore: unknown } | null;
+    clientProfile?: { trustScore: unknown } | null;
+  } | null): number {
+    return Number(
+      user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0,
+    );
   }
 }
 
