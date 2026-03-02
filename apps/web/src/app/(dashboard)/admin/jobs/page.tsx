@@ -19,7 +19,7 @@ import { useAdminJobs } from '@/hooks/queries/use-admin';
 import { cn } from '@/lib/utils';
 import type { AdminJob, AdminJobListParams } from '@/lib/api/admin';
 
-const STATUS_OPTIONS = ['', 'OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'DISPUTED'] as const;
+const JOB_STATUS_OPTIONS = ['', 'OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'DISPUTED'] as const;
 
 const statusBadge: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',

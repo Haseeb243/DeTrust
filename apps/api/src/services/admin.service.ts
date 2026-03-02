@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import type { Prisma } from '@prisma/client';
 
 // =============================================================================
 // TYPES
@@ -247,9 +248,9 @@ export class AdminService {
   async listUsers(params: UserListParams) {
     const { page = 1, limit = 20, role, status, search, sort = 'createdAt', order = 'desc' } = params;
 
-    const where: Record<string, unknown> = {};
-    if (role) where.role = role;
-    if (status) where.status = status;
+    const where: Prisma.UserWhereInput = {};
+    if (role) where.role = role as Prisma.EnumUserRoleFilter;
+    if (status) where.status = status as Prisma.EnumUserStatusFilter;
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -315,8 +316,8 @@ export class AdminService {
   async listJobs(params: JobListParams) {
     const { page = 1, limit = 20, status, search, sort = 'createdAt', order = 'desc' } = params;
 
-    const where: Record<string, unknown> = {};
-    if (status) where.status = status;
+    const where: Prisma.JobWhereInput = {};
+    if (status) where.status = status as Prisma.EnumJobStatusFilter;
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },

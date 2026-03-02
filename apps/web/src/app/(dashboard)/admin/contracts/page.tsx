@@ -17,6 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useContracts } from '@/hooks/queries/use-contracts';
 import { useAdminStats } from '@/hooks/queries/use-admin';
 import { cn } from '@/lib/utils';
+import type { Contract } from '@/lib/api/contract';
 
 const STATUS_TABS = [
   { value: '', label: 'All' },
@@ -43,7 +44,7 @@ export default function AdminContractsPage() {
   const { data, isLoading } = useContracts({
     page: 1,
     limit: 50,
-    ...(activeTab ? { status: activeTab as any } : {}),
+    ...(activeTab ? { status: activeTab as 'ACTIVE' | 'COMPLETED' | 'PENDING' | 'DISPUTED' } : {}),
   });
   const contracts = data?.items ?? [];
 
@@ -122,7 +123,7 @@ export default function AdminContractsPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {contracts.map((contract: any) => (
+          {contracts.map((contract: Contract) => (
             <Card key={contract.id} className="border-dt-border bg-dt-surface transition hover:shadow-md">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">

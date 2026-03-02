@@ -18,6 +18,16 @@ import { useAdminStats } from '@/hooks/queries/use-admin';
 import { cn } from '@/lib/utils';
 import type { GetDisputesParams } from '@/lib/api/dispute';
 
+interface DisputeListItem {
+  id: string;
+  status: string;
+  reason: string;
+  createdAt: string;
+  contract?: { id: string; title: string };
+  initiator?: { id: string; name: string | null };
+  _count?: { votes: number };
+}
+
 const STATUS_TABS = [
   { value: '', label: 'All' },
   { value: 'OPEN', label: 'Open' },
@@ -121,7 +131,7 @@ export default function AdminDisputesPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {disputes.map((dispute: any) => {
+          {disputes.map((dispute: DisputeListItem) => {
             const status = statusConfig[dispute.status] ?? statusConfig.OPEN;
             const contract = dispute.contract;
             return (

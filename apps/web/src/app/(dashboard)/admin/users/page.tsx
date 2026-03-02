@@ -24,6 +24,8 @@ import type { AdminUser, AdminUserListParams } from '@/lib/api/admin';
 
 const ROLE_OPTIONS = ['', 'FREELANCER', 'CLIENT', 'ADMIN'] as const;
 const STATUS_OPTIONS = ['', 'ACTIVE', 'SUSPENDED'] as const;
+type RoleOption = (typeof ROLE_OPTIONS)[number];
+type StatusOption = (typeof STATUS_OPTIONS)[number];
 
 const roleBadge: Record<string, string> = {
   FREELANCER: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
