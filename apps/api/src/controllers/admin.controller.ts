@@ -97,6 +97,22 @@ const listJobs = async (req: Request, res: Response, next: NextFunction): Promis
   }
 };
 
+/**
+ * GET /api/admin/flagged
+ */
+const getFlaggedAccounts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const params = {
+      page: parseInt(req.query.page as string, 10) || 1,
+      limit: Math.min(parseInt(req.query.limit as string, 10) || 20, 100),
+    };
+    const result = await adminService.getFlaggedAccounts(params);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const adminController = {
   getStats,
   getTrends,
@@ -104,4 +120,5 @@ export const adminController = {
   listUsers,
   updateUserStatus,
   listJobs,
+  getFlaggedAccounts,
 };

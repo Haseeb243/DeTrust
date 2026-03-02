@@ -23,4 +23,7 @@ router.patch('/users/:userId/status', adminController.updateUserStatus);
 // Job oversight
 router.get('/jobs', adminController.listJobs);
 
+// Flagged accounts
+router.get('/flagged', adminController.getFlaggedAccounts);
+
 export default router;

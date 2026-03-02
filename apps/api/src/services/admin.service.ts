@@ -418,6 +418,158 @@ export class AdminService {
     activities.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return activities.slice(0, limit);
   }
+
+  /**
+   * Get flagged accounts — users with high dispute rates, low trust, or suspended status.
+   * Auto-detection based on configurable thresholds.
+   */
+  async getFlaggedAccounts(params: { page?: number; limit?: number } = {}) {
+    const { page = 1, limit = 20 } = params;
+
+    // Find users with concerning activity patterns
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        walletAddress: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        lastLoginAt: true,
+        freelancerProfile: { select: { trustScore: true, completedJobs: true } },
+        clientProfile: { select: { trustScore: true, totalSpent: true } },
+        _count: {
+          select: {
+            reviewsReceived: true,
+            disputesInitiated: true,
+            disputesAgainst: true,
+            contracts: true,
+          },
+        },
+      },
+      where: {
+        role: { not: 'ADMIN' },
+        OR: [
+          // Suspended users
+          { status: 'SUSPENDED' },
+          // Low trust score freelancers (below 30)
+          { freelancerProfile: { trustScore: { lt: 30 } } },
+          // Low trust score clients (below 30)
+          { clientProfile: { trustScore: { lt: 30 } } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    // Also find users with high dispute involvement (separate query)
+    const highDisputeUsers = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        walletAddress: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        lastLoginAt: true,
+        freelancerProfile: { select: { trustScore: true, completedJobs: true } },
+        clientProfile: { select: { trustScore: true, totalSpent: true } },
+        _count: {
+          select: {
+            reviewsReceived: true,
+            disputesInitiated: true,
+            disputesAgainst: true,
+            contracts: true,
+          },
+        },
+      },
+      where: {
+        role: { not: 'ADMIN' },
+        disputesInitiated: { some: {} },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Merge and deduplicate, computing risk flags
+    const seenIds = new Set<string>();
+    const flaggedUsers: Array<{
+      id: string;
+      name: string | null;
+      email: string | null;
+      walletAddress: string | null;
+      role: string;
+      status: string;
+      createdAt: Date;
+      trustScore: number;
+      contracts: number;
+      disputes: number;
+      reviews: number;
+      riskFlags: string[];
+      riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+    }> = [];
+
+    const processUser = (u: typeof users[0]) => {
+      if (seenIds.has(u.id)) return;
+      seenIds.add(u.id);
+
+      const trustScore = Number(u.freelancerProfile?.trustScore ?? u.clientProfile?.trustScore ?? 0);
+      const totalDisputes = u._count.disputesInitiated + u._count.disputesAgainst;
+      const contractCount = u._count.contracts;
+      const disputeRate = contractCount > 0 ? totalDisputes / contractCount : 0;
+
+      const riskFlags: string[] = [];
+      if (u.status === 'SUSPENDED') riskFlags.push('SUSPENDED');
+      if (trustScore < 30 && trustScore > 0) riskFlags.push('LOW_TRUST');
+      if (disputeRate > 0.3 && totalDisputes >= 2) riskFlags.push('HIGH_DISPUTE_RATE');
+      if (totalDisputes >= 3) riskFlags.push('MULTIPLE_DISPUTES');
+
+      // Only include if flagged
+      if (riskFlags.length === 0) return;
+
+      const riskLevel: 'HIGH' | 'MEDIUM' | 'LOW' =
+        riskFlags.length >= 3 || riskFlags.includes('SUSPENDED') ? 'HIGH' :
+        riskFlags.length >= 2 ? 'MEDIUM' : 'LOW';
+
+      flaggedUsers.push({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        walletAddress: u.walletAddress,
+        role: u.role,
+        status: u.status,
+        createdAt: u.createdAt,
+        trustScore,
+        contracts: contractCount,
+        disputes: totalDisputes,
+        reviews: u._count.reviewsReceived,
+        riskFlags,
+        riskLevel,
+      });
+    };
+
+    for (const u of users) processUser(u);
+    for (const u of highDisputeUsers) processUser(u);
+
+    // Sort by risk level (HIGH first)
+    const riskOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+    flaggedUsers.sort((a, b) => riskOrder[a.riskLevel] - riskOrder[b.riskLevel]);
+
+    const total = flaggedUsers.length;
+    return {
+      items: flaggedUsers.slice(0, limit),
+      total,
+      page,
+      limit,
+      riskSummary: {
+        high: flaggedUsers.filter((u) => u.riskLevel === 'HIGH').length,
+        medium: flaggedUsers.filter((u) => u.riskLevel === 'MEDIUM').length,
+        low: flaggedUsers.filter((u) => u.riskLevel === 'LOW').length,
+      },
+    };
+  }
 }
 
 export const adminService = new AdminService();

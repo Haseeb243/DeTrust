@@ -191,6 +191,18 @@ export class DisputeService {
       },
     });
 
+    // Notify both parties about voting phase
+    const { clientId, freelancerId, title } = dispute.contract;
+    for (const userId of [clientId, freelancerId]) {
+      await notificationService.createNotification({
+        userId,
+        type: 'DISPUTE_VOTING',
+        title: 'Dispute Voting Started',
+        message: `Voting has started on the dispute for "${title}". Community jurors will now review the case.`,
+        data: { disputeId: dispute.id, contractId: dispute.contractId },
+      });
+    }
+
     return updated;
   }
 

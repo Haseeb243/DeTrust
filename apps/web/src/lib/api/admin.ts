@@ -124,6 +124,34 @@ interface PaginatedResponse<T> {
   hasPrev: boolean;
 }
 
+export interface FlaggedUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  walletAddress: string | null;
+  role: string;
+  status: string;
+  createdAt: string;
+  trustScore: number;
+  contracts: number;
+  disputes: number;
+  reviews: number;
+  riskFlags: string[];
+  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface FlaggedAccountsResponse {
+  items: FlaggedUser[];
+  total: number;
+  page: number;
+  limit: number;
+  riskSummary: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+}
+
 // =============================================================================
 // ADMIN API
 // =============================================================================
@@ -158,6 +186,9 @@ export const adminApi = {
 
   listJobs: (params?: AdminJobListParams) =>
     api.get<PaginatedResponse<AdminJob>>(`/admin/jobs${buildQuery(params as Record<string, unknown>)}`),
+
+  getFlaggedAccounts: (params?: { page?: number; limit?: number }) =>
+    api.get<FlaggedAccountsResponse>(`/admin/flagged${buildQuery(params as Record<string, unknown>)}`),
 };
 
 export default adminApi;

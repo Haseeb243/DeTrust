@@ -12,6 +12,7 @@ export const adminKeys = {
   activity: (limit?: number) => [...adminKeys.all, 'activity', limit] as const,
   users: (params?: AdminUserListParams) => [...adminKeys.all, 'users', params] as const,
   jobs: (params?: AdminJobListParams) => [...adminKeys.all, 'jobs', params] as const,
+  flagged: (params?: { page?: number; limit?: number }) => [...adminKeys.all, 'flagged', params] as const,
 };
 
 export function useAdminStats() {
@@ -79,6 +80,19 @@ export function useUpdateUserStatus() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminKeys.users() });
       qc.invalidateQueries({ queryKey: adminKeys.stats() });
+      qc.invalidateQueries({ queryKey: adminKeys.flagged() });
     },
+  });
+}
+
+export function useAdminFlaggedAccounts(params?: { page?: number; limit?: number }) {
+  return useQuery({
+    queryKey: adminKeys.flagged(params),
+    queryFn: async () => {
+      const res = await adminApi.getFlaggedAccounts(params);
+      if (!res.success || !res.data) throw new Error(res.error?.message ?? 'Failed to fetch flagged accounts');
+      return res.data;
+    },
+    refetchInterval: 120000, // Refresh every 2 minutes
   });
 }

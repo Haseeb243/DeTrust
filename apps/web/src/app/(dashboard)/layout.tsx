@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import {
+  AlertTriangle,
   BarChart3,
   Briefcase,
   CreditCard,
@@ -69,6 +70,7 @@ const navigation = {
     { name: 'Dashboard', href: '/admin', icon: Home },
     { name: 'Analytics', href: '/admin/reports', icon: BarChart3 },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Flagged Accounts', href: '/admin/flagged', icon: AlertTriangle },
     { name: 'Jobs', href: '/admin/jobs', icon: Briefcase },
     { name: 'Contracts', href: '/admin/contracts', icon: FileText },
     { name: 'Disputes', href: '/admin/disputes', icon: Shield },
