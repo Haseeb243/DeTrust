@@ -113,6 +113,18 @@ const getFlaggedAccounts = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+/**
+ * GET /api/admin/reviews
+ */
+const listReviews = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const result = await adminService.listReviews(req.query as never);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const adminController = {
   getStats,
   getTrends,
@@ -121,4 +133,5 @@ export const adminController = {
   updateUserStatus,
   listJobs,
   getFlaggedAccounts,
+  listReviews,
 };

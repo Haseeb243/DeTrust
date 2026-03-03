@@ -114,6 +114,43 @@ export interface AdminJobListParams {
   order?: string;
 }
 
+export interface AdminReview {
+  id: string;
+  contractId: string;
+  overallRating: number;
+  communicationRating: number | null;
+  qualityRating: number | null;
+  timelinessRating: number | null;
+  professionalismRating: number | null;
+  comment: string | null;
+  responseText: string | null;
+  responseAt: string | null;
+  ipfsHash: string | null;
+  blockchainTxHash: string | null;
+  isPublic: boolean;
+  createdAt: string;
+  author: { id: string; name: string | null; avatarUrl: string | null; role: string };
+  subject: { id: string; name: string | null; avatarUrl: string | null; role: string };
+  contract: { id: string; title: string; status: string };
+}
+
+export interface AdminReviewListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  minRating?: number;
+  maxRating?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  authorId?: string;
+  subjectId?: string;
+  contractId?: string;
+  hasBlockchain?: 'true' | 'false';
+  hasIpfs?: 'true' | 'false';
+  sort?: string;
+  order?: string;
+}
+
 interface PaginatedResponse<T> {
   items: T[];
   total: number;
@@ -189,6 +226,9 @@ export const adminApi = {
 
   getFlaggedAccounts: (params?: { page?: number; limit?: number }) =>
     api.get<FlaggedAccountsResponse>(`/admin/flagged${buildQuery(params as Record<string, unknown>)}`),
+
+  listReviews: (params?: AdminReviewListParams) =>
+    api.get<PaginatedResponse<AdminReview>>(`/admin/reviews${buildQuery(params as Record<string, unknown>)}`),
 };
 
 export default adminApi;

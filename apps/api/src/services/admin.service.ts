@@ -1,5 +1,6 @@
 import { prisma } from '../config/database';
 import type { Prisma } from '@prisma/client';
+import type { AdminReviewsQuery } from '../validators/admin.validator';
 
 // =============================================================================
 // FLAGGED ACCOUNTS THRESHOLDS
@@ -342,11 +343,10 @@ export class AdminService {
           title: true,
           status: true,
           type: true,
-          budgetMin: true,
-          budgetMax: true,
+          budget: true,
           createdAt: true,
           client: { select: { id: true, name: true } },
-          _count: { select: { proposals: true, contracts: true } },
+          _count: { select: { proposals: true } },
         },
         orderBy: { [sort]: order },
         skip: (page - 1) * limit,
@@ -452,8 +452,8 @@ export class AdminService {
           select: {
             reviewsReceived: true,
             disputesInitiated: true,
-            disputesAgainst: true,
             contracts: true,
+            clientContracts: true,
           },
         },
       },
@@ -490,8 +490,8 @@ export class AdminService {
           select: {
             reviewsReceived: true,
             disputesInitiated: true,
-            disputesAgainst: true,
             contracts: true,
+            clientContracts: true,
           },
         },
       },
@@ -525,8 +525,8 @@ export class AdminService {
       seenIds.add(u.id);
 
       const trustScore = Number(u.freelancerProfile?.trustScore ?? u.clientProfile?.trustScore ?? 0);
-      const totalDisputes = u._count.disputesInitiated + u._count.disputesAgainst;
-      const contractCount = u._count.contracts;
+      const totalDisputes = u._count.disputesInitiated;
+      const contractCount = u._count.contracts + u._count.clientContracts;
       const disputeRate = contractCount > 0 ? totalDisputes / contractCount : 0;
 
       const riskFlags: string[] = [];
@@ -577,6 +577,64 @@ export class AdminService {
         medium: flaggedUsers.filter((u) => u.riskLevel === 'MEDIUM').length,
         low: flaggedUsers.filter((u) => u.riskLevel === 'LOW').length,
       },
+    };
+  }
+
+  /**
+   * List all reviews with filtering, search, and pagination.
+   * Admin bypasses double-blind — all reviews are visible.
+   */
+  async listReviews(query: AdminReviewsQuery) {
+    const { page, limit, search, minRating, maxRating, dateFrom, dateTo, authorId, subjectId, contractId, hasBlockchain, hasIpfs, sort, order } = query;
+
+    const where: Prisma.ReviewWhereInput = {};
+
+    if (search) {
+      where.comment = { contains: search, mode: 'insensitive' };
+    }
+    if (minRating !== undefined || maxRating !== undefined) {
+      where.overallRating = {
+        ...(minRating !== undefined ? { gte: minRating } : {}),
+        ...(maxRating !== undefined ? { lte: maxRating } : {}),
+      };
+    }
+    if (dateFrom || dateTo) {
+      where.createdAt = {
+        ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+        ...(dateTo ? { lte: new Date(dateTo) } : {}),
+      };
+    }
+    if (authorId) where.authorId = authorId;
+    if (subjectId) where.subjectId = subjectId;
+    if (contractId) where.contractId = contractId;
+    if (hasBlockchain === 'true') where.blockchainTxHash = { not: null };
+    if (hasBlockchain === 'false') where.blockchainTxHash = null;
+    if (hasIpfs === 'true') where.ipfsHash = { not: null };
+    if (hasIpfs === 'false') where.ipfsHash = null;
+
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        where,
+        include: {
+          author: { select: { id: true, name: true, avatarUrl: true, role: true } },
+          subject: { select: { id: true, name: true, avatarUrl: true, role: true } },
+          contract: { select: { id: true, title: true, status: true } },
+        },
+        orderBy: { [sort]: order },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.review.count({ where }),
+    ]);
+
+    return {
+      items: reviews,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrev: page > 1,
     };
   }
 }

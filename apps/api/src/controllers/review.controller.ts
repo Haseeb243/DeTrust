@@ -30,16 +30,8 @@ const getUserReviews = async (req: Request, res: Response, next: NextFunction): 
     const viewerId = authReq.userId;
     const { userId } = req.params;
 
-    const query: GetReviewsQuery = {
-      role: req.query.role as GetReviewsQuery['role'],
-      page: parseInt(req.query.page as string, 10) || 1,
-      limit: Math.min(parseInt(req.query.limit as string, 10) || 20, 100),
-      minRating: req.query.minRating ? parseFloat(req.query.minRating as string) : undefined,
-      maxRating: req.query.maxRating ? parseFloat(req.query.maxRating as string) : undefined,
-      search: (req.query.search as string) || undefined,
-      sort: (req.query.sort as GetReviewsQuery['sort']) || 'createdAt',
-      order: (req.query.order as GetReviewsQuery['order']) || 'desc',
-    };
+    // Query params already validated by validateQuery(getReviewsQuerySchema) middleware
+    const query = req.query as unknown as GetReviewsQuery;
 
     const reviews = await reviewService.getUserReviews(userId, query, viewerId);
     res.json({ success: true, data: reviews });

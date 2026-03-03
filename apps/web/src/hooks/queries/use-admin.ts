@@ -3,6 +3,7 @@ import {
   adminApi,
   type AdminUserListParams,
   type AdminJobListParams,
+  type AdminReviewListParams,
 } from '@/lib/api/admin';
 
 export const adminKeys = {
@@ -13,6 +14,7 @@ export const adminKeys = {
   users: (params?: AdminUserListParams) => [...adminKeys.all, 'users', params] as const,
   jobs: (params?: AdminJobListParams) => [...adminKeys.all, 'jobs', params] as const,
   flagged: (params?: { page?: number; limit?: number }) => [...adminKeys.all, 'flagged', params] as const,
+  reviews: (params?: AdminReviewListParams) => [...adminKeys.all, 'reviews', params] as const,
 };
 
 export function useAdminStats() {
@@ -94,5 +96,16 @@ export function useAdminFlaggedAccounts(params?: { page?: number; limit?: number
       return res.data;
     },
     refetchInterval: 120000, // Refresh every 2 minutes
+  });
+}
+
+export function useAdminReviews(params?: AdminReviewListParams) {
+  return useQuery({
+    queryKey: adminKeys.reviews(params),
+    queryFn: async () => {
+      const res = await adminApi.listReviews(params);
+      if (!res.success || !res.data) throw new Error(res.error?.message ?? 'Failed to fetch reviews');
+      return res.data;
+    },
   });
 }

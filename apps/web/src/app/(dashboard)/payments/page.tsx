@@ -114,6 +114,23 @@ export default function PaymentsPage() {
           createdAt: contract.createdAt,
         });
       }
+
+      // Show refund entry for cancelled contracts (dispute resolved in client's favor)
+      if (contract.status === 'CANCELLED' && contract.fundingTxHash) {
+        const refundAmount = Math.max(0, Number(contract.totalAmount || 0) - Number(contract.paidAmount || 0));
+        if (refundAmount > 0) {
+          txs.push({
+            id: `refund-${contract.id}`,
+            type: 'deposit',
+            amount: refundAmount,
+            status: 'completed',
+            description: `Escrow refunded — ${contract.title} (dispute resolved)`,
+            contractId: contract.id,
+            contractTitle: contract.title,
+            createdAt: contract.cancelledAt || contract.updatedAt || contract.createdAt,
+          });
+        }
+      }
     });
 
     // Sort by date
@@ -134,7 +151,7 @@ export default function PaymentsPage() {
   }, 0);
 
   const totalEscrow = contracts
-    .filter((c) => c.status === 'ACTIVE' && Boolean(c.fundingTxHash || c.escrowAddress))
+    .filter((c) => (c.status === 'ACTIVE' || c.status === 'DISPUTED') && Boolean(c.fundingTxHash || c.escrowAddress))
     .reduce((sum, c) => sum + Math.max(0, Number(c.totalAmount || 0) - Number(c.paidAmount || 0)), 0);
 
   const filteredTransactions = transactions.filter((t) => {

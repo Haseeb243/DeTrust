@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAccount, useBalance } from 'wagmi';
 import {
   ArrowUpRight,
@@ -38,7 +39,15 @@ const toneClasses: Record<'success' | 'warning' | 'info', string> = {
 
 export default function DashboardPage() {
   const { user, isNewUser } = useAuthStore();
+  const router = useRouter();
   const { address, isConnected } = useAccount();
+
+  // Admins should never land on /dashboard — redirect to /admin
+  useEffect(() => {
+    if (user?.role === 'ADMIN') {
+      router.replace('/admin');
+    }
+  }, [user?.role, router]);
   const { data: balanceData } = useBalance({
     address,
     query: {

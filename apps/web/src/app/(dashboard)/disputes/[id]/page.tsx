@@ -19,7 +19,7 @@ import {
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
 import type { DisputeVote } from '@detrust/types';
-import { useDispute, useCastVote, useAdminResolve, useStartVoting, useJurorEligibility } from '@/hooks/queries/use-disputes';
+import { useDispute, useCastVote, useAdminResolve, useStartVoting } from '@/hooks/queries/use-disputes';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
 
@@ -54,7 +54,6 @@ export default function DisputeDetailPage() {
   const disputeId = params.id as string;
 
   const { data: dispute, isLoading } = useDispute(disputeId);
-  const { data: eligibility } = useJurorEligibility(disputeId);
   const castVoteMutation = useCastVote();
   const adminResolveMutation = useAdminResolve();
   const startVotingMutation = useStartVoting();
@@ -242,30 +241,88 @@ export default function DisputeDetailPage() {
         </Card>
       </div>
 
-      {/* Evidence */}
-      {dispute.evidence && dispute.evidence.length > 0 && (
-        <Card className="border-dt-border bg-dt-surface">
-          <CardHeader>
-            <CardTitle className="text-dt-text">Evidence ({dispute.evidence.length} files)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {dispute.evidence.map((url: string, idx: number) => (
-                <a
-                  key={idx}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-dt-border p-3 text-sm text-blue-600 transition hover:bg-dt-surface-alt dark:text-blue-400"
-                >
-                  <FileText className="h-4 w-4" />
-                  Evidence file {idx + 1}
-                </a>
-              ))}
+      {/* Evidence / Proof */}
+      <Card className="border-dt-border bg-dt-surface">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-dt-text">
+            <FileText className="h-5 w-5" /> Evidence &amp; Proof
+            {dispute.evidence && dispute.evidence.length > 0 && (
+              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                {dispute.evidence.length} file{dispute.evidence.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dispute.evidence && dispute.evidence.length > 0 ? (
+            <div className="space-y-3">
+              {dispute.evidence.map((url: string, idx: number) => {
+                const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(url);
+                const isPdf = /\.pdf$/i.test(url);
+                const fileName = url.split('/').pop() ?? `Evidence file ${idx + 1}`;
+
+                return (
+                  <div
+                    key={idx}
+                    className="overflow-hidden rounded-xl border border-dt-border"
+                  >
+                    {/* Preview for images */}
+                    {isImage && (
+                      <div className="relative bg-slate-50 p-4 dark:bg-slate-800/50">
+                        <img
+                          src={url}
+                          alt={`Evidence ${idx + 1}`}
+                          className="mx-auto max-h-64 rounded-lg object-contain"
+                        />
+                      </div>
+                    )}
+
+                    {/* Embedded PDF viewer */}
+                    {isPdf && (
+                      <div className="bg-slate-50 dark:bg-slate-800/50">
+                        <iframe
+                          src={url}
+                          title={`Evidence PDF ${idx + 1}`}
+                          className="h-80 w-full border-0"
+                        />
+                      </div>
+                    )}
+
+                    {/* File info + download link */}
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-dt-text">{fileName}</p>
+                        <p className="text-xs text-dt-text-muted">
+                          {isImage ? 'Image' : isPdf ? 'PDF Document' : 'File'} · Click to open
+                        </p>
+                      </div>
+                      <ArrowLeft className="h-4 w-4 rotate-180 text-dt-text-muted" />
+                    </a>
+                  </div>
+                );
+              })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                <FileText className="h-6 w-6 text-dt-text-muted" />
+              </div>
+              <p className="text-sm font-medium text-dt-text">No evidence submitted yet</p>
+              <p className="mt-1 text-xs text-dt-text-muted">
+                Parties can submit evidence files while the dispute is open.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Votes */}
       {dispute.votes && dispute.votes.length > 0 && (
@@ -314,70 +371,39 @@ export default function DisputeDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Juror eligibility check (M4-I5) */}
-            {eligibility && !eligibility.eligible && (
-              <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" aria-hidden="true" />
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-800 dark:text-amber-300">Not eligible to vote</p>
-                    <ul className="mt-1 list-disc space-y-1 pl-4 text-amber-700 dark:text-amber-400">
-                      {!eligibility.meetsScoreRequirement && (
-                        <li>
-                          Your trust score ({eligibility.trustScore.toFixed(1)}) is below the minimum
-                          required ({eligibility.minimumRequired}). Build your reputation to participate
-                          in dispute resolution.
-                        </li>
-                      )}
-                      {eligibility.hasVoted && (
-                        <li>You have already voted on this dispute.</li>
-                      )}
-                      {!eligibility.withinDeadline && (
-                        <li>The voting deadline has passed.</li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {(!eligibility || eligibility.eligible) && (
-              <>
-                <div className="flex gap-3">
-                  <Button
-                    variant={voteChoice === 'CLIENT_WINS' ? 'default' : 'outline'}
-                    onClick={() => setVoteChoice('CLIENT_WINS')}
-                    className={cn(
-                      voteChoice === 'CLIENT_WINS' && 'bg-blue-600 text-white hover:bg-blue-700'
-                    )}
-                  >
-                    <ThumbsUp className="mr-2 h-4 w-4" /> Client Wins
-                  </Button>
-                  <Button
-                    variant={voteChoice === 'FREELANCER_WINS' ? 'default' : 'outline'}
-                    onClick={() => setVoteChoice('FREELANCER_WINS')}
-                    className={cn(
-                      voteChoice === 'FREELANCER_WINS' && 'bg-emerald-600 text-white hover:bg-emerald-700'
-                    )}
-                  >
-                    <ThumbsDown className="mr-2 h-4 w-4" /> Freelancer Wins
-                  </Button>
-                </div>
-                <Textarea
-                  value={reasoning}
-                  onChange={(e) => setReasoning(e.target.value)}
-                  placeholder="Optional: explain your reasoning..."
-                  rows={3}
-                  className="border-dt-border"
-                />
-                <Button
-                  onClick={handleCastVote}
-                  disabled={!voteChoice || castVoteMutation.isPending}
-                >
-                  {castVoteMutation.isPending ? <Spinner size="sm" /> : 'Submit Vote'}
-                </Button>
-              </>
-            )}
+            <div className="flex gap-3">
+              <Button
+                variant={voteChoice === 'CLIENT_WINS' ? 'default' : 'outline'}
+                onClick={() => setVoteChoice('CLIENT_WINS')}
+                className={cn(
+                  voteChoice === 'CLIENT_WINS' && 'bg-blue-600 text-white hover:bg-blue-700'
+                )}
+              >
+                <ThumbsUp className="mr-2 h-4 w-4" /> Client Wins
+              </Button>
+              <Button
+                variant={voteChoice === 'FREELANCER_WINS' ? 'default' : 'outline'}
+                onClick={() => setVoteChoice('FREELANCER_WINS')}
+                className={cn(
+                  voteChoice === 'FREELANCER_WINS' && 'bg-emerald-600 text-white hover:bg-emerald-700'
+                )}
+              >
+                <ThumbsDown className="mr-2 h-4 w-4" /> Freelancer Wins
+              </Button>
+            </div>
+            <Textarea
+              value={reasoning}
+              onChange={(e) => setReasoning(e.target.value)}
+              placeholder="Optional: explain your reasoning..."
+              rows={3}
+              className="border-dt-border"
+            />
+            <Button
+              onClick={handleCastVote}
+              disabled={!voteChoice || castVoteMutation.isPending}
+            >
+              {castVoteMutation.isPending ? <Spinner size="sm" /> : 'Submit Vote'}
+            </Button>
           </CardContent>
         </Card>
       )}

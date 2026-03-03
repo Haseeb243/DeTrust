@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         {/* Logo */}
         <div className="flex h-20 items-center border-b border-slate-100 px-4 dark:border-slate-800">
           <BrandMark
-            href="/dashboard"
+            href={role === 'ADMIN' ? '/admin' : '/dashboard'}
             showWordmark={!isSidebarCollapsed}
             className={cn(
               'flex w-full items-center justify-start text-2xl font-semibold tracking-tight text-dt-text dark:text-slate-100',
@@ -168,27 +168,29 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* Bottom section */}
         <div className="absolute inset-x-0 bottom-0 space-y-3 border-t border-slate-100 p-4 dark:border-slate-800">
-          {/* Premium Badge */}
-          <div className={cn('rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-4 text-white shadow-lg', isSidebarCollapsed && 'p-2')}>
-            <div className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-amber-300" />
+          {/* Premium Badge — hidden for ADMIN (admins have no trust score) */}
+          {role !== 'ADMIN' && (
+            <div className={cn('rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-4 text-white shadow-lg', isSidebarCollapsed && 'p-2')}>
+              <div className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-amber-300" />
+                {!isSidebarCollapsed && (
+                  <span className="text-xs font-semibold uppercase tracking-wider">Trust Signal</span>
+                )}
+              </div>
               {!isSidebarCollapsed && (
-                <span className="text-xs font-semibold uppercase tracking-wider">Trust Signal</span>
+                <>
+                  <p className="mt-2 text-2xl font-bold">{user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0}%</p>
+                  <p className="text-xs text-emerald-100">{role === 'FREELANCER' ? 'Freelancer Score' : 'Client Score'}</p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-dt-surface/20">
+                    <div 
+                      className="h-full rounded-full bg-dt-surface/90 transition-all" 
+                      style={{ width: `${user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0}%` }}
+                    />
+                  </div>
+                </>
               )}
             </div>
-            {!isSidebarCollapsed && (
-              <>
-                <p className="mt-2 text-2xl font-bold">{user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0}%</p>
-                <p className="text-xs text-emerald-100">{role === 'FREELANCER' ? 'Freelancer Score' : 'Client Score'}</p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-dt-surface/20">
-                  <div 
-                    className="h-full rounded-full bg-dt-surface/90 transition-all" 
-                    style={{ width: `${user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0}%` }}
-                  />
-                </div>
-              </>
-            )}
-          </div>
+          )}
           <button
             onClick={handleSignOut}
             className={cn(

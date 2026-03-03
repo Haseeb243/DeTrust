@@ -58,6 +58,7 @@ export interface Contract {
   startDate?: string;
   endDate?: string;
   completedAt?: string;
+  cancelledAt?: string;
   createdAt: string;
   updatedAt: string;
   milestones: ContractMilestone[];

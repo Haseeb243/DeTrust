@@ -43,7 +43,9 @@ export default function LoginPage() {
 
     if (success) {
       toast.success('Login successful!');
-      router.push('/dashboard');
+      // Admin users go to /admin dashboard; all others to /dashboard
+      const { user: loggedInUser } = useAuthStore.getState();
+      router.push(loggedInUser?.role === 'ADMIN' ? '/admin' : '/dashboard');
     }
   };
 

@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authenticate, optionalAuth, validateBody } from '../middleware';
+import { authenticate, optionalAuth, validateBody, validateQuery } from '../middleware';
 import { reviewController } from '../controllers/review.controller';
-import { createReviewSchema, createReviewResponseSchema } from '../validators/review.validator';
+import { createReviewSchema, createReviewResponseSchema, getReviewsQuerySchema } from '../validators/review.validator';
 
 const router: Router = Router();
 
@@ -14,8 +14,8 @@ router.get('/contract/:contractId', optionalAuth, reviewController.getContractRe
 // Check if current user has reviewed a contract
 router.get('/contract/:contractId/status', authenticate, reviewController.getReviewStatus);
 
-// Get reviews for a specific user (optional auth for double-blind)
-router.get('/user/:userId', optionalAuth, reviewController.getUserReviews);
+// Get reviews for a specific user (optional auth for double-blind, Zod-validated query)
+router.get('/user/:userId', optionalAuth, validateQuery(getReviewsQuerySchema), reviewController.getUserReviews);
 
 // Get aggregated review summary for a user (public, but log viewer if authenticated)
 router.get('/user/:userId/summary', optionalAuth, reviewController.getReviewSummary);

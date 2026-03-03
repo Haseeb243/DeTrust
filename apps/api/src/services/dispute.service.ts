@@ -325,7 +325,16 @@ export class DisputeService {
     const dispute = await prisma.dispute.findUnique({
       where: { id: disputeId },
       include: {
-        contract: { select: { clientId: true, freelancerId: true, title: true } },
+        contract: {
+          select: {
+            id: true,
+            clientId: true,
+            freelancerId: true,
+            title: true,
+            totalAmount: true,
+            milestones: { select: { id: true, status: true } },
+          },
+        },
       },
     });
 
@@ -337,19 +346,82 @@ export class DisputeService {
       throw new ValidationError('Dispute is already resolved');
     }
 
-    const updated = await prisma.dispute.update({
-      where: { id: disputeId },
-      data: {
-        status: 'RESOLVED',
-        outcome: input.outcome as any,
-        resolution: input.resolution,
-        resolvedAt: new Date(),
-      },
-      include: {
-        contract: { select: { id: true, title: true, totalAmount: true } },
-        initiator: { select: { id: true, name: true } },
-        votes: { include: { juror: { select: { id: true, name: true } } } },
-      },
+    // Resolve dispute + update contract/milestones in a single transaction
+    const updated = await prisma.$transaction(async (tx: any) => {
+      // 1. Resolve the dispute
+      const resolvedDispute = await tx.dispute.update({
+        where: { id: disputeId },
+        data: {
+          status: 'RESOLVED',
+          outcome: input.outcome as any,
+          resolution: input.resolution,
+          resolvedAt: new Date(),
+        },
+        include: {
+          contract: { select: { id: true, title: true, totalAmount: true } },
+          initiator: { select: { id: true, name: true } },
+          votes: { include: { juror: { select: { id: true, name: true } } } },
+        },
+      });
+
+      // 2. Update contract and milestone statuses based on outcome
+      const unpaidMilestoneIds = dispute.contract.milestones
+        .filter((m: { status: string }) =>
+          m.status !== 'PAID' && m.status !== 'APPROVED'
+        )
+        .map((m: { id: string }) => m.id);
+
+      if (input.outcome === 'CLIENT_WINS') {
+        // Client wins → cancel contract, refund escrow (cancel unpaid milestones)
+        await tx.contract.update({
+          where: { id: dispute.contractId },
+          data: {
+            status: 'CANCELLED',
+            cancelledAt: new Date(),
+          },
+        });
+
+        if (unpaidMilestoneIds.length > 0) {
+          await tx.milestone.updateMany({
+            where: { id: { in: unpaidMilestoneIds } },
+            data: { status: 'PENDING' },
+          });
+        }
+      } else if (input.outcome === 'FREELANCER_WINS') {
+        // Freelancer wins → resume contract, mark submitted milestones as approved/paid
+        const allPaid = dispute.contract.milestones.every(
+          (m: { status: string }) => m.status === 'PAID' || m.status === 'APPROVED'
+        );
+
+        await tx.contract.update({
+          where: { id: dispute.contractId },
+          data: { status: allPaid ? 'COMPLETED' : 'ACTIVE' },
+        });
+
+        // Auto-approve any submitted milestones (freelancer delivered, client disputed unfairly)
+        const submittedIds = dispute.contract.milestones
+          .filter((m: { status: string }) => m.status === 'SUBMITTED' || m.status === 'DISPUTED')
+          .map((m: { id: string }) => m.id);
+
+        if (submittedIds.length > 0) {
+          await tx.milestone.updateMany({
+            where: { id: { in: submittedIds } },
+            data: {
+              status: 'PAID',
+              approvedAt: new Date(),
+              paidAt: new Date(),
+            },
+          });
+        }
+      } else {
+        // SPLIT → return contract to active, leave milestones as-is for renegotiation
+        await tx.contract.update({
+          where: { id: dispute.contractId },
+          data: { status: 'ACTIVE' },
+        });
+      }
+
+      return resolvedDispute;
     });
 
     const { clientId, freelancerId, title } = dispute.contract;

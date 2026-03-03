@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { authenticate, requireAdmin } from '../middleware';
+import { authenticate, requireAdmin, validateQuery } from '../middleware';
 import { adminController } from '../controllers/admin.controller';
+import { adminReviewsQuerySchema } from '../validators/admin.validator';
 
 const router: Router = Router();
 
@@ -25,5 +26,8 @@ router.get('/jobs', adminController.listJobs);
 
 // Flagged accounts
 router.get('/flagged', adminController.getFlaggedAccounts);
+
+// Review oversight (M3 — admin bypasses double-blind)
+router.get('/reviews', validateQuery(adminReviewsQuerySchema), adminController.listReviews);
 
 export default router;

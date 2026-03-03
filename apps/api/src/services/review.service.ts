@@ -200,13 +200,16 @@ export class ReviewService {
       return true;
     });
 
+    // Use filtered count for accurate pagination (double-blind may hide items)
+    const filteredTotal = total - (reviews.length - filtered.length);
+
     return {
       items: filtered,
-      total,
+      total: filteredTotal,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
-      hasNext: page * limit < total,
+      totalPages: Math.ceil(filteredTotal / limit),
+      hasNext: page * limit < filteredTotal,
       hasPrev: page > 1,
     };
   }
