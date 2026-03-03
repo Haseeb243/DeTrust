@@ -23,3 +23,6 @@ export * from './blockchain';
 
 // Skill types
 export * from './skill';
+
+// Trust Score types
+export * from './trustScore';

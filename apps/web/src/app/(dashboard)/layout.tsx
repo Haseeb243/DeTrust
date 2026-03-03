@@ -74,6 +74,7 @@ const navigation = {
     { name: 'Jobs', href: '/admin/jobs', icon: Briefcase },
     { name: 'Contracts', href: '/admin/contracts', icon: FileText },
     { name: 'Disputes', href: '/admin/disputes', icon: Shield },
+    { name: 'Trust Scores', href: '/admin/trust-scores', icon: Activity },
     { name: 'Reviews', href: '/admin/reviews', icon: Star },
     { name: 'Messages', href: '/admin/messages', icon: MessageSquare },
     { name: 'Settings', href: '/admin/settings', icon: Settings },

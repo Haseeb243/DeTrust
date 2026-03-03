@@ -1,6 +1,6 @@
 # Module 4 (Trust Scoring Module) Audit
 
-**Updated:** 2026-02-28
+**Updated:** 2026-06-04
 
 This document tracks how the current implementation maps to the SRS requirements in Section 1.7.4 (FE-1 – FE-4), along with gaps, computation logic, and integration status.
 
@@ -9,9 +9,9 @@ This document tracks how the current implementation maps to the SRS requirements
 | SRS ID | Requirement | Status | Notes |
 |--------|-------------|--------|-------|
 | **FE-1** | Collect performance data for freelancers and clients | ✅ **Complete** | Queries Prisma for avg ratings, completion rates, dispute outcomes, hire rates, payment punctuality, job clarity ratings |
-| **FE-2** | Compute rule-based trust score for freelancers | ✅ **Complete** | Formula: `(0.4 × AvgRating) + (0.3 × CompletionRate) + (0.2 × DisputeWinRate) + (0.1 × Experience)` |
-| **FE-3** | Compute rule-based trust score for clients | ✅ **Complete** | Formula: `(0.4 × AvgRating) + (0.3 × PaymentPunctuality) + (0.2 × HireRate) + (0.1 × JobClarityRating)` |
-| **FE-4** | Display real-time trust scores and historical trends on dashboards | ⚠️ **Partial** | Real-time score + component breakdown displayed; historical trends NOT implemented (no time-series data model) |
+| **FE-2** | Compute rule-based trust score for freelancers | ✅ **Complete** | Formula: `(0.4 × AvgRating) + (0.3 × CompletionRate) + (0.2 × DisputeWinRate) + (0.1 × Experience)`. 5-contract minimum threshold enforced. |
+| **FE-3** | Compute rule-based trust score for clients | ✅ **Complete** | Formula: `(0.4 × AvgRating) + (0.3 × PaymentPunctuality) + (0.2 × HireRate) + (0.1 × JobClarityRating)`. 5-contract minimum, cancellation-rate penalty (up to −10), dispute-behaviour penalty (up to −15). |
+| **FE-4** | Display real-time trust scores and historical trends on dashboards | ✅ **Complete** | Real-time score + component breakdown displayed; ineligible state shown; historical trends via `TrustScoreHistory` model; WebSocket push via `trust-score:updated` event |
 
 ## Trust Score Formulas
 
@@ -42,8 +42,8 @@ This document tracks how the current implementation maps to the SRS requirements
 | FR-P1.3 | Color-coded trust score display | ✅ | Emerald (>75), Blue (≥50), Amber (>0), Slate (no data) |
 | FR-P1.4 | Trust score recalculated on events | ✅ | Recomputed after review submissions (via `reviewService`) |
 | FR-P1.5 | Talent search filtering by min trust score | ✅ | `searchFreelancers()` supports `minTrustScore` param |
-| FR-P1.6 | Historical trust score trends | ❌ | No `TrustScoreHistory` model; only current score persisted |
-| FR-P1.7 | Background recalculation job | ❌ | `trustScore.job.ts` is empty; scores only computed on-demand |
+| FR-P1.6 | Historical trust score trends | ✅ | `TrustScoreHistory` model populated by background job; `getHistory()` service method + API endpoint; frontend WebSocket cache invalidation |
+| FR-P1.7 | Background recalculation job | ✅ | `trustScore.job.ts` implements periodic recalc for all freelancers/clients; skips history for ineligible users |
 
 ## Backend Architecture
 
@@ -55,40 +55,64 @@ This document tracks how the current implementation maps to the SRS requirements
 
 ### Service Layer (`apps/api/src/services/trustScore.service.ts`)
 
-- **`computeFreelancerTrustScore(userId)`** — Queries contracts, disputes, profile data; computes + persists score
-- **`computeClientTrustScore(userId)`** — Queries contracts, jobs, reviews; computes + persists score
+- **`computeFreelancerTrustScore(userId)`** — Queries contracts, disputes, profile data; enforces 5-contract eligibility gate; computes + persists score; emits WebSocket event
+- **`computeClientTrustScore(userId)`** — Queries contracts, jobs, reviews; enforces 5-contract eligibility gate; applies cancellation-rate & dispute-behaviour penalties; computes + persists score; emits WebSocket event
 - **`getTrustScoreBreakdown(userId)`** — Auto-detects role (freelancer vs client) and delegates to correct formula
-- **`emptyBreakdown()`** — Returns zero score for users without profiles
+- **`emptyBreakdown()`** — Returns `{ totalScore: null, eligible: false, components: [] }` for users without profiles
+- **`getHistory(userId, limit?)`** — Returns paginated trust score history entries from `TrustScoreHistory`
 
 ### Response Shape
 
 ```typescript
 interface TrustScoreBreakdown {
-  totalScore: number;
+  totalScore: number | null;   // null when ineligible
+  eligible: boolean;
+  minimumContracts?: number;   // present when ineligible
+  currentContracts?: number;   // present when ineligible
   components: Array<{
     label: string;
     weight: number;
     rawValue: number;
     normalizedValue: number;
-    weightedValue: number;
+    weightedValue: number;     // negative for penalty components
   }>;
 }
 ```
+
+### Admin Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/admin/trust-scores` | Admin | Paginated list with filters (role, eligibility, score range, search) |
+| PATCH | `/api/admin/trust-scores/:userId` | Admin | Manual adjustment (−100 to +100) with audit reason |
+
+### WebSocket Events
+
+| Event | Room | Payload | Trigger |
+|-------|------|---------|---------|
+| `trust-score:updated` | `user:{userId}` | `{ userId, breakdown }` | After score recomputation or admin adjustment |
 
 ## Frontend Components
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `components/trust/trust-score-card.tsx` | Full breakdown display with colored progress bars | ~120 |
+| `components/trust/trust-score-card.tsx` | Full breakdown display with eligibility gate, colored progress bars, penalty section | ~130 |
 | `hooks/queries/use-trust-score.ts` | TanStack Query hook for trust score data | ~20 |
 | `lib/trust-color.ts` | Trust score color/label utilities (trust palette) | ~30 |
+| `hooks/queries/use-admin.ts` | `useAdminTrustScores()` + `useAdjustTrustScore()` hooks | ~40 |
+| `components/admin/admin-trust-score-filters.tsx` | Search, role, eligibility, score-range, sort filters | ~80 |
+| `components/admin/admin-trust-score-table.tsx` | Paginated table with expandable rows + adjust button | ~140 |
+| `components/admin/admin-adjust-score-dialog.tsx` | Modal with slider, preview, reason textarea | ~120 |
+| `app/(dashboard)/admin/trust-scores/page.tsx` | Admin trust score management page | ~150 |
 
 ### TrustScoreCard Features
 
 - Large score display (0–100) with dynamic color coding
+- **Ineligibility state**: dashed border, ShieldOff icon, N/5 progress bar showing contracts needed
 - Component breakdown section showing each metric + weight
+- Separate **Penalties** section for negative adjustments (red styling)
 - Colored progress bars per component
-- Status labels: "Excellent" (>75), "Good" (≥50), "Developing" (>0), "No data yet"
+- Status labels: "Excellent" (>75), "Good" (≥50), "Developing" (>0), "Not Yet Eligible" (ineligible)
 - Dark mode support via `dt-*` semantic tokens
 
 ### Dashboard Integration
@@ -123,13 +147,13 @@ totalReviews    Int      @default(0)
 
 | # | Gap | Severity | Recommendation |
 |---|-----|----------|----------------|
-| 1 | No trust score history tracking | **HIGH** | Add `TrustScoreHistory` Prisma model for time-series data |
-| 2 | `trustScore.job.ts` is empty | **HIGH** | Implement periodic recalculation job for all users |
-| 3 | No trend visualization on frontend | **MEDIUM** | Add line chart showing score over time (requires history model) |
-| 4 | Scores only computed on-demand via `getTrustScoreBreakdown()` | **MEDIUM** | Scores should be proactively recalculated via background job |
+| 1 | ~~No trust score history tracking~~ | ✅ **Done** | `TrustScoreHistory` model populated by background job; `getHistory()` API available |
+| 2 | ~~`trustScore.job.ts` is empty~~ | ✅ **Done** | Background job recalculates all freelancer + client scores; skips history for ineligible users |
+| 3 | No trend visualization on frontend | **MEDIUM** | Add line chart showing score over time (data model ready, needs chart component) |
+| 4 | ~~Scores only computed on-demand~~ | ✅ **Done** | Proactive recalculation via background job + dispute-triggered recomputation |
 | 5 | No blockchain anchoring of trust scores | **LOW** | Future: anchor score hashes on ReputationRegistry for decentralized verification |
 | 6 | ~~Juror eligibility not enforced~~ | ✅ **Done** | Trust score >= 50 now enforced in `castVote()` + eligibility API |
 
 ## Build Status
 
-**Last verified:** 2026-03-02 — Service layer functional, API endpoint responding, frontend components integrated across profiles and dashboard. Juror eligibility enforcement added.
+**Last verified:** 2026-06-04 — Service layer functional with eligibility gate + client penalties, admin trust score panel operational, WebSocket events wired, background job skips ineligible users, shared types exported from `packages/types`.

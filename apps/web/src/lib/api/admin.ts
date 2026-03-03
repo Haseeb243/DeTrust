@@ -190,6 +190,47 @@ export interface FlaggedAccountsResponse {
 }
 
 // =============================================================================
+// ADMIN TRUST SCORE TYPES
+// =============================================================================
+
+export interface AdminTrustScoreEntry {
+  userId: string;
+  name: string | null;
+  email: string | null;
+  role: string;
+  avatarUrl: string | null;
+  trustScore: number;
+  completedContracts: number;
+  eligible: boolean;
+  lastUpdated: string;
+}
+
+export interface AdminTrustScoreListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: 'FREELANCER' | 'CLIENT' | 'all';
+  minScore?: number;
+  maxScore?: number;
+  eligible?: 'true' | 'false';
+  sort?: 'trustScore' | 'name' | 'createdAt' | 'completedContracts';
+  order?: 'asc' | 'desc';
+}
+
+export interface AdminAdjustTrustScorePayload {
+  adjustment: number;
+  reason: string;
+}
+
+export interface AdminAdjustTrustScoreResult {
+  userId: string;
+  previousScore: number;
+  newScore: number;
+  adjustment: number;
+  reason: string;
+}
+
+// =============================================================================
 // ADMIN API
 // =============================================================================
 
@@ -229,6 +270,12 @@ export const adminApi = {
 
   listReviews: (params?: AdminReviewListParams) =>
     api.get<PaginatedResponse<AdminReview>>(`/admin/reviews${buildQuery(params as Record<string, unknown>)}`),
+
+  listTrustScores: (params?: AdminTrustScoreListParams) =>
+    api.get<PaginatedResponse<AdminTrustScoreEntry>>(`/admin/trust-scores${buildQuery(params as Record<string, unknown>)}`),
+
+  adjustTrustScore: (userId: string, payload: AdminAdjustTrustScorePayload) =>
+    api.patch<AdminAdjustTrustScoreResult>(`/admin/trust-scores/${userId}`, payload),
 };
 
 export default adminApi;

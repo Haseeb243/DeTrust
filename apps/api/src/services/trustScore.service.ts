@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import { emitTrustScoreUpdated } from '../events/trustScore.events';
 
 /**
  * Trust Score Formulas (SRS Module 4):
@@ -7,6 +8,12 @@ import { prisma } from '../config/database';
  * Client:     (0.4 × AvgRating) + (0.3 × PaymentPunctuality) + (0.2 × HireRate) + (0.1 × JobClarityRating)
  *
  * All components are normalized to 0–100 scale before weighting.
+ *
+ * Eligibility: Users must have ≥ 5 completed contracts for a meaningful trust score.
+ *
+ * Client Penalties (post-formula deductions):
+ * - Cancellation rate penalty: up to -10 pts
+ * - Dispute behavior penalty: up to -15 pts
  *
  * Inactivity Decay (M4-I6):
  * If user has no contract activity for > 90 days, apply a gradual decay:
@@ -19,15 +26,29 @@ const MAX_DECAY_DAYS = 365;
 const MIN_DECAY_FACTOR = 0.5;
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
+/** Minimum completed contracts required for a meaningful trust score */
+const MIN_CONTRACTS_FOR_TRUST_SCORE = 5;
+
+/** Maximum cancellation rate penalty for clients */
+const MAX_CANCELLATION_PENALTY = 10;
+
+/** Maximum dispute behavior penalty for clients */
+const MAX_DISPUTE_PENALTY = 15;
+
+export interface TrustScoreComponent {
+  label: string;
+  weight: number;
+  rawValue: number;
+  normalizedValue: number;
+  weightedValue: number;
+}
+
 export interface TrustScoreBreakdown {
-  totalScore: number;
-  components: Array<{
-    label: string;
-    weight: number;
-    rawValue: number;
-    normalizedValue: number;
-    weightedValue: number;
-  }>;
+  totalScore: number | null;
+  eligible: boolean;
+  minimumContracts?: number;
+  currentContracts?: number;
+  components: TrustScoreComponent[];
 }
 
 export class TrustScoreService {
@@ -58,6 +79,21 @@ export class TrustScoreService {
     });
     const completionRate = totalContracts > 0 ? (completedContracts / totalContracts) * 100 : 0;
 
+    // Eligibility gate: < 5 completed contracts → ineligible
+    if (completedContracts < MIN_CONTRACTS_FOR_TRUST_SCORE) {
+      await prisma.freelancerProfile.update({
+        where: { userId },
+        data: { trustScore: 0, completedJobs: completedContracts, successRate: Math.round(completionRate * 100) / 100 },
+      });
+      return {
+        totalScore: null,
+        eligible: false,
+        minimumContracts: MIN_CONTRACTS_FOR_TRUST_SCORE,
+        currentContracts: completedContracts,
+        components: [],
+      };
+    }
+
     // 3. Dispute Win Rate: disputes resolved in their favor / total disputes
     //    Default to 50 (neutral) when no disputes exist — a new freelancer
     //    without any disputes should not be penalized or rewarded.
@@ -78,7 +114,7 @@ export class TrustScoreService {
     // 4. Experience: normalize completed jobs (cap at 50 for 100%)
     const experienceScore = Math.min((completedContracts / 50) * 100, 100);
 
-    const components = [
+    const components: TrustScoreComponent[] = [
       { label: 'Average Rating', weight: 0.4, rawValue: avgRating, normalizedValue: normalizedRating },
       { label: 'Completion Rate', weight: 0.3, rawValue: completionRate, normalizedValue: completionRate },
       { label: 'Dispute Win Rate', weight: 0.2, rawValue: disputeWinRate, normalizedValue: disputeWinRate },
@@ -104,7 +140,9 @@ export class TrustScoreService {
       },
     });
 
-    return { totalScore, components };
+    const breakdown: TrustScoreBreakdown = { totalScore, eligible: true, components };
+    emitTrustScoreUpdated(userId, breakdown);
+    return breakdown;
   }
 
   /**
@@ -135,6 +173,21 @@ export class TrustScoreService {
     });
     const paymentPunctuality = totalContracts > 0 ? (completedContracts / totalContracts) * 100 : 0;
 
+    // Eligibility gate: < 5 completed contracts → ineligible
+    if (completedContracts < MIN_CONTRACTS_FOR_TRUST_SCORE) {
+      await prisma.clientProfile.update({
+        where: { userId },
+        data: { trustScore: 0, hireRate: 0 },
+      });
+      return {
+        totalScore: null,
+        eligible: false,
+        minimumContracts: MIN_CONTRACTS_FOR_TRUST_SCORE,
+        currentContracts: completedContracts,
+        components: [],
+      };
+    }
+
     // 3. Hire Rate: contracts created / jobs posted
     const jobsPosted = Number(profile.jobsPosted ?? 0);
     const hireRate = jobsPosted > 0 ? (totalContracts / jobsPosted) * 100 : 0;
@@ -153,7 +206,7 @@ export class TrustScoreService {
     const jobClarityRating = Number(clarityAgg._avg.qualityRating ?? 0);
     const normalizedClarity = (jobClarityRating / 5) * 100;
 
-    const components = [
+    const components: TrustScoreComponent[] = [
       { label: 'Average Rating', weight: 0.4, rawValue: avgRating, normalizedValue: normalizedRating },
       { label: 'Payment Punctuality', weight: 0.3, rawValue: paymentPunctuality, normalizedValue: paymentPunctuality },
       { label: 'Hire Rate', weight: 0.2, rawValue: hireRate, normalizedValue: normalizedHireRate },
@@ -165,9 +218,50 @@ export class TrustScoreService {
 
     const rawScore = Math.round(components.reduce((sum, c) => sum + c.weightedValue, 0) * 100) / 100;
 
+    // ------- Client Penalty Modifiers (post-formula deductions) -------
+
+    // Cancellation rate penalty: up to -10 pts
+    const cancelledContracts = await prisma.contract.count({
+      where: { clientId: userId, status: 'CANCELLED' },
+    });
+    const cancellationRate = totalContracts > 0 ? cancelledContracts / totalContracts : 0;
+    const cancellationPenalty = Math.round(cancellationRate * MAX_CANCELLATION_PENALTY * 100) / 100;
+
+    if (cancellationPenalty > 0) {
+      components.push({
+        label: 'Cancellation Penalty',
+        weight: 0,
+        rawValue: cancelledContracts,
+        normalizedValue: cancellationRate * 100,
+        weightedValue: -cancellationPenalty,
+      });
+    }
+
+    // Dispute behavior penalty: up to -15 pts (only disputes the client LOST)
+    const clientLostDisputes = await prisma.dispute.count({
+      where: {
+        contract: { clientId: userId },
+        outcome: 'FREELANCER_WINS',
+      },
+    });
+    const disputeRate = totalContracts > 0 ? clientLostDisputes / totalContracts : 0;
+    const disputePenalty = Math.round(disputeRate * MAX_DISPUTE_PENALTY * 100) / 100;
+
+    if (disputePenalty > 0) {
+      components.push({
+        label: 'Dispute Behavior Penalty',
+        weight: 0,
+        rawValue: clientLostDisputes,
+        normalizedValue: disputeRate * 100,
+        weightedValue: -disputePenalty,
+      });
+    }
+
+    const penalizedScore = Math.max(0, rawScore - cancellationPenalty - disputePenalty);
+
     // Apply inactivity decay (M4-I6)
     const decayFactor = await this.getInactivityDecayFactor(userId);
-    const totalScore = Math.round(rawScore * decayFactor * 100) / 100;
+    const totalScore = Math.round(penalizedScore * decayFactor * 100) / 100;
 
     // Persist
     await prisma.clientProfile.update({
@@ -178,7 +272,9 @@ export class TrustScoreService {
       },
     });
 
-    return { totalScore, components };
+    const breakdown: TrustScoreBreakdown = { totalScore, eligible: true, components };
+    emitTrustScoreUpdated(userId, breakdown);
+    return breakdown;
   }
 
   /**
@@ -208,7 +304,35 @@ export class TrustScoreService {
   }
 
   private emptyBreakdown(): TrustScoreBreakdown {
-    return { totalScore: 0, components: [] };
+    return { totalScore: null, eligible: false, components: [] };
+  }
+
+  /**
+   * Get paginated trust score history for a user.
+   */
+  async getHistory(userId: string, limit = 30): Promise<{ items: Array<{ id: string; score: number; breakdown: unknown; createdAt: Date }>; total: number }> {
+    const [items, total] = await Promise.all([
+      prisma.trustScoreHistory.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: Math.min(limit, 100),
+        select: {
+          id: true,
+          score: true,
+          breakdown: true,
+          createdAt: true,
+        },
+      }),
+      prisma.trustScoreHistory.count({ where: { userId } }),
+    ]);
+
+    return {
+      items: items.reverse().map((i) => ({
+        ...i,
+        score: Number(i.score),
+      })), // Return oldest-first for chart rendering
+      total,
+    };
   }
 
   /**

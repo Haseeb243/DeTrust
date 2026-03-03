@@ -130,7 +130,10 @@ export interface TrustScoreComponent {
 }
 
 export interface TrustScoreBreakdown {
-  totalScore: number;
+  totalScore: number | null;
+  eligible: boolean;
+  minimumContracts?: number;
+  currentContracts?: number;
   components: TrustScoreComponent[];
 }
 

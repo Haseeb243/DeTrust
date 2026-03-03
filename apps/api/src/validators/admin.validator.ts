@@ -22,3 +22,32 @@ export const adminReviewsQuerySchema = z.object({
 });
 
 export type AdminReviewsQuery = z.infer<typeof adminReviewsQuerySchema>;
+
+// =============================================================================
+// ADMIN TRUST SCORES QUERY
+// =============================================================================
+
+export const adminTrustScoresQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  search: z.string().max(200).optional(),
+  role: z.enum(['FREELANCER', 'CLIENT', 'all']).default('all'),
+  minScore: z.coerce.number().min(0).max(100).optional(),
+  maxScore: z.coerce.number().min(0).max(100).optional(),
+  eligible: z.enum(['true', 'false']).optional(),
+  sort: z.enum(['trustScore', 'name', 'createdAt', 'completedContracts']).default('trustScore'),
+  order: z.enum(['asc', 'desc']).default('desc'),
+});
+
+export type AdminTrustScoresQuery = z.infer<typeof adminTrustScoresQuerySchema>;
+
+// =============================================================================
+// ADMIN ADJUST TRUST SCORE
+// =============================================================================
+
+export const adminAdjustTrustScoreSchema = z.object({
+  adjustment: z.number().min(-100).max(100),
+  reason: z.string().min(10).max(500),
+});
+
+export type AdminAdjustTrustScoreInput = z.infer<typeof adminAdjustTrustScoreSchema>;

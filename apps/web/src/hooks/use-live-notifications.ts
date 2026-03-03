@@ -37,6 +37,12 @@ export function useLiveNotifications(userId: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
     });
 
+    // Trust score live updates (M4)
+    socket.on('trust-score:updated', (data: { userId: string }) => {
+      queryClient.invalidateQueries({ queryKey: ['trustScore', data.userId] });
+      queryClient.invalidateQueries({ queryKey: ['trustScore', 'history', data.userId] });
+    });
+
     socket.on('connect_error', (err) => {
       console.warn('[ws] connection error:', err.message);
     });

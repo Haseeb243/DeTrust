@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService, trustScoreService } from '../services';
 import { AuthenticatedRequest } from '../middleware';
-import { prisma } from '../config/database';
 
 export class UserController {
   /**
@@ -280,24 +279,11 @@ export class UserController {
       const { id } = req.params;
       const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
 
-      const history = await prisma.trustScoreHistory.findMany({
-        where: { userId: id },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        select: {
-          id: true,
-          score: true,
-          breakdown: true,
-          createdAt: true,
-        },
-      });
+      const history = await trustScoreService.getHistory(id, limit);
 
       res.json({
         success: true,
-        data: {
-          items: history.reverse(), // Return oldest-first for chart rendering
-          total: history.length,
-        },
+        data: history,
       });
     } catch (error) {
       next(error);

@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError, ValidationError } from '../middleware';
 import { notificationService } from './notification.service';
+import { trustScoreService } from './trustScore.service';
 import { emitDisputeOpened, emitDisputeResolved } from '../events/dispute.events';
 import type {
   CreateDisputeInput,
@@ -443,6 +444,14 @@ export class DisputeService {
     }
 
     emitDisputeResolved(clientId, freelancerId, dispute.id, input.outcome);
+
+    // Recalculate trust scores immediately after dispute resolution (M4)
+    trustScoreService.getTrustScoreBreakdown(clientId).catch((err) =>
+      console.error(`[DisputeService] Trust score recalc failed for client ${clientId}:`, err),
+    );
+    trustScoreService.getTrustScoreBreakdown(freelancerId).catch((err) =>
+      console.error(`[DisputeService] Trust score recalc failed for freelancer ${freelancerId}:`, err),
+    );
 
     return updated;
   }

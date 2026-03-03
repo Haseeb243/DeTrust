@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import type { Prisma } from '@prisma/client';
-import type { AdminReviewsQuery } from '../validators/admin.validator';
+import type { AdminReviewsQuery, AdminTrustScoresQuery, AdminAdjustTrustScoreInput } from '../validators/admin.validator';
+import { emitTrustScoreUpdated } from '../events/trustScore.events';
 
 // =============================================================================
 // FLAGGED ACCOUNTS THRESHOLDS
@@ -635,6 +636,207 @@ export class AdminService {
       totalPages: Math.ceil(total / limit),
       hasNext: page * limit < total,
       hasPrev: page > 1,
+    };
+  }
+
+  // ===========================================================================
+  // TRUST SCORES
+  // ===========================================================================
+
+  /**
+   * List all users with trust scores, filterable by role, score range, eligibility.
+   */
+  async listTrustScores(query: AdminTrustScoresQuery) {
+    const { page, limit, search, role, minScore, maxScore, eligible, sort, order } = query;
+
+    const MIN_CONTRACTS = 5;
+
+    const where: Prisma.UserWhereInput = {};
+
+    // Role filter
+    if (role === 'FREELANCER') {
+      where.role = 'FREELANCER';
+      where.freelancerProfile = { isNot: null };
+    } else if (role === 'CLIENT') {
+      where.role = 'CLIENT';
+      where.clientProfile = { isNot: null };
+    } else {
+      // All users with a profile
+      where.OR = [
+        { freelancerProfile: { isNot: null } },
+        { clientProfile: { isNot: null } },
+      ];
+    }
+
+    // Search by name or email
+    if (search) {
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        },
+      ];
+    }
+
+    // Score range filter on profile trustScore
+    if (minScore !== undefined || maxScore !== undefined) {
+      const scoreFilter: { gte?: number; lte?: number } = {};
+      if (minScore !== undefined) scoreFilter.gte = minScore;
+      if (maxScore !== undefined) scoreFilter.lte = maxScore;
+
+      if (role === 'FREELANCER') {
+        where.freelancerProfile = { ...(where.freelancerProfile as object ?? {}), trustScore: scoreFilter };
+      } else if (role === 'CLIENT') {
+        where.clientProfile = { ...(where.clientProfile as object ?? {}), trustScore: scoreFilter };
+      }
+      // For 'all' we can't easily filter both — skip score filter for 'all' role
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          avatarUrl: true,
+          createdAt: true,
+          freelancerProfile: {
+            select: { trustScore: true, completedJobs: true, updatedAt: true },
+          },
+          clientProfile: {
+            select: { trustScore: true, updatedAt: true },
+          },
+          _count: {
+            select: { contracts: true },
+          },
+        },
+        orderBy: sort === 'trustScore'
+          ? [{ freelancerProfile: { trustScore: order } }]
+          : sort === 'completedContracts'
+            ? [{ freelancerProfile: { completedJobs: order } }]
+            : { [sort]: order },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    const items = users.map((u) => {
+      const isFreelancer = !!u.freelancerProfile;
+      const trustScore = Number(
+        isFreelancer
+          ? u.freelancerProfile?.trustScore ?? 0
+          : u.clientProfile?.trustScore ?? 0,
+      );
+      const completedContracts = isFreelancer
+        ? (u.freelancerProfile?.completedJobs ?? 0)
+        : u._count.contracts;
+      const lastUpdated = isFreelancer
+        ? u.freelancerProfile?.updatedAt
+        : u.clientProfile?.updatedAt;
+
+      return {
+        userId: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        avatarUrl: u.avatarUrl,
+        trustScore,
+        completedContracts,
+        eligible: completedContracts >= MIN_CONTRACTS,
+        lastUpdated: lastUpdated ?? u.createdAt,
+      };
+    });
+
+    // Post-filter eligibility if requested (can't do in Prisma directly)
+    const filtered = eligible !== undefined
+      ? items.filter((i) => eligible === 'true' ? i.eligible : !i.eligible)
+      : items;
+
+    return {
+      items: filtered,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrev: page > 1,
+    };
+  }
+
+  /**
+   * Manually adjust a user's trust score with reason (admin override).
+   * Creates a TrustScoreHistory entry with admin metadata.
+   */
+  async adjustTrustScore(
+    userId: string,
+    input: AdminAdjustTrustScoreInput,
+    adminId: string,
+  ) {
+    // Find which profile the user has
+    const [freelancerProfile, clientProfile] = await Promise.all([
+      prisma.freelancerProfile.findUnique({ where: { userId }, select: { trustScore: true } }),
+      prisma.clientProfile.findUnique({ where: { userId }, select: { trustScore: true } }),
+    ]);
+
+    const isFreelancer = !!freelancerProfile;
+    const isClient = !!clientProfile;
+
+    if (!isFreelancer && !isClient) {
+      throw new Error('User has no profile to adjust trust score');
+    }
+
+    const currentScore = Number(
+      isFreelancer ? freelancerProfile!.trustScore ?? 0 : clientProfile!.trustScore ?? 0,
+    );
+    const newScore = Math.max(0, Math.min(100, currentScore + input.adjustment));
+
+    // Update profile
+    if (isFreelancer) {
+      await prisma.freelancerProfile.update({
+        where: { userId },
+        data: { trustScore: newScore },
+      });
+    } else {
+      await prisma.clientProfile.update({
+        where: { userId },
+        data: { trustScore: newScore },
+      });
+    }
+
+    // Record history with admin metadata
+    await prisma.trustScoreHistory.create({
+      data: {
+        userId,
+        score: newScore,
+        breakdown: {
+          type: 'ADMIN_ADJUSTMENT',
+          adminId,
+          previousScore: currentScore,
+          adjustment: input.adjustment,
+          reason: input.reason,
+          timestamp: new Date().toISOString(),
+        },
+      },
+    });
+
+    // Emit WebSocket event
+    emitTrustScoreUpdated(userId, {
+      totalScore: newScore,
+      eligible: true,
+      components: [],
+    });
+
+    return {
+      userId,
+      previousScore: currentScore,
+      newScore,
+      adjustment: input.adjustment,
+      reason: input.reason,
     };
   }
 }

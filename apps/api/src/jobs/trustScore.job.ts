@@ -29,14 +29,16 @@ async function recalculateAllTrustScores(): Promise<void> {
       try {
         const breakdown = await trustScoreService.computeFreelancerTrustScore(f.userId);
 
-        // Record history entry
-        await prisma.trustScoreHistory.create({
-          data: {
-            userId: f.userId,
-            score: breakdown.totalScore,
-            breakdown: breakdown.components as unknown as Prisma.InputJsonValue,
-          },
-        });
+        // Only record history for eligible users (≥5 completed contracts)
+        if (breakdown.eligible && breakdown.totalScore !== null) {
+          await prisma.trustScoreHistory.create({
+            data: {
+              userId: f.userId,
+              score: breakdown.totalScore,
+              breakdown: breakdown.components as unknown as Prisma.InputJsonValue,
+            },
+          });
+        }
 
         freelancerCount++;
       } catch (err) {
@@ -54,14 +56,16 @@ async function recalculateAllTrustScores(): Promise<void> {
       try {
         const breakdown = await trustScoreService.computeClientTrustScore(c.userId);
 
-        // Record history entry
-        await prisma.trustScoreHistory.create({
-          data: {
-            userId: c.userId,
-            score: breakdown.totalScore,
-            breakdown: breakdown.components as unknown as Prisma.InputJsonValue,
-          },
-        });
+        // Only record history for eligible users (≥5 completed contracts)
+        if (breakdown.eligible && breakdown.totalScore !== null) {
+          await prisma.trustScoreHistory.create({
+            data: {
+              userId: c.userId,
+              score: breakdown.totalScore,
+              breakdown: breakdown.components as unknown as Prisma.InputJsonValue,
+            },
+          });
+        }
 
         clientCount++;
       } catch (err) {
