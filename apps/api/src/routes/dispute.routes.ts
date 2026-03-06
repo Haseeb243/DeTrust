@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate, requireAdmin, validateBody } from '../middleware';
 import { disputeController } from '../controllers/dispute.controller';
+import { evidenceUpload } from '../middleware/upload.middleware';
 import {
   createDisputeSchema,
   submitEvidenceSchema,
@@ -22,8 +23,11 @@ router.get('/:disputeId/eligibility', authenticate, disputeController.checkEligi
 // Create a new dispute (M5-I1)
 router.post('/', authenticate, validateBody(createDisputeSchema), disputeController.createDispute);
 
-// Submit additional evidence (M5-I3)
+// Submit additional evidence — URL-based (M5-I3, legacy)
 router.post('/:disputeId/evidence', authenticate, validateBody(submitEvidenceSchema), disputeController.submitEvidence);
+
+// Upload evidence files via IPFS (multipart/form-data, max 5 files × 25 MB)
+router.post('/:disputeId/evidence/upload', authenticate, evidenceUpload, disputeController.uploadEvidence);
 
 // Admin: start voting phase (M5-I4)
 router.post('/:disputeId/start-voting', authenticate, requireAdmin, disputeController.startVoting);

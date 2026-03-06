@@ -4,8 +4,6 @@ import {
   type AdminUserListParams,
   type AdminJobListParams,
   type AdminReviewListParams,
-  type AdminTrustScoreListParams,
-  type AdminAdjustTrustScorePayload,
 } from '@/lib/api/admin';
 
 export const adminKeys = {
@@ -17,7 +15,6 @@ export const adminKeys = {
   jobs: (params?: AdminJobListParams) => [...adminKeys.all, 'jobs', params] as const,
   flagged: (params?: { page?: number; limit?: number }) => [...adminKeys.all, 'flagged', params] as const,
   reviews: (params?: AdminReviewListParams) => [...adminKeys.all, 'reviews', params] as const,
-  trustScores: (params?: AdminTrustScoreListParams) => [...adminKeys.all, 'trustScores', params] as const,
 };
 
 export function useAdminStats() {
@@ -109,29 +106,6 @@ export function useAdminReviews(params?: AdminReviewListParams) {
       const res = await adminApi.listReviews(params);
       if (!res.success || !res.data) throw new Error(res.error?.message ?? 'Failed to fetch reviews');
       return res.data;
-    },
-  });
-}
-
-export function useAdminTrustScores(params?: AdminTrustScoreListParams) {
-  return useQuery({
-    queryKey: adminKeys.trustScores(params),
-    queryFn: async () => {
-      const res = await adminApi.listTrustScores(params);
-      if (!res.success || !res.data) throw new Error(res.error?.message ?? 'Failed to fetch trust scores');
-      return res.data;
-    },
-  });
-}
-
-export function useAdjustTrustScore() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ userId, payload }: { userId: string; payload: AdminAdjustTrustScorePayload }) =>
-      adminApi.adjustTrustScore(userId, payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: adminKeys.trustScores() });
-      qc.invalidateQueries({ queryKey: adminKeys.stats() });
     },
   });
 }

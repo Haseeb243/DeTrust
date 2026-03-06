@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { adminService } from '../services/admin.service';
-import type { AuthenticatedRequest } from '../middleware';
 
 /**
  * GET /api/admin/stats
@@ -126,32 +125,6 @@ const listReviews = async (req: Request, res: Response, next: NextFunction): Pro
   }
 };
 
-/**
- * GET /api/admin/trust-scores
- */
-const listTrustScores = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const result = await adminService.listTrustScores(req.query as never);
-    res.json({ success: true, data: result });
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * PATCH /api/admin/trust-scores/:userId
- */
-const adjustTrustScore = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { userId } = req.params;
-    const adminId = req.userId!;
-    const result = await adminService.adjustTrustScore(userId, req.body, adminId);
-    res.json({ success: true, data: result, message: 'Trust score adjusted' });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const adminController = {
   getStats,
   getTrends,
@@ -161,6 +134,4 @@ export const adminController = {
   listJobs,
   getFlaggedAccounts,
   listReviews,
-  listTrustScores,
-  adjustTrustScore,
 };

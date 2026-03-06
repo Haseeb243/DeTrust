@@ -53,6 +53,17 @@ export function useSubmitEvidence() {
   });
 }
 
+export function useUploadEvidence() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ disputeId, files, description }: { disputeId: string; files: File[]; description: string }) =>
+      disputeApi.uploadEvidence(disputeId, files, description),
+    onSuccess: (_, { disputeId }) => {
+      qc.invalidateQueries({ queryKey: disputeKeys.detail(disputeId) });
+    },
+  });
+}
+
 export function useStartVoting() {
   const qc = useQueryClient();
   return useMutation({

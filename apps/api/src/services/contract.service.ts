@@ -98,6 +98,19 @@ export class ContractService {
           milestones: {
             orderBy: { orderIndex: 'asc' },
           },
+          disputes: {
+            select: {
+              id: true,
+              status: true,
+              outcome: true,
+              resolution: true,
+              resolutionTxHash: true,
+              resolvedAt: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
         },
         orderBy: { [sort]: order },
         skip: (page - 1) * limit,
@@ -487,65 +500,21 @@ export class ContractService {
 
   /**
    * Raise dispute
+   * @deprecated Use disputeService.createDispute() instead — this method lacks duplicate
+   * checking, proper validation, and Socket.IO event emission. Kept for backward
+   * compatibility; proxies to the canonical dispute service.
    */
   async raiseDispute(contractId: string, userId: string, reason: string, evidence?: string[]) {
-    const contract = await prisma.contract.findUnique({
-      where: { id: contractId },
-    });
-
-    if (!contract) {
-      throw new NotFoundError('Contract not found');
-    }
-
-    if (contract.clientId !== userId && contract.freelancerId !== userId) {
-      throw new ForbiddenError('You do not have permission to raise a dispute');
-    }
-
-    if (contract.status === 'COMPLETED' || contract.status === 'CANCELLED') {
-      throw new ForbiddenError('Cannot raise dispute on completed or cancelled contract');
-    }
-
-    const result = await prisma.$transaction(async (tx: TransactionClient) => {
-      // Update contract status
-      const updatedContract = await tx.contract.update({
-        where: { id: contractId },
-        data: { status: 'DISPUTED' },
-      });
-
-      // Create dispute record
-      await tx.dispute.create({
-        data: {
-          contractId,
-          initiatorId: userId,
-          reason,
-          description: reason,
-          evidence: evidence ?? [],
-          status: 'OPEN',
-          outcome: 'PENDING',
-        },
-      });
-
-      return updatedContract;
-    });
-
-    // Notify the other party
-    const otherPartyId = contract.clientId === userId ? contract.freelancerId : contract.clientId;
-    await prisma.notification.create({
-      data: {
-        userId: otherPartyId,
-        type: 'DISPUTE_OPENED',
-        title: 'Dispute Raised',
-        message: `A dispute has been raised on contract "${contract.title}"`,
-        data: { contractId, reason },
-      },
-    });
-
-    this.emitContractStatus(contract.clientId, contract.freelancerId, {
+    // Import lazily to avoid circular dependency
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { disputeService } = require('./dispute.service');
+    const dispute = await disputeService.createDispute(userId, {
       contractId,
-      status: 'DISPUTED',
+      reason,
+      description: reason,
+      evidence,
     });
-
-    return result;
+    return dispute;
   }
 
   /**

@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "chainId": 31337,
-  "timestamp": 1772497309,
+  "timestamp": 1772783530,
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
   "feeRecipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
   "contracts": {
@@ -13,7 +13,7 @@
     "JobEscrow": {
       "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
       "blockNumber": 4,
-      "txHash": "0x4f81a48b88cf037607b31a6727c36712f9e79d12ef54e8d3487932d4e0e83cf2"
+      "txHash": "0x327e7ec4adde05aa901e2d1c53a1b341909c05285c09962fa4092b75cc551870"
     },
     "ReputationRegistry": {
       "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",

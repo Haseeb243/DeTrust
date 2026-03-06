@@ -5,10 +5,7 @@ import { config } from './config';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { connectRedis, disconnectRedis } from './config/redis';
 import { initSocketIO } from './config/socket';
-import { startCronJobs, stopCronJobs } from './services/cron.service';
-import { startTrustScoreJob, stopTrustScoreJob } from './jobs/trustScore.job';
-import { startBlockchainJob, stopBlockchainJob } from './jobs/blockchain.job';
-import { startEmailJob, stopEmailJob } from './jobs/email.job';
+import { startQueues, stopQueues } from './queues';
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -24,12 +21,9 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
     console.log('🛑 HTTP server closed');
     
     try {
+      await stopQueues();
       await disconnectDatabase();
       await disconnectRedis();
-      stopCronJobs();
-      stopTrustScoreJob();
-      stopBlockchainJob();
-      stopEmailJob();
       console.log('✅ Graceful shutdown completed');
       process.exit(0);
     } catch (error) {
@@ -70,11 +64,8 @@ const startServer = async (): Promise<void> => {
     // Connect to Redis
     await connectRedis();
 
-    // Start scheduled jobs
-    startCronJobs();
-    startTrustScoreJob();
-    startBlockchainJob();
-    startEmailJob();
+    // Start BullMQ queues and workers
+    await startQueues();
 
     // Start listening
     server.listen(config.server.port, () => {

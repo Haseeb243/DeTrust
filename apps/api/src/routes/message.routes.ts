@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate, validateBody } from '../middleware';
 import { messageController } from '../controllers/message.controller';
+import { documentUpload } from '../middleware/upload.middleware';
 import { z } from 'zod';
 
 const router: Router = Router();
@@ -26,6 +27,9 @@ router.get('/:partnerId', authenticate, messageController.getMessages);
 
 // Send a message (M8-I1)
 router.post('/', authenticate, validateBody(sendMessageSchema), messageController.sendMessage);
+
+// Upload a file attachment for messages (M8-I3)
+router.post('/upload-attachment', authenticate, documentUpload, messageController.uploadAttachment);
 
 // Mark conversation as read
 router.patch('/:partnerId/read', authenticate, messageController.markConversationRead);

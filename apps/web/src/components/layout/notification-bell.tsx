@@ -7,30 +7,35 @@ import { NotificationType } from '@detrust/types';
 
 import { cn, formatRelativeTime } from '@/lib/utils';
 import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead } from '@/hooks/queries';
+import { useAuthStore } from '@/store';
 
 /** Map notification types to the page the user should land on. */
-function getNotificationHref(type: NotificationType, data: Record<string, unknown> | null): string | null {
+function getNotificationHref(type: NotificationType, data: Record<string, unknown> | null, isAdmin: boolean): string | null {
   if (!data) return null;
+
+  const prefix = isAdmin ? '/admin' : '';
 
   switch (type) {
     case NotificationType.JOB_POSTED:
-      return data.jobId ? `/jobs/${data.jobId}` : null;
+      return data.jobId ? `${prefix}/jobs/${data.jobId}` : null;
     case NotificationType.PROPOSAL_RECEIVED:
     case NotificationType.PROPOSAL_ACCEPTED:
     case NotificationType.PROPOSAL_REJECTED:
-      return data.proposalId ? `/proposals` : data.jobId ? `/jobs/${data.jobId}/proposals` : null;
+      return data.proposalId ? `${prefix}/proposals` : data.jobId ? `${prefix}/jobs/${data.jobId}/proposals` : null;
     case NotificationType.CONTRACT_CREATED:
     case NotificationType.MILESTONE_SUBMITTED:
     case NotificationType.MILESTONE_APPROVED:
+    case NotificationType.MILESTONE_AUTO_APPROVED:
     case NotificationType.PAYMENT_RELEASED:
-      return data.contractId ? `/contracts/${data.contractId}` : null;
+      return data.contractId ? `${prefix}/contracts/${data.contractId}` : null;
     case NotificationType.DISPUTE_OPENED:
+    case NotificationType.DISPUTE_VOTING:
     case NotificationType.DISPUTE_RESOLVED:
-      return data.contractId ? `/contracts/${data.contractId}` : null;
+      return data.contractId ? `${prefix}/contracts/${data.contractId}` : null;
     case NotificationType.REVIEW_RECEIVED:
-      return '/profile';
+      return `${prefix}/profile`;
     case NotificationType.MESSAGE_RECEIVED:
-      return '/messages';
+      return `${prefix}/messages`;
     default:
       return null;
   }
@@ -38,6 +43,8 @@ function getNotificationHref(type: NotificationType, data: Record<string, unknow
 
 export function NotificationBell() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN';
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const bellButtonRef = useRef<HTMLButtonElement>(null);
@@ -86,7 +93,7 @@ export function NotificationBell() {
       markAsRead.mutate(notification.id);
     }
 
-    const href = getNotificationHref(notification.type, notification.data);
+    const href = getNotificationHref(notification.type, notification.data, isAdmin);
     if (href) {
       router.push(href);
     }

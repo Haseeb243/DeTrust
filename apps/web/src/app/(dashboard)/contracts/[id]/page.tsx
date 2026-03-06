@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ArrowLeft, XCircle, MessageSquareText } from 'lucide-react';
+import { ArrowLeft, XCircle, MessageSquareText, AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
@@ -119,6 +119,22 @@ export default function ContractDetailPage() {
             <EscrowFunding contract={contract} onFunded={() => { refetch(); }} autoFund={autoFund} />
           )}
           <MilestoneTimeline milestones={contract.milestones} />
+          {contract.status === 'DISPUTED' && (
+            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/30">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+              <div>
+                <p className="font-medium text-red-700 dark:text-red-400">Contract Under Dispute</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-500">
+                  This contract has an active dispute. Milestone submissions and payments are frozen
+                  until the dispute is resolved. Visit the{' '}
+                  <Link href="/disputes" className="underline hover:text-red-700">
+                    Disputes page
+                  </Link>{' '}
+                  for details.
+                </p>
+              </div>
+            </div>
+          )}
           {showDisputeForm && (
             <DisputeForm
               onSubmit={handleSubmitDispute}

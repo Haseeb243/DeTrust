@@ -88,9 +88,11 @@ enum NotificationType {
   CONTRACT_CREATED
   MILESTONE_SUBMITTED
   MILESTONE_APPROVED
+  MILESTONE_AUTO_APPROVED
   PAYMENT_RELEASED
   REVIEW_RECEIVED
   DISPUTE_OPENED
+  DISPUTE_VOTING
   DISPUTE_RESOLVED
   MESSAGE_RECEIVED
   SYSTEM
@@ -107,6 +109,8 @@ enum SecureFileCategory {
   AVATAR
   RESUME
   CERTIFICATION
+  EVIDENCE
+  MESSAGE_ATTACHMENT
 }
 
 enum SecureFileVisibility {
@@ -119,6 +123,8 @@ enum SecureFileResourceType {
   USER
   FREELANCER_PROFILE
   CERTIFICATION
+  DISPUTE
+  MESSAGE
 }
 
 enum KycStatus {
@@ -164,6 +170,7 @@ model User {
   reviewsReceived     Review[]           @relation("ReviewSubject")
   disputesInitiated   Dispute[]          @relation("DisputeInitiator")
   disputeVotes        DisputeVote[]
+  evidenceUploads     DisputeEvidence[]   @relation("EvidenceUploader")
   messagesSent        Message[]          @relation("MessageSender")
   messagesReceived    Message[]          @relation("MessageReceiver")
   notifications       Notification[]
@@ -647,12 +654,30 @@ model Dispute {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
-  contract  Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  initiator User          @relation("DisputeInitiator", fields: [initiatorId], references: [id])
-  votes     DisputeVote[]
+  contract      Contract          @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  initiator     User              @relation("DisputeInitiator", fields: [initiatorId], references: [id])
+  votes         DisputeVote[]
+  evidenceItems DisputeEvidence[]
 
   @@index([contractId])
   @@index([status])
+}
+
+model DisputeEvidence {
+  id           String   @id @default(cuid())
+  disputeId    String
+  uploadedById String
+  url          String   // IPFS gateway URL or ipfs://cid or sha256:hash
+  cid          String?  // Raw IPFS CID (without prefix)
+  fileName     String?
+  fileSize     Int?     // bytes
+  description  String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  dispute    Dispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation("EvidenceUploader", fields: [uploadedById], references: [id])
+
+  @@index([disputeId])
 }
 
 model DisputeVote {

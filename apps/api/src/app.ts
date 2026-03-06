@@ -26,6 +26,7 @@ import reviewRoutes from './routes/review.routes';
 import disputeRoutes from './routes/dispute.routes';
 import messageRoutes from './routes/message.routes';
 import adminRoutes from './routes/admin.routes';
+import supportRoutes from './routes/support.routes';
 
 // Create Express app
 const app: Application = express();
@@ -121,6 +122,9 @@ app.use(`${API_PREFIX}/messages`, messageRoutes);
 
 // Admin routes
 app.use(`${API_PREFIX}/admin`, adminRoutes);
+
+// Support routes
+app.use(`${API_PREFIX}/support`, supportRoutes);
 
 // API documentation (Swagger UI)
 app.use(`${API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

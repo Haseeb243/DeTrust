@@ -40,6 +40,8 @@ import { BrandMark } from '@/components/layout/brand-mark';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { TokenBalance } from '@/components/layout/token-balance';
 import { ThemeToggle } from '@/components/ui';
+import { SupportWidget } from '@/components/layout/SupportWidget';
+import { NotificationPermissionBanner } from '@/components/layout/NotificationPermissionBanner';
 
 const navigation = {
   FREELANCER: [
@@ -285,6 +287,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
+        {/* Notification permission prompt */}
+        <NotificationPermissionBanner />
+
         {/* Page content */}
         <main id="main-content" className="min-h-[calc(100vh-5rem)] p-8">
           <Suspense fallback={
@@ -296,6 +301,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </Suspense>
         </main>
       </div>
+
+      {/* Floating customer support widget */}
+      <SupportWidget />
     </div>
   );
 }

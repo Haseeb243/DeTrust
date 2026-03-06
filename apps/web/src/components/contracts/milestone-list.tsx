@@ -41,6 +41,7 @@ export function MilestoneList({
   const [revisionLoading, setRevisionLoading] = useState(false);
 
   const isEscrowFunded = contract.status === 'ACTIVE';
+  const isDisputed = contract.status === 'DISPUTED';
   const isHourly = contract.billingType === 'HOURLY';
 
   const completedMilestones = contract.milestones?.filter(m => m.status === 'PAID' || m.status === 'APPROVED').length || 0;
@@ -243,6 +244,8 @@ export function MilestoneList({
                   ? 'border-purple-200 bg-purple-50'
                   : milestone.status === 'REVISION_REQUESTED'
                   ? 'border-amber-200 bg-amber-50'
+                  : isDisputed
+                  ? 'border-red-200 bg-red-50/30'
                   : 'border-dt-border bg-dt-surface'
               )}
             >
@@ -313,7 +316,12 @@ export function MilestoneList({
               {/* Freelancer submit */}
               {isFreelancer && (milestone.status === 'PENDING' || milestone.status === 'IN_PROGRESS' || milestone.status === 'REVISION_REQUESTED') && (
                 <div className="mt-4">
-                  {!isEscrowFunded ? (
+                  {isDisputed ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      This contract is under dispute — milestone submissions are disabled until the dispute is resolved.
+                    </div>
+                  ) : !isEscrowFunded ? (
                     <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
                       <AlertTriangle className="h-4 w-4 shrink-0" />
                       Escrow must be funded before deliverables can be submitted

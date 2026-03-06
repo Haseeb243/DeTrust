@@ -73,4 +73,66 @@ const documentFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
 export const avatarUpload: RequestHandler = createUploadHandler('avatar', AVATAR_LIMIT_BYTES, avatarFilter);
 export const documentUpload: RequestHandler = createUploadHandler('document', DOCUMENT_LIMIT_BYTES, documentFilter);
 
+/**
+ * Evidence file upload — accepts up to 5 files (PDF, images, Office, ZIP).
+ * Max 25 MB per file (SRS FR-P2.2).
+ */
+const EVIDENCE_LIMIT_BYTES = 25 * 1024 * 1024;
+
+const evidenceFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
+	const allowed = new Set([
+		...DOCUMENT_MIME_TYPES,
+		'text/plain',
+		'video/mp4',
+		'video/webm',
+		'audio/mpeg',
+		'audio/ogg',
+	]);
+	if (!allowed.has(file.mimetype)) {
+		cb(new ValidationError('Unsupported file type. Allowed: PDF, images, Office docs, ZIP, text, audio, and video.'));
+		return;
+	}
+	cb(null, true);
+};
+
+const createMultiUploadHandler = (
+	field: string,
+	maxCount: number,
+	limit: number,
+	filter: multer.Options['fileFilter'],
+): RequestHandler => {
+	const uploader = multer({
+		storage: memoryStorage,
+		fileFilter: filter,
+		limits: { fileSize: limit },
+	});
+
+	return (req, res, next) => {
+		uploader.array(field, maxCount)(req, res, (error) => {
+			if (error) {
+				if (error instanceof multer.MulterError) {
+					const message =
+						error.code === 'LIMIT_FILE_SIZE'
+							? 'File exceeds the 25 MB limit'
+							: error.code === 'LIMIT_UNEXPECTED_FILE'
+								? 'Maximum 5 evidence files allowed'
+								: 'Upload failed, please try again';
+					next(new ValidationError(message));
+					return;
+				}
+				next(error);
+				return;
+			}
+			next();
+		});
+	};
+};
+
+export const evidenceUpload: RequestHandler = createMultiUploadHandler(
+	'files',
+	5,
+	EVIDENCE_LIMIT_BYTES,
+	evidenceFilter,
+);
+
 export default avatarUpload;

@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
+import { SecureFileCategory, SecureFileResourceType, SecureFileVisibility } from '@prisma/client';
+
 import { AuthenticatedRequest } from '../middleware';
+import { ValidationError } from '../middleware';
 import { messageService } from '../services/message.service';
+import { storageService } from '../services/storage.service';
+import { config } from '../config';
 
 /**
  * Send a message
@@ -97,10 +102,54 @@ const getUnreadCount = async (req: Request, res: Response, next: NextFunction): 
   }
 };
 
+/**
+ * Upload a file attachment for a message
+ * POST /api/messages/upload-attachment
+ */
+const uploadAttachment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.userId!;
+
+    if (!req.file) {
+      throw new ValidationError('No file provided');
+    }
+
+    const secureFile = await storageService.uploadSecureFile({
+      buffer: req.file.buffer,
+      filename: req.file.originalname || `msg-attachment-${Date.now()}`,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      userId,
+      category: SecureFileCategory.MESSAGE_ATTACHMENT,
+      visibility: SecureFileVisibility.AUTHENTICATED,
+      resourceType: SecureFileResourceType.MESSAGE,
+      resourceId: userId,
+    });
+
+    const baseUrl = config.server.apiUrl.replace(/\/$/, '');
+    const url = `${baseUrl}/api/uploads/${secureFile.id}`;
+
+    res.status(201).json({
+      success: true,
+      data: {
+        url,
+        fileId: secureFile.id,
+        mimeType: secureFile.mimeType,
+        size: secureFile.size,
+        filename: secureFile.filename,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const messageController = {
   sendMessage,
   getConversations,
   getMessages,
   markConversationRead,
   getUnreadCount,
+  uploadAttachment,
 };

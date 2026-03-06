@@ -45,6 +45,35 @@ const submitEvidence = async (req: Request, res: Response, next: NextFunction): 
 };
 
 /**
+ * Upload evidence files to IPFS, then attach CIDs to the dispute.
+ * POST /api/disputes/:disputeId/evidence/upload  (multipart/form-data)
+ */
+const uploadEvidence = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.userId!;
+    const { disputeId } = req.params;
+    const files = (req as any).files as Express.Multer.File[] | undefined;
+    const description = (req.body.description as string) || '';
+
+    if (!files || files.length === 0) {
+      res.status(400).json({ success: false, error: { message: 'At least one file is required' } });
+      return;
+    }
+
+    if (description.length < 10) {
+      res.status(400).json({ success: false, error: { message: 'Description must be at least 10 characters' } });
+      return;
+    }
+
+    const dispute = await disputeService.uploadEvidence(userId, disputeId, files, description);
+    res.json({ success: true, data: dispute, message: 'Evidence uploaded to IPFS and attached' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Start voting phase (admin only)
  * POST /api/disputes/:disputeId/start-voting
  */
@@ -125,6 +154,10 @@ const listDisputes = async (req: Request, res: Response, next: NextFunction): Pr
 
     const query: GetDisputesQuery = {
       status: req.query.status as GetDisputesQuery['status'],
+      outcome: req.query.outcome as GetDisputesQuery['outcome'],
+      dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
+      dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
+      search: req.query.search as string | undefined,
       page: parseInt(req.query.page as string, 10) || 1,
       limit: Math.min(parseInt(req.query.limit as string, 10) || 20, 100),
       sort: (req.query.sort as GetDisputesQuery['sort']) || 'createdAt',
@@ -158,6 +191,7 @@ const checkEligibility = async (req: Request, res: Response, next: NextFunction)
 export const disputeController = {
   createDispute,
   submitEvidence,
+  uploadEvidence,
   startVoting,
   castVote,
   adminResolve,

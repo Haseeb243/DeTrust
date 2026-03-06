@@ -38,27 +38,39 @@ const outcomeLabels: Record<string, string> = {
 export default function DisputesPage() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabValue>('');
+  const [page, setPage] = useState(1);
 
   const params: GetDisputesParams = {
-    page: 1,
+    page,
     limit: 20,
     ...(activeTab ? { status: activeTab as GetDisputesParams['status'] } : {}),
   };
 
   const { data, isLoading } = useDisputes(params);
   const disputes = data?.items ?? [];
+  const totalPages = data?.totalPages ?? 1;
+  const hasNext = data?.hasNext ?? false;
+  const hasPrev = data?.hasPrev ?? false;
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold text-dt-text">
-          <Shield className="h-6 w-6 text-blue-500" />
-          Dispute Resolution
-        </h1>
-        <p className="mt-1 text-dt-text-muted">
-          Manage and track contract disputes. {user?.role === 'ADMIN' ? 'As admin, you can review and resolve all disputes.' : 'View disputes related to your contracts.'}
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-dt-text">
+            <Shield className="h-6 w-6 text-blue-500" />
+            Dispute Resolution
+          </h1>
+          <p className="mt-1 text-dt-text-muted">
+            Manage and track contract disputes. {user?.role === 'ADMIN' ? 'As admin, you can review and resolve all disputes.' : 'View disputes related to your contracts.'}
+          </p>
+        </div>
+        <Link
+          href="/disputes/history"
+          className="shrink-0 rounded-lg border border-dt-border bg-dt-surface px-3 py-2 text-sm font-medium text-dt-text-muted transition hover:bg-dt-surface-alt hover:text-dt-text"
+        >
+          View History
+        </Link>
       </div>
 
       {/* Status Tabs */}
@@ -66,7 +78,7 @@ export default function DisputesPage() {
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
+            onClick={() => { setActiveTab(tab.value); setPage(1); }}
             className={cn(
               'whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition',
               activeTab === tab.value
@@ -160,6 +172,41 @@ export default function DisputesPage() {
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-dt-text-muted">
+            Page {page} of {totalPages} ({data?.total ?? 0} disputes)
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={!hasPrev}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition',
+                hasPrev
+                  ? 'bg-dt-surface text-dt-text hover:bg-dt-surface-alt'
+                  : 'cursor-not-allowed text-dt-text-muted opacity-50'
+              )}
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!hasNext}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition',
+                hasNext
+                  ? 'bg-dt-surface text-dt-text hover:bg-dt-surface-alt'
+                  : 'cursor-not-allowed text-dt-text-muted opacity-50'
+              )}
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
 

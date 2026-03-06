@@ -52,6 +52,9 @@ const envSchema = z.object({
   // Frontend
   FRONTEND_URL: z.string().default('http://localhost:3000'),
   
+  // Support
+  SUPPORT_ADMIN_USER_ID: z.string().optional(),
+  
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.string().default('900000'),
   RATE_LIMIT_MAX_REQUESTS: z.string().default('100'),
@@ -140,6 +143,10 @@ export const config = {
   
   ai: {
     serviceUrl: env.AI_SERVICE_URL,
+  },
+
+  support: {
+    adminUserId: env.SUPPORT_ADMIN_USER_ID,
   },
   
   rateLimit: {

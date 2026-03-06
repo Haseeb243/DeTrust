@@ -71,8 +71,16 @@ export function TrustScoreCard({ breakdown, className }: TrustScoreCardProps) {
   }
 
   const score = breakdown.totalScore ?? 0;
-  const positiveComponents = breakdown.components.filter((c) => c.weightedValue >= 0);
+  const positiveComponents = breakdown.components.filter((c) => c.weight > 0);
   const penaltyComponents = breakdown.components.filter((c) => c.weightedValue < 0);
+  // Info components that render with a progress bar (e.g. Dispute Win Rate)
+  const infoBarComponents = breakdown.components.filter(
+    (c) => c.weight === 0 && c.weightedValue >= 0 && c.label === 'Dispute Win Rate',
+  );
+  // Text-only info components (e.g. Dispute Record, Cancellation Penalty at 0)
+  const infoTextComponents = breakdown.components.filter(
+    (c) => c.weight === 0 && c.weightedValue >= 0 && c.label !== 'Dispute Win Rate',
+  );
 
   return (
     <Card className={cn('border-dt-border bg-dt-surface shadow-lg', className)}>
@@ -153,6 +161,66 @@ export function TrustScoreCard({ breakdown, className }: TrustScoreCardProps) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Dispute Win Rate bar (informational — matches freelancer visual) */}
+        {infoBarComponents.length > 0 && (
+          <div className="space-y-3 border-t border-dt-border pt-4">
+            <p className="text-xs font-medium text-dt-text-muted">Dispute &amp; Compliance</p>
+            {infoBarComponents.map((component) => (
+              <div key={component.label} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-dt-text-muted">
+                    {component.label}{' '}
+                    <span className="text-xs text-dt-text-muted/60">(info)</span>
+                  </span>
+                  <span className="font-medium text-dt-text">
+                    {component.normalizedValue.toFixed(1)}
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className={cn('h-full rounded-full transition-all', getBarColor(component.normalizedValue))}
+                    style={{ width: `${Math.min(component.normalizedValue, 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Text-only info (cancellation status, etc.) */}
+        {infoTextComponents.length > 0 && (
+          <div className={cn(
+            'space-y-3 pt-4',
+            infoBarComponents.length === 0 && 'border-t border-dt-border',
+          )}>
+            {infoBarComponents.length === 0 && (
+              <p className="text-xs font-medium text-dt-text-muted">Dispute &amp; Compliance</p>
+            )}
+            {infoTextComponents.map((component) => {
+              const isDispute = component.label === 'Dispute Record';
+              const displayValue = isDispute
+                ? `${component.rawValue} dispute${component.rawValue !== 1 ? 's' : ''} · ${component.normalizedValue}% win rate`
+                : component.rawValue === 0
+                  ? 'Clean record'
+                  : `${component.rawValue} cancelled`;
+
+              return (
+                <div key={component.label} className="flex items-center justify-between text-sm">
+                  <span className="text-dt-text-muted">{component.label}</span>
+                  <span className={cn(
+                    'font-medium',
+                    component.rawValue === 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-amber-600 dark:text-amber-400',
+                  )}>
+                    {displayValue}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>

@@ -18,10 +18,30 @@ import {
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import type { DisputeVote } from '@detrust/types';
-import { useDispute, useCastVote, useAdminResolve, useStartVoting } from '@/hooks/queries/use-disputes';
+import type { DisputeVote, DisputeEvidence } from '@detrust/types';
+import {
+  useDispute,
+  useCastVote,
+  useAdminResolve,
+  useStartVoting,
+  useJurorEligibility,
+  useSubmitEvidence,
+  useUploadEvidence,
+} from '@/hooks/queries/use-disputes';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { openSecureFileInNewTab } from '@/lib/secure-files';
+
+/** Detect evidence URLs that are inaccessible SHA-256 fallback hashes */
+function isSha256Evidence(url: string): boolean {
+  return /^(ipfs:\/\/)?sha256:/i.test(url);
+}
+
+/** Detect evidence URLs stored as secure API uploads */
+function isSecureApiUpload(url: string): boolean {
+  return /\/api\/uploads\//.test(url);
+}
 
 interface DisputeContract {
   id: string;
@@ -57,11 +77,19 @@ export default function DisputeDetailPage() {
   const castVoteMutation = useCastVote();
   const adminResolveMutation = useAdminResolve();
   const startVotingMutation = useStartVoting();
+  const submitEvidenceMutation = useSubmitEvidence();
+  const uploadEvidenceMutation = useUploadEvidence();
+
+  // Juror eligibility check (only meaningful during VOTING phase)
+  const { data: eligibility } = useJurorEligibility(disputeId);
 
   const [voteChoice, setVoteChoice] = useState<'CLIENT_WINS' | 'FREELANCER_WINS' | ''>('');
   const [reasoning, setReasoning] = useState('');
   const [resolution, setResolution] = useState('');
   const [resolveOutcome, setResolveOutcome] = useState<'CLIENT_WINS' | 'FREELANCER_WINS' | 'SPLIT'>('CLIENT_WINS');
+  const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
+  const [evidenceDesc, setEvidenceDesc] = useState('');
+  const [openingEvidenceId, setOpeningEvidenceId] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'ADMIN';
   const disputeContract = dispute?.contract as DisputeContract | undefined;
@@ -131,6 +159,33 @@ export default function DisputeDetailPage() {
       toast.success('Voting phase started');
     } else {
       toast.error(res.error?.message ?? 'Failed to start voting');
+    }
+  };
+
+  const handleSubmitEvidence = async () => {
+    if (evidenceFiles.length === 0) {
+      toast.error('Please select at least one evidence file');
+      return;
+    }
+    if (evidenceDesc.length < 10) {
+      toast.error('Description must be at least 10 characters');
+      return;
+    }
+    if (evidenceFiles.length > 5) {
+      toast.error('Maximum 5 files allowed');
+      return;
+    }
+    const res = await uploadEvidenceMutation.mutateAsync({
+      disputeId,
+      files: evidenceFiles,
+      description: evidenceDesc,
+    });
+    if (res.success) {
+      toast.success('Evidence uploaded to IPFS successfully');
+      setEvidenceFiles([]);
+      setEvidenceDesc('');
+    } else {
+      toast.error(res.error?.message ?? 'Failed to upload evidence');
     }
   };
 
@@ -246,19 +301,149 @@ export default function DisputeDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-dt-text">
             <FileText className="h-5 w-5" /> Evidence &amp; Proof
-            {dispute.evidence && dispute.evidence.length > 0 && (
-              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                {dispute.evidence.length} file{dispute.evidence.length !== 1 ? 's' : ''}
-              </Badge>
-            )}
+            {(() => {
+              const count = (dispute.evidenceItems as DisputeEvidence[] | undefined)?.length ?? dispute.evidence?.length ?? 0;
+              return count > 0 ? (
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  {count} file{count !== 1 ? 's' : ''}
+                </Badge>
+              ) : null;
+            })()}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {dispute.evidence && dispute.evidence.length > 0 ? (
+          {(dispute.evidenceItems as DisputeEvidence[] | undefined)?.length ? (
+            <div className="space-y-3">
+              {(dispute.evidenceItems as DisputeEvidence[]).map((item) => {
+                const url = item.url;
+                const sha256 = isSha256Evidence(url);
+                const secureUpload = isSecureApiUpload(url);
+                const isImage = !sha256 && /\.(png|jpe?g|gif|webp|svg)$/i.test(url);
+                const isPdf = !sha256 && /\.pdf$/i.test(url);
+                const fileName = item.fileName ?? url.split('/').pop() ?? 'Evidence file';
+
+                return (
+                  <div
+                    key={item.id}
+                    className="overflow-hidden rounded-xl border border-dt-border"
+                  >
+                    {/* Party attribution header */}
+                    <div className="flex items-center justify-between bg-slate-50 px-3 py-2 dark:bg-slate-800/50">
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-dt-text">
+                        <User className="h-3.5 w-3.5" />
+                        {item.uploadedBy?.name ?? 'Unknown'}
+                      </span>
+                      <span className="text-xs text-dt-text-muted">
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    {/* SHA-256 fallback: file was never uploaded to IPFS */}
+                    {sha256 ? (
+                      <div className="flex items-start gap-3 border-t border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                            Evidence unavailable
+                          </p>
+                          <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
+                            This file ({fileName}) was uploaded before IPFS integration was fixed.
+                            The party should re-upload the evidence.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Preview for images */}
+                        {isImage && !secureUpload && (
+                          <div className="relative bg-slate-50 p-4 dark:bg-slate-800/50">
+                            <img
+                              src={url}
+                              alt={`Evidence by ${item.uploadedBy?.name ?? 'Unknown'}`}
+                              className="mx-auto max-h-64 rounded-lg object-contain"
+                            />
+                          </div>
+                        )}
+
+                        {/* Embedded PDF viewer */}
+                        {isPdf && !secureUpload && (
+                          <div className="bg-slate-50 dark:bg-slate-800/50">
+                            <iframe
+                              src={url}
+                              title={`Evidence PDF — ${fileName}`}
+                              className="h-80 w-full border-0"
+                            />
+                          </div>
+                        )}
+
+                        {/* File info + download link */}
+                        {secureUpload ? (
+                          <button
+                            type="button"
+                            disabled={openingEvidenceId === item.id}
+                            onClick={async () => {
+                              setOpeningEvidenceId(item.id);
+                              try {
+                                await openSecureFileInNewTab(url, { token: api.getToken() ?? undefined });
+                              } catch {
+                                toast.error('Failed to open evidence file');
+                              } finally {
+                                setOpeningEvidenceId(null);
+                              }
+                            }}
+                            className="flex w-full items-center gap-3 p-3 text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                              <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="min-w-0 flex-1 text-left">
+                              <p className="truncate font-medium text-dt-text">{fileName}</p>
+                              <p className="text-xs text-dt-text-muted">
+                                {isImage ? 'Image' : isPdf ? 'PDF Document' : 'File'}
+                                {item.fileSize ? ` · ${(item.fileSize / 1024).toFixed(0)} KB` : ''}
+                                {item.description ? ` · ${item.description}` : ''}
+                              </p>
+                            </div>
+                            {openingEvidenceId === item.id ? (
+                              <Spinner size="sm" />
+                            ) : (
+                              <ArrowLeft className="h-4 w-4 rotate-180 text-dt-text-muted" />
+                            )}
+                          </button>
+                        ) : (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-3 text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                              <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-medium text-dt-text">{fileName}</p>
+                              <p className="text-xs text-dt-text-muted">
+                                {isImage ? 'Image' : isPdf ? 'PDF Document' : 'File'}
+                                {item.fileSize ? ` · ${(item.fileSize / 1024).toFixed(0)} KB` : ''}
+                                {item.description ? ` · ${item.description}` : ''}
+                              </p>
+                            </div>
+                            <ArrowLeft className="h-4 w-4 rotate-180 text-dt-text-muted" />
+                          </a>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : dispute.evidence && dispute.evidence.length > 0 ? (
             <div className="space-y-3">
               {dispute.evidence.map((url: string, idx: number) => {
-                const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(url);
-                const isPdf = /\.pdf$/i.test(url);
+                const sha256 = isSha256Evidence(url);
+                const secureUpload = isSecureApiUpload(url);
+                const isImage = !sha256 && /\.(png|jpe?g|gif|webp|svg)$/i.test(url);
+                const isPdf = !sha256 && /\.pdf$/i.test(url);
                 const fileName = url.split('/').pop() ?? `Evidence file ${idx + 1}`;
 
                 return (
@@ -266,46 +451,81 @@ export default function DisputeDetailPage() {
                     key={idx}
                     className="overflow-hidden rounded-xl border border-dt-border"
                   >
-                    {/* Preview for images */}
-                    {isImage && (
-                      <div className="relative bg-slate-50 p-4 dark:bg-slate-800/50">
-                        <img
-                          src={url}
-                          alt={`Evidence ${idx + 1}`}
-                          className="mx-auto max-h-64 rounded-lg object-contain"
-                        />
+                    {sha256 ? (
+                      <div className="flex items-start gap-3 bg-amber-50 p-4 dark:bg-amber-950/30">
+                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                            Evidence unavailable
+                          </p>
+                          <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
+                            This file was uploaded before IPFS integration was fixed.
+                            The party should re-upload the evidence.
+                          </p>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        {isImage && !secureUpload && (
+                          <div className="relative bg-slate-50 p-4 dark:bg-slate-800/50">
+                            <img
+                              src={url}
+                              alt={`Evidence ${idx + 1}`}
+                              className="mx-auto max-h-64 rounded-lg object-contain"
+                            />
+                          </div>
+                        )}
+                        {isPdf && !secureUpload && (
+                          <div className="bg-slate-50 dark:bg-slate-800/50">
+                            <iframe
+                              src={url}
+                              title={`Evidence PDF ${idx + 1}`}
+                              className="h-80 w-full border-0"
+                            />
+                          </div>
+                        )}
+                        {secureUpload ? (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await openSecureFileInNewTab(url, { token: api.getToken() ?? undefined });
+                              } catch {
+                                toast.error('Failed to open evidence file');
+                              }
+                            }}
+                            className="flex w-full items-center gap-3 p-3 text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                              <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="min-w-0 flex-1 text-left">
+                              <p className="truncate font-medium text-dt-text">{fileName}</p>
+                              <p className="text-xs text-dt-text-muted">Secure upload · Click to open</p>
+                            </div>
+                            <ArrowLeft className="h-4 w-4 rotate-180 text-dt-text-muted" />
+                          </button>
+                        ) : (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-3 text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                              <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-medium text-dt-text">{fileName}</p>
+                              <p className="text-xs text-dt-text-muted">
+                                {isImage ? 'Image' : isPdf ? 'PDF Document' : 'File'} · Click to open
+                              </p>
+                            </div>
+                            <ArrowLeft className="h-4 w-4 rotate-180 text-dt-text-muted" />
+                          </a>
+                        )}
+                      </>
                     )}
-
-                    {/* Embedded PDF viewer */}
-                    {isPdf && (
-                      <div className="bg-slate-50 dark:bg-slate-800/50">
-                        <iframe
-                          src={url}
-                          title={`Evidence PDF ${idx + 1}`}
-                          className="h-80 w-full border-0"
-                        />
-                      </div>
-                    )}
-
-                    {/* File info + download link */}
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                    >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                        <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-dt-text">{fileName}</p>
-                        <p className="text-xs text-dt-text-muted">
-                          {isImage ? 'Image' : isPdf ? 'PDF Document' : 'File'} · Click to open
-                        </p>
-                      </div>
-                      <ArrowLeft className="h-4 w-4 rotate-180 text-dt-text-muted" />
-                    </a>
                   </div>
                 );
               })}
@@ -362,7 +582,75 @@ export default function DisputeDetailPage() {
         </Card>
       )}
 
-      {/* Vote Panel (for non-parties during VOTING) */}
+      {/* Submit Additional Evidence (for parties, OPEN status only) */}
+      {dispute.status === 'OPEN' && isParty && (
+        <Card className="border-dt-border bg-dt-surface">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-dt-text">
+              <FileText className="h-5 w-5" /> Upload Evidence Files
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <label
+                htmlFor="evidence-files"
+                className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-dt-border p-6 transition hover:border-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-950/20"
+              >
+                <FileText className="mb-2 h-8 w-8 text-dt-text-muted" />
+                <span className="text-sm font-medium text-dt-text">
+                  {evidenceFiles.length > 0
+                    ? `${evidenceFiles.length} file${evidenceFiles.length > 1 ? 's' : ''} selected`
+                    : 'Click to select files'}
+                </span>
+                <span className="mt-1 text-xs text-dt-text-muted">
+                  PDF, images, Office docs, ZIP — max 5 files, 25 MB each
+                </span>
+                <input
+                  id="evidence-files"
+                  type="file"
+                  multiple
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.7z,.tar,.gz,.txt,.mp4,.webm,.mp3,.ogg"
+                  className="hidden"
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.files ?? []);
+                    if (selected.length > 5) {
+                      toast.error('Maximum 5 files allowed');
+                      return;
+                    }
+                    setEvidenceFiles(selected);
+                  }}
+                />
+              </label>
+              {evidenceFiles.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {evidenceFiles.map((f, i) => (
+                    <li key={i} className="flex items-center justify-between rounded-md bg-dt-surface-alt px-3 py-1.5 text-xs text-dt-text">
+                      <span className="truncate">{f.name}</span>
+                      <span className="ml-2 shrink-0 text-dt-text-muted">{(f.size / 1024).toFixed(0)} KB</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <Textarea
+              value={evidenceDesc}
+              onChange={(e) => setEvidenceDesc(e.target.value)}
+              placeholder="Describe this evidence (min 10 chars)..."
+              rows={2}
+              className="border-dt-border"
+            />
+            <Button
+              onClick={handleSubmitEvidence}
+              disabled={evidenceFiles.length === 0 || evidenceDesc.length < 10 || uploadEvidenceMutation.isPending}
+              size="sm"
+            >
+              {uploadEvidenceMutation.isPending ? <Spinner size="sm" /> : 'Upload to IPFS'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Vote Panel (for eligible non-parties during VOTING) */}
       {dispute.status === 'VOTING' && !isParty && (
         <Card className="border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/20">
           <CardHeader>
@@ -371,39 +659,61 @@ export default function DisputeDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-3">
-              <Button
-                variant={voteChoice === 'CLIENT_WINS' ? 'default' : 'outline'}
-                onClick={() => setVoteChoice('CLIENT_WINS')}
-                className={cn(
-                  voteChoice === 'CLIENT_WINS' && 'bg-blue-600 text-white hover:bg-blue-700'
-                )}
-              >
-                <ThumbsUp className="mr-2 h-4 w-4" /> Client Wins
-              </Button>
-              <Button
-                variant={voteChoice === 'FREELANCER_WINS' ? 'default' : 'outline'}
-                onClick={() => setVoteChoice('FREELANCER_WINS')}
-                className={cn(
-                  voteChoice === 'FREELANCER_WINS' && 'bg-emerald-600 text-white hover:bg-emerald-700'
-                )}
-              >
-                <ThumbsDown className="mr-2 h-4 w-4" /> Freelancer Wins
-              </Button>
-            </div>
-            <Textarea
-              value={reasoning}
-              onChange={(e) => setReasoning(e.target.value)}
-              placeholder="Optional: explain your reasoning..."
-              rows={3}
-              className="border-dt-border"
-            />
-            <Button
-              onClick={handleCastVote}
-              disabled={!voteChoice || castVoteMutation.isPending}
-            >
-              {castVoteMutation.isPending ? <Spinner size="sm" /> : 'Submit Vote'}
-            </Button>
+            {/* Eligibility check */}
+            {eligibility && !eligibility.eligible ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                  You are not eligible to vote on this dispute.
+                </p>
+                <ul className="mt-2 space-y-1 text-xs text-amber-600 dark:text-amber-500">
+                  {eligibility.isParty && <li>• You are a party to this dispute</li>}
+                  {eligibility.hasVoted && <li>• You have already voted</li>}
+                  {!eligibility.meetsScoreRequirement && (
+                    <li>
+                      • Your trust score ({eligibility.trustScore.toFixed(1)}) is below the
+                      minimum ({eligibility.minimumRequired})
+                    </li>
+                  )}
+                  {!eligibility.withinDeadline && <li>• The voting deadline has passed</li>}
+                </ul>
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-3">
+                  <Button
+                    variant={voteChoice === 'CLIENT_WINS' ? 'default' : 'outline'}
+                    onClick={() => setVoteChoice('CLIENT_WINS')}
+                    className={cn(
+                      voteChoice === 'CLIENT_WINS' && 'bg-blue-600 text-white hover:bg-blue-700'
+                    )}
+                  >
+                    <ThumbsUp className="mr-2 h-4 w-4" /> Client Wins
+                  </Button>
+                  <Button
+                    variant={voteChoice === 'FREELANCER_WINS' ? 'default' : 'outline'}
+                    onClick={() => setVoteChoice('FREELANCER_WINS')}
+                    className={cn(
+                      voteChoice === 'FREELANCER_WINS' && 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    )}
+                  >
+                    <ThumbsDown className="mr-2 h-4 w-4" /> Freelancer Wins
+                  </Button>
+                </div>
+                <Textarea
+                  value={reasoning}
+                  onChange={(e) => setReasoning(e.target.value)}
+                  placeholder="Optional: explain your reasoning..."
+                  rows={3}
+                  className="border-dt-border"
+                />
+                <Button
+                  onClick={handleCastVote}
+                  disabled={!voteChoice || castVoteMutation.isPending}
+                >
+                  {castVoteMutation.isPending ? <Spinner size="sm" /> : 'Submit Vote'}
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
@@ -467,11 +777,21 @@ export default function DisputeDetailPage() {
               <CheckCircle2 className="h-5 w-5" /> Resolution
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="mb-2 text-sm font-medium text-dt-text">
+          <CardContent className="space-y-3">
+            <p className="text-sm font-medium text-dt-text">
               Outcome: {outcomeLabels[dispute.outcome] ?? dispute.outcome}
             </p>
             <p className="whitespace-pre-wrap text-sm text-dt-text-muted">{dispute.resolution}</p>
+            {dispute.resolutionTxHash && (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+                <p className="text-xs font-medium text-green-700 dark:text-green-400">
+                  On-chain Resolution
+                </p>
+                <p className="mt-1 font-mono text-xs text-dt-text-muted break-all">
+                  Tx: {dispute.resolutionTxHash}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

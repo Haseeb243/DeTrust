@@ -80,6 +80,13 @@ docker-compose up -d postgres redis
 docker-compose ps
 ```
 
+
+
+pkill -f "ts-node.*server.ts" 2>/dev/null; pkill -f "next dev" 2>/dev/null; pkill -f "nodemon" 2>/dev/null; echo "Killed any stale dev processes"
+
+Killed any stale dev processes 
+
+
 The PostgreSQL container is provisioned with:
 
 | Variable | Value |
@@ -160,6 +167,9 @@ cd apps/api && pnpm dev
 
 # Terminal 2: Frontend
 cd apps/web && pnpm dev
+
+
+
 ```
 
 ---

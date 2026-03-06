@@ -124,6 +124,15 @@ export class TrustScoreService {
       weightedValue: Math.round((c.normalizedValue * c.weight) * 100) / 100,
     }));
 
+    // Dispute Record — informational component (always visible, matches client view)
+    components.push({
+      label: 'Dispute Record',
+      weight: 0,
+      rawValue: totalDisputes,
+      normalizedValue: totalDisputes > 0 ? Math.round((wonDisputes / totalDisputes) * 100) : 0,
+      weightedValue: 0, // Informational only
+    });
+
     const rawScore = Math.round(components.reduce((sum, c) => sum + c.weightedValue, 0) * 100) / 100;
 
     // Apply inactivity decay (M4-I6)
@@ -227,35 +236,54 @@ export class TrustScoreService {
     const cancellationRate = totalContracts > 0 ? cancelledContracts / totalContracts : 0;
     const cancellationPenalty = Math.round(cancellationRate * MAX_CANCELLATION_PENALTY * 100) / 100;
 
-    if (cancellationPenalty > 0) {
-      components.push({
-        label: 'Cancellation Penalty',
-        weight: 0,
-        rawValue: cancelledContracts,
-        normalizedValue: cancellationRate * 100,
-        weightedValue: -cancellationPenalty,
-      });
-    }
+    // Always show cancellation component (even when 0) for transparency
+    components.push({
+      label: 'Cancellation Penalty',
+      weight: 0,
+      rawValue: cancelledContracts,
+      normalizedValue: cancellationRate * 100,
+      weightedValue: cancellationPenalty > 0 ? -cancellationPenalty : 0,
+    });
 
     // Dispute behavior penalty: up to -15 pts (only disputes the client LOST)
+    const totalDisputes = await prisma.dispute.count({
+      where: { contract: { clientId: userId } },
+    });
     const clientLostDisputes = await prisma.dispute.count({
       where: {
         contract: { clientId: userId },
         outcome: 'FREELANCER_WINS',
       },
     });
+    const clientWonDisputes = await prisma.dispute.count({
+      where: {
+        contract: { clientId: userId },
+        outcome: 'CLIENT_WINS',
+      },
+    });
     const disputeRate = totalContracts > 0 ? clientLostDisputes / totalContracts : 0;
     const disputePenalty = Math.round(disputeRate * MAX_DISPUTE_PENALTY * 100) / 100;
 
-    if (disputePenalty > 0) {
-      components.push({
-        label: 'Dispute Behavior Penalty',
-        weight: 0,
-        rawValue: clientLostDisputes,
-        normalizedValue: disputeRate * 100,
-        weightedValue: -disputePenalty,
-      });
-    }
+    // Always show dispute component for transparency
+    components.push({
+      label: 'Dispute Behavior Penalty',
+      weight: 0,
+      rawValue: clientLostDisputes,
+      normalizedValue: disputeRate * 100,
+      weightedValue: disputePenalty > 0 ? -disputePenalty : 0,
+    });
+
+    // Add dispute summary — informational bar (matches freelancer visual)
+    const disputeWinRate = totalDisputes > 0
+      ? Math.round((clientWonDisputes / totalDisputes) * 100)
+      : 0;
+    components.push({
+      label: 'Dispute Win Rate',
+      weight: 0,
+      rawValue: disputeWinRate,
+      normalizedValue: disputeWinRate,
+      weightedValue: 0, // Informational bar — not factored into client score
+    });
 
     const penalizedScore = Math.max(0, rawScore - cancellationPenalty - disputePenalty);
 

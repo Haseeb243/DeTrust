@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { messageApi, type SendMessageInput } from '@/lib/api/message';
+import { messageApi, type SendMessageInput, type AttachmentUploadResult } from '@/lib/api/message';
 
 export const messageKeys = {
   all: ['messages'] as const,
@@ -28,7 +28,7 @@ export function useMessages(partnerId: string, params?: { page?: number; limit?:
       return res.data;
     },
     enabled: !!partnerId,
-    refetchInterval: 5000, // Poll every 5s for new messages
+    refetchInterval: 30000, // Fallback poll every 30s (Socket.IO is primary)
   });
 }
 
@@ -64,5 +64,15 @@ export function useMessageUnreadCount() {
       return res.data;
     },
     refetchInterval: 30000, // Poll every 30s
+  });
+}
+
+export function useUploadAttachment() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const res = await messageApi.uploadAttachment(file);
+      if (!res.success || !res.data) throw new Error(res.error?.message ?? 'Upload failed');
+      return res.data as AttachmentUploadResult;
+    },
   });
 }

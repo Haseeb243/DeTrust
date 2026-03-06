@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authenticate, requireAdmin, validateQuery, validateBody } from '../middleware';
+import { authenticate, requireAdmin, validateQuery } from '../middleware';
 import { adminController } from '../controllers/admin.controller';
-import { adminReviewsQuerySchema, adminTrustScoresQuerySchema, adminAdjustTrustScoreSchema } from '../validators/admin.validator';
+import { adminReviewsQuerySchema } from '../validators/admin.validator';
 
 const router: Router = Router();
 
@@ -29,9 +29,5 @@ router.get('/flagged', adminController.getFlaggedAccounts);
 
 // Review oversight (M3 — admin bypasses double-blind)
 router.get('/reviews', validateQuery(adminReviewsQuerySchema), adminController.listReviews);
-
-// Trust score oversight (M4 — admin view + manual override)
-router.get('/trust-scores', validateQuery(adminTrustScoresQuerySchema), adminController.listTrustScores);
-router.patch('/trust-scores/:userId', validateBody(adminAdjustTrustScoreSchema), adminController.adjustTrustScore);
 
 export default router;

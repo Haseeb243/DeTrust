@@ -63,6 +63,7 @@ contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
 	event MilestoneApproved(bytes32 indexed jobId, uint256 milestoneIndex);
 	event PaymentReleased(bytes32 indexed jobId, uint256 milestoneIndex, address freelancer, uint256 amount);
 	event DisputeRaised(bytes32 indexed jobId, address raisedBy);
+	event DisputeResolved(bytes32 indexed jobId, uint8 outcome, uint256 clientAmount, uint256 freelancerAmount);
 	event JobCompleted(bytes32 indexed jobId);
 	event JobCancelled(bytes32 indexed jobId, address cancelledBy);
 
@@ -190,6 +191,67 @@ contract JobEscrow is Ownable, Pausable, ReentrancyGuard {
 
 		job.status = JobStatus.Disputed;
 		emit DisputeRaised(jobId, _msgSender());
+	}
+
+	/**
+	 * Resolve a disputed job by distributing escrowed funds based on outcome.
+	 * Can only be called by the contract owner (admin / relayer).
+	 *
+	 * @param jobId   The job identifier
+	 * @param outcome 0 = CLIENT_WINS (full refund to client)
+	 *                1 = FREELANCER_WINS (release remaining to freelancer)
+	 *                2 = SPLIT (50/50 split of remaining funds)
+	 */
+	function resolveDispute(bytes32 jobId, uint8 outcome) external onlyOwner nonReentrant {
+		Job storage job = _requireJob(jobId);
+		require(job.status == JobStatus.Disputed, "Not disputed");
+		require(outcome <= 2, "Invalid outcome");
+
+		uint256 remaining = job.totalAmount - job.paidAmount;
+		uint256 clientAmount = 0;
+		uint256 freelancerAmount = 0;
+
+		if (outcome == 0) {
+			// CLIENT_WINS → refund all remaining to client + platform fee
+			clientAmount = remaining + job.platformFee;
+			job.platformFee = 0;
+			job.status = JobStatus.Cancelled;
+		} else if (outcome == 1) {
+			// FREELANCER_WINS → release remaining to freelancer, platform fee to feeRecipient
+			freelancerAmount = remaining;
+			job.status = JobStatus.Completed;
+		} else {
+			// SPLIT → 50/50 of remaining, platform fee returned to client
+			clientAmount = remaining / 2 + job.platformFee;
+			freelancerAmount = remaining - (remaining / 2); // handles odd wei
+			job.platformFee = 0;
+			job.status = JobStatus.Cancelled;
+		}
+
+		// Update accounting
+		job.paidAmount = job.totalAmount;
+		totalEscrowBalance -= remaining;
+
+		// Transfer funds
+		if (clientAmount > 0) {
+			paymentToken.safeTransfer(job.client, clientAmount);
+		}
+		if (freelancerAmount > 0) {
+			paymentToken.safeTransfer(job.freelancer, freelancerAmount);
+		}
+
+		// Pay platform fee if freelancer wins (normal completion flow)
+		if (outcome == 1) {
+			_payoutPlatformFee(jobId);
+		}
+
+		emit DisputeResolved(jobId, outcome, clientAmount, freelancerAmount);
+
+		if (outcome == 0 || outcome == 2) {
+			emit JobCancelled(jobId, msg.sender);
+		} else {
+			emit JobCompleted(jobId);
+		}
 	}
 
 	function getMilestones(bytes32 jobId) external view returns (Milestone[] memory) {

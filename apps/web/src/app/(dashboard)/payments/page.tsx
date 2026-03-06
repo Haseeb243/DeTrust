@@ -11,6 +11,7 @@ import {
   Clock,
   DollarSign,
   ExternalLink,
+  Scale,
   Shield,
   Wallet,
   XCircle,
@@ -22,7 +23,7 @@ import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
 import { useContracts } from '@/hooks/queries/use-contracts';
 
-type TransactionType = 'payment' | 'withdrawal' | 'deposit' | 'escrow';
+type TransactionType = 'payment' | 'withdrawal' | 'deposit' | 'escrow' | 'dispute-release' | 'dispute-refund' | 'dispute-split';
 
 interface Transaction {
   id: string;
@@ -41,6 +42,19 @@ const TYPE_COLORS: Record<TransactionType, string> = {
   withdrawal: 'bg-blue-100 text-blue-700',
   deposit: 'bg-purple-100 text-purple-700',
   escrow: 'bg-amber-100 text-amber-700',
+  'dispute-release': 'bg-emerald-100 text-emerald-700',
+  'dispute-refund': 'bg-red-100 text-red-700',
+  'dispute-split': 'bg-yellow-100 text-yellow-700',
+};
+
+const TYPE_LABELS: Record<TransactionType, string> = {
+  payment: 'Payment',
+  withdrawal: 'Withdrawal',
+  deposit: 'Deposit',
+  escrow: 'Escrow',
+  'dispute-release': 'Dispute Release',
+  'dispute-refund': 'Dispute Refund',
+  'dispute-split': 'Dispute Split',
 };
 
 const STATUS_ICONS = {
@@ -115,22 +129,41 @@ export default function PaymentsPage() {
         });
       }
 
-      // Show refund entry for cancelled contracts (dispute resolved in client's favor)
-      if (contract.status === 'CANCELLED' && contract.fundingTxHash) {
-        const refundAmount = Math.max(0, Number(contract.totalAmount || 0) - Number(contract.paidAmount || 0));
-        if (refundAmount > 0) {
-          txs.push({
-            id: `refund-${contract.id}`,
-            type: 'deposit',
-            amount: refundAmount,
-            status: 'completed',
-            description: `Escrow refunded — ${contract.title} (dispute resolved)`,
-            contractId: contract.id,
-            contractTitle: contract.title,
-            createdAt: contract.cancelledAt || contract.updatedAt || contract.createdAt,
-          });
+      // Add dispute resolution transactions
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (contract as any).disputes?.forEach((dispute: { id: string; outcome: string; resolutionTxHash?: string; resolvedAt?: string; status: string }) => {
+        if (dispute.status !== 'RESOLVED') return;
+        const amount = Number(contract.totalAmount);
+        let type: TransactionType = 'dispute-split';
+        let description = '';
+
+        if (dispute.outcome === 'FREELANCER_WINS') {
+          type = isClient ? 'dispute-refund' : 'dispute-release';
+          description = isClient
+            ? `Dispute lost — funds released to freelancer for ${contract.title}`
+            : `Dispute won — funds released for ${contract.title}`;
+        } else if (dispute.outcome === 'CLIENT_WINS') {
+          type = isClient ? 'dispute-refund' : 'dispute-refund';
+          description = isClient
+            ? `Dispute won — escrow refunded for ${contract.title}`
+            : `Dispute lost — escrow refunded to client for ${contract.title}`;
+        } else if (dispute.outcome === 'SPLIT') {
+          type = 'dispute-split';
+          description = `Dispute split — partial resolution for ${contract.title}`;
         }
-      }
+
+        txs.push({
+          id: `dispute-${dispute.id}`,
+          type,
+          amount: dispute.outcome === 'SPLIT' ? amount / 2 : amount,
+          status: 'completed',
+          description,
+          contractId: contract.id,
+          contractTitle: contract.title,
+          txHash: dispute.resolutionTxHash,
+          createdAt: dispute.resolvedAt || contract.createdAt,
+        });
+      });
     });
 
     // Sort by date
@@ -151,12 +184,15 @@ export default function PaymentsPage() {
   }, 0);
 
   const totalEscrow = contracts
-    .filter((c) => (c.status === 'ACTIVE' || c.status === 'DISPUTED') && Boolean(c.fundingTxHash || c.escrowAddress))
+    .filter((c) => c.status === 'ACTIVE' && Boolean(c.fundingTxHash || c.escrowAddress))
     .reduce((sum, c) => sum + Math.max(0, Number(c.totalAmount || 0) - Number(c.paidAmount || 0)), 0);
 
+  const isDisputeTx = (type: TransactionType) =>
+    type === 'dispute-release' || type === 'dispute-refund' || type === 'dispute-split';
+
   const filteredTransactions = transactions.filter((t) => {
-    if (activeTab === 'incoming') return t.type === 'payment' && !isClient;
-    if (activeTab === 'outgoing') return t.type === 'payment' && isClient;
+    if (activeTab === 'incoming') return (t.type === 'payment' && !isClient) || t.type === 'dispute-release';
+    if (activeTab === 'outgoing') return (t.type === 'payment' && isClient) || t.type === 'dispute-refund';
     return true;
   });
 
@@ -305,6 +341,12 @@ export default function PaymentsPage() {
                           ? 'bg-red-100'
                           : tx.type === 'escrow'
                           ? 'bg-amber-100'
+                          : tx.type === 'dispute-release'
+                          ? 'bg-emerald-100'
+                          : tx.type === 'dispute-refund'
+                          ? 'bg-red-100'
+                          : tx.type === 'dispute-split'
+                          ? 'bg-yellow-100'
                           : 'bg-blue-100'
                       )}
                     >
@@ -314,6 +356,8 @@ export default function PaymentsPage() {
                         <ArrowUpRight className="h-5 w-5 text-red-600" />
                       ) : tx.type === 'escrow' ? (
                         <Shield className="h-5 w-5 text-amber-600" />
+                      ) : isDisputeTx(tx.type) ? (
+                        <Scale className="h-5 w-5 text-blue-600" />
                       ) : (
                         <DollarSign className="h-5 w-5 text-blue-600" />
                       )}
@@ -340,17 +384,19 @@ export default function PaymentsPage() {
                     <p
                       className={cn(
                         'text-lg font-semibold',
-                        tx.type === 'payment' && !isClient
+                        (tx.type === 'payment' && !isClient) || tx.type === 'dispute-release'
                           ? 'text-emerald-600'
-                          : tx.type === 'payment' && isClient
+                          : (tx.type === 'payment' && isClient) || tx.type === 'dispute-refund'
                           ? 'text-red-600'
+                          : tx.type === 'dispute-split'
+                          ? 'text-yellow-600'
                           : 'text-dt-text'
                       )}
                     >
-                      {tx.type === 'payment' && !isClient ? '+' : tx.type === 'payment' && isClient ? '-' : ''}
+                      {(tx.type === 'payment' && !isClient) || tx.type === 'dispute-release' ? '+' : (tx.type === 'payment' && isClient) || tx.type === 'dispute-refund' ? '-' : '±'}
                       ${tx.amount.toLocaleString()}
                     </p>
-                    <Badge className={TYPE_COLORS[tx.type]}>{tx.type}</Badge>
+                    <Badge className={TYPE_COLORS[tx.type]}>{TYPE_LABELS[tx.type] ?? tx.type}</Badge>
                   </div>
                 </div>
               ))}

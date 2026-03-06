@@ -1,8 +1,12 @@
 import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError, ValidationError } from '../middleware';
 import { notificationService } from './notification.service';
-import { trustScoreService } from './trustScore.service';
-import { emitDisputeOpened, emitDisputeResolved } from '../events/dispute.events';
+import { escrowService } from './escrow.service';
+import { storageService } from './storage.service';
+import { config } from '../config';
+import { SecureFileCategory, SecureFileResourceType, SecureFileVisibility } from '@detrust/database';
+import { jurorNotificationQueue, trustScoreUserQueue } from '../queues';
+import { emitDisputeOpened, emitDisputeVotingStarted, emitDisputeResolved } from '../events/dispute.events';
 import type {
   CreateDisputeInput,
   SubmitEvidenceInput,
@@ -27,6 +31,7 @@ export class DisputeService {
       where: { id: input.contractId },
       select: {
         id: true,
+        jobId: true,
         status: true,
         clientId: true,
         freelancerId: true,
@@ -84,6 +89,14 @@ export class DisputeService {
       await tx.contract.update({
         where: { id: input.contractId },
         data: { status: 'DISPUTED' },
+      });
+
+      // Also update the parent Job status to DISPUTED
+      await tx.job.update({
+        where: { id: contract.jobId },
+        data: { status: 'DISPUTED' },
+      }).catch(() => {
+        // Job might not exist or id mismatch — non-critical
       });
 
       return d;
@@ -154,6 +167,97 @@ export class DisputeService {
   }
 
   /**
+   * Upload evidence files to IPFS then attach the resulting CIDs/URLs to the dispute.
+   * Multer files are uploaded via ipfsService.uploadFile().
+   */
+  async uploadEvidence(
+    userId: string,
+    disputeId: string,
+    files: Express.Multer.File[],
+    description: string,
+  ) {
+    const dispute = await prisma.dispute.findUnique({
+      where: { id: disputeId },
+      include: {
+        contract: { select: { clientId: true, freelancerId: true } },
+      },
+    });
+
+    if (!dispute) {
+      throw new NotFoundError('Dispute not found');
+    }
+
+    if (dispute.status !== 'OPEN') {
+      throw new ValidationError('Evidence can only be submitted to open disputes');
+    }
+
+    const { clientId, freelancerId } = dispute.contract;
+    if (userId !== clientId && userId !== freelancerId) {
+      throw new ForbiddenError('Only contract parties can submit evidence');
+    }
+
+    if (files.length > 5) {
+      throw new ValidationError('Maximum 5 evidence files allowed per submission');
+    }
+
+    // Upload each file via storageService (same proven path as resume/certs)
+    const baseUrl = config.server.apiUrl.replace(/\/$/, '');
+    const uploadResults: { url: string; cid: string; fileName: string; fileSize: number }[] = [];
+
+    for (const f of files) {
+      const secureFile = await storageService.uploadSecureFile({
+        buffer: f.buffer,
+        filename: f.originalname || `evidence-${Date.now()}`,
+        mimeType: f.mimetype,
+        size: f.size,
+        userId,
+        category: SecureFileCategory.EVIDENCE,
+        visibility: SecureFileVisibility.AUTHENTICATED,
+        resourceType: SecureFileResourceType.DISPUTE,
+        resourceId: disputeId,
+      });
+      uploadResults.push({
+        url: `${baseUrl}/api/uploads/${secureFile.id}`,
+        cid: secureFile.cid,
+        fileName: f.originalname || secureFile.filename,
+        fileSize: f.size,
+      });
+    }
+
+    // Store URLs in the legacy evidence array
+    const newEvidenceUrls = uploadResults.map((u) => u.url);
+    const updatedEvidence = [...dispute.evidence, ...newEvidenceUrls];
+
+    // Write structured DisputeEvidence records (with party attribution)
+    await prisma.disputeEvidence.createMany({
+      data: uploadResults.map((u) => ({
+        disputeId,
+        uploadedById: userId,
+        url: u.url,
+        cid: u.cid,
+        fileName: u.fileName,
+        fileSize: u.fileSize,
+        description,
+      })),
+    });
+
+    const updated = await prisma.dispute.update({
+      where: { id: disputeId },
+      data: { evidence: updatedEvidence },
+      include: {
+        contract: { select: { id: true, title: true, totalAmount: true } },
+        initiator: { select: { id: true, name: true } },
+        evidenceItems: {
+          include: { uploadedBy: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    return updated;
+  }
+
+  /**
    * Admin transitions dispute from OPEN → VOTING.
    * In the hybrid model, admin can either resolve directly or open voting.
    */
@@ -195,8 +299,10 @@ export class DisputeService {
       },
     });
 
-    // Notify both parties about voting phase
+    // Emit real-time Socket.IO event for voting phase start
     const { clientId, freelancerId, title } = dispute.contract;
+    emitDisputeVotingStarted(clientId, freelancerId, dispute.id);
+
     for (const userId of [clientId, freelancerId]) {
       await notificationService.createNotification({
         userId,
@@ -206,6 +312,15 @@ export class DisputeService {
         data: { disputeId: dispute.id, contractId: dispute.contractId },
       });
     }
+
+    // --- AUTO-NOTIFY ELIGIBLE JURORS via BullMQ ---
+    await jurorNotificationQueue.add(`juror-notify-${dispute.id}`, {
+      disputeId: dispute.id,
+      contractId: dispute.contractId,
+      contractTitle: title,
+      clientId,
+      freelancerId,
+    });
 
     return updated;
   }
@@ -329,6 +444,7 @@ export class DisputeService {
         contract: {
           select: {
             id: true,
+            jobId: true,
             clientId: true,
             freelancerId: true,
             title: true,
@@ -382,6 +498,12 @@ export class DisputeService {
           },
         });
 
+        // Update Job status to CANCELLED
+        await tx.job.update({
+          where: { id: dispute.contract.jobId },
+          data: { status: 'CANCELLED' },
+        });
+
         if (unpaidMilestoneIds.length > 0) {
           await tx.milestone.updateMany({
             where: { id: { in: unpaidMilestoneIds } },
@@ -389,24 +511,27 @@ export class DisputeService {
           });
         }
       } else if (input.outcome === 'FREELANCER_WINS') {
-        // Freelancer wins → resume contract, mark submitted milestones as approved/paid
-        const allPaid = dispute.contract.milestones.every(
-          (m: { status: string }) => m.status === 'PAID' || m.status === 'APPROVED'
-        );
-
+        // Freelancer wins → contract COMPLETED, all unpaid milestones force-approved.
+        // Escrow funds are released to freelancer via on-chain resolveDispute().
         await tx.contract.update({
           where: { id: dispute.contractId },
-          data: { status: allPaid ? 'COMPLETED' : 'ACTIVE' },
+          data: { status: 'COMPLETED', completedAt: new Date() },
         });
 
-        // Auto-approve any submitted milestones (freelancer delivered, client disputed unfairly)
-        const submittedIds = dispute.contract.milestones
-          .filter((m: { status: string }) => m.status === 'SUBMITTED' || m.status === 'DISPUTED')
+        // Update Job status to COMPLETED
+        await tx.job.update({
+          where: { id: dispute.contract.jobId },
+          data: { status: 'COMPLETED' },
+        });
+
+        // Auto-approve all non-paid milestones (freelancer won — they get paid)
+        const unpaidIds = dispute.contract.milestones
+          .filter((m: { status: string }) => m.status !== 'PAID')
           .map((m: { id: string }) => m.id);
 
-        if (submittedIds.length > 0) {
+        if (unpaidIds.length > 0) {
           await tx.milestone.updateMany({
-            where: { id: { in: submittedIds } },
+            where: { id: { in: unpaidIds } },
             data: {
               status: 'PAID',
               approvedAt: new Date(),
@@ -415,10 +540,16 @@ export class DisputeService {
           });
         }
       } else {
-        // SPLIT → return contract to active, leave milestones as-is for renegotiation
+        // SPLIT → contract is completed (dispute resolved by compromise); funds split on-chain
         await tx.contract.update({
           where: { id: dispute.contractId },
-          data: { status: 'ACTIVE' },
+          data: { status: 'COMPLETED', completedAt: new Date() },
+        });
+
+        // Update Job status to COMPLETED
+        await tx.job.update({
+          where: { id: dispute.contract.jobId },
+          data: { status: 'COMPLETED' },
         });
       }
 
@@ -426,6 +557,29 @@ export class DisputeService {
     });
 
     const { clientId, freelancerId, title } = dispute.contract;
+
+    // --- Blockchain: resolve dispute on-chain (release/refund escrow funds) ---
+    let resolutionTxHash: string | null = null;
+    try {
+      resolutionTxHash = await escrowService.resolveDisputeOnChain(
+        dispute.contractId,
+        input.outcome,
+      );
+
+      if (resolutionTxHash) {
+        // Store the tx hash on the dispute record
+        await prisma.dispute.update({
+          where: { id: disputeId },
+          data: { resolutionTxHash },
+        });
+        console.log(`[DisputeService] On-chain resolution tx: ${resolutionTxHash}`);
+      } else {
+        console.warn('[DisputeService] Blockchain not available — dispute resolved off-chain only. Funds must be released manually or via retry job.');
+      }
+    } catch (err) {
+      console.error('[DisputeService] On-chain dispute resolution failed:', err);
+      // Continue with off-chain resolution — retry job will pick it up
+    }
 
     // Notify both parties
     const outcomeText =
@@ -445,13 +599,9 @@ export class DisputeService {
 
     emitDisputeResolved(clientId, freelancerId, dispute.id, input.outcome);
 
-    // Recalculate trust scores immediately after dispute resolution (M4)
-    trustScoreService.getTrustScoreBreakdown(clientId).catch((err) =>
-      console.error(`[DisputeService] Trust score recalc failed for client ${clientId}:`, err),
-    );
-    trustScoreService.getTrustScoreBreakdown(freelancerId).catch((err) =>
-      console.error(`[DisputeService] Trust score recalc failed for freelancer ${freelancerId}:`, err),
-    );
+    // Recalculate trust scores via BullMQ after dispute resolution (M4)
+    await trustScoreUserQueue.add(`trust-client-${clientId}`, { userId: clientId });
+    await trustScoreUserQueue.add(`trust-freelancer-${freelancerId}`, { userId: freelancerId });
 
     return updated;
   }
@@ -479,6 +629,10 @@ export class DisputeService {
           include: { juror: { select: { id: true, name: true } } },
           orderBy: { createdAt: 'desc' },
         },
+        evidenceItems: {
+          include: { uploadedBy: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
 
@@ -504,6 +658,7 @@ export class DisputeService {
 
   /**
    * List disputes for a user (as party) or all disputes for admin.
+   * Supports filtering by status, outcome, date range, and text search.
    */
   async listDisputes(userId: string, query: GetDisputesQuery) {
     const user = await prisma.user.findUnique({
@@ -523,6 +678,26 @@ export class DisputeService {
 
     if (query.status) {
       where.status = query.status;
+    }
+
+    if (query.outcome) {
+      where.outcome = query.outcome;
+    }
+
+    // Date range filter
+    if (query.dateFrom || query.dateTo) {
+      where.createdAt = {
+        ...(query.dateFrom ? { gte: query.dateFrom } : {}),
+        ...(query.dateTo ? { lte: query.dateTo } : {}),
+      };
+    }
+
+    // Text search on reason / description
+    if (query.search) {
+      where.OR = [
+        { reason: { contains: query.search, mode: 'insensitive' } },
+        { description: { contains: query.search, mode: 'insensitive' } },
+      ];
     }
 
     const [items, total] = await Promise.all([
@@ -622,6 +797,7 @@ export class DisputeService {
       user?.freelancerProfile?.trustScore ?? user?.clientProfile?.trustScore ?? 0,
     );
   }
+
 }
 
 export const disputeService = new DisputeService();

@@ -11,9 +11,13 @@ export type DisputeStatus = 'OPEN' | 'VOTING' | 'RESOLVED' | 'APPEALED';
 
 export interface GetDisputesParams {
   status?: DisputeStatus;
+  outcome?: 'PENDING' | 'CLIENT_WINS' | 'FREELANCER_WINS' | 'SPLIT';
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
   page?: number;
   limit?: number;
-  sort?: 'createdAt' | 'updatedAt';
+  sort?: 'createdAt' | 'updatedAt' | 'resolvedAt';
   order?: 'asc' | 'desc';
 }
 
@@ -86,6 +90,14 @@ export const disputeApi = {
   // Submit additional evidence
   submitEvidence: (disputeId: string, data: { description: string; files: string[] }) =>
     api.post<Dispute>(`/disputes/${disputeId}/evidence`, data),
+
+  // Upload evidence files to IPFS (multipart/form-data)
+  uploadEvidence: async (disputeId: string, files: File[], description: string) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    formData.append('description', description);
+    return api.post<Dispute>(`/disputes/${disputeId}/evidence/upload`, formData);
+  },
 
   // Start voting (admin)
   startVoting: (disputeId: string) =>

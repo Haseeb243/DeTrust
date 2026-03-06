@@ -51,6 +51,24 @@ export interface Dispute {
     name: string | null;
   };
   votes?: DisputeVote[];
+  evidenceItems?: DisputeEvidence[];
+}
+
+export interface DisputeEvidence {
+  id: string;
+  disputeId: string;
+  uploadedById: string;
+  url: string;
+  cid: string | null;
+  fileName: string | null;
+  fileSize: number | null;
+  description: string | null;
+  createdAt: Date;
+
+  uploadedBy?: {
+    id: string;
+    name: string | null;
+  };
 }
 
 export interface DisputeVote {

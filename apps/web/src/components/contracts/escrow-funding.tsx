@@ -46,7 +46,6 @@ export function EscrowFunding({ contract, onFunded, autoFund }: EscrowFundingPro
   const totalAmount = Number(contract.totalAmount || 0);
   const freelancerAddress = contract.freelancer?.walletAddress as Address | undefined;
   const milestoneAmounts = (contract.milestones ?? []).map((m) => Number(m.amount));
-  const isSameWallet = Boolean(freelancerAddress && address && freelancerAddress.toLowerCase() === address.toLowerCase());
 
   // Calculate fee breakdown in USD (3% platform fee)
   useEffect(() => {
@@ -89,11 +88,6 @@ export function EscrowFunding({ contract, onFunded, autoFund }: EscrowFundingPro
 
     if (!isConnected || !address) {
       toast.error('Please connect your wallet first.');
-      return;
-    }
-
-    if (isSameWallet) {
-      toast.error('Cannot fund escrow: your wallet address matches the freelancer. The client and freelancer must use different wallets.');
       return;
     }
 
@@ -224,13 +218,6 @@ export function EscrowFunding({ contract, onFunded, autoFund }: EscrowFundingPro
           </div>
         )}
 
-        {isSameWallet && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Your wallet address matches the freelancer&apos;s address. The client and freelancer must use different wallets to create an escrow.</span>
-          </div>
-        )}
-
         {!isEscrowReady && isConnected && (
           <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -280,7 +267,7 @@ export function EscrowFunding({ contract, onFunded, autoFund }: EscrowFundingPro
         {/* Fund Button */}
         <Button
           onClick={handleFundEscrow}
-          disabled={funding || escrowLoading || !isConnected || !freelancerAddress || !isEscrowReady || isSameWallet}
+          disabled={funding || escrowLoading || !isConnected || !freelancerAddress || !isEscrowReady}
           className="w-full bg-amber-500 py-6 text-base font-semibold text-white shadow-lg shadow-amber-200/70 hover:bg-amber-600 disabled:opacity-50"
         >
           {funding || escrowLoading ? (
