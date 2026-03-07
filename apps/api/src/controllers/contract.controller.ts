@@ -15,6 +15,7 @@ export const listContracts = async (
   try {
     const authReq = req as AuthenticatedRequest;
     const userId = authReq.userId!;
+    const userRole = authReq.userRole;
     const { status, role, page = '1', limit = '10', sort = 'createdAt', order = 'desc' } = req.query;
 
     const query = {
@@ -26,7 +27,10 @@ export const listContracts = async (
       order: (order as 'asc' | 'desc') || 'desc',
     };
 
-    const contracts = await contractService.listContracts(userId, query);
+    // Admin sees all contracts; regular users see only their own
+    const contracts = userRole === 'ADMIN'
+      ? await contractService.listAllContracts(query)
+      : await contractService.listContracts(userId, query);
     res.json({ success: true, data: contracts });
   } catch (error) {
     next(error);

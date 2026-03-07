@@ -6,15 +6,19 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { ArrowLeft, XCircle, MessageSquareText, AlertTriangle } from 'lucide-react';
 
-import { Button } from '@/components/ui';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { useJobEscrow } from '@/hooks/use-job-escrow';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
-import { ContractHeader, EscrowFunding, MilestoneList, ContractSidebar } from '@/components/contracts';
+import { ContractHeader } from '@/components/contracts/contract-header';
+import { ContractSidebar } from '@/components/contracts/contract-sidebar';
+import { EscrowFunding } from '@/components/contracts/escrow-funding';
+import { MilestoneList } from '@/components/contracts/milestone-list';
 import { MilestoneTimeline } from '@/components/contracts/milestone-timeline';
 import { DisputeForm } from '@/components/contracts/dispute-form';
-import { ReviewForm, ReviewList } from '@/components/reviews';
+import { ReviewForm } from '@/components/reviews/review-form';
+import { ReviewList } from '@/components/reviews/review-list';
 import { useContract, useRaiseDispute } from '@/hooks/queries/use-contracts';
 import { useContractReviews, useReviewStatus } from '@/hooks/queries/use-reviews';
 

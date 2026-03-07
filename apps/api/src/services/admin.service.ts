@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import type { Prisma } from '@prisma/client';
 import type { AdminReviewsQuery } from '../validators/admin.validator';
+import { apiCache } from './cache.service';
 
 // =============================================================================
 // FLAGGED ACCOUNTS THRESHOLDS
@@ -97,8 +98,13 @@ export interface MonthlyTrend {
 export class AdminService {
   /**
    * Get comprehensive platform statistics for the admin dashboard.
+   * Cached for 2 min via Redis to avoid repeated heavy COUNT queries.
    */
   async getPlatformStats(): Promise<PlatformStats> {
+    return apiCache.getAdminStats(() => this._fetchPlatformStats());
+  }
+
+  private async _fetchPlatformStats(): Promise<PlatformStats> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -220,8 +226,13 @@ export class AdminService {
 
   /**
    * Get monthly trends for the last 6 months.
+   * Cached for 10 min — trends change infrequently.
    */
   async getMonthlyTrends(): Promise<MonthlyTrend[]> {
+    return apiCache.getAdminTrends(() => this._fetchMonthlyTrends());
+  }
+
+  private async _fetchMonthlyTrends(): Promise<MonthlyTrend[]> {
     const trends: MonthlyTrend[] = [];
     const now = new Date();
 
@@ -346,6 +357,7 @@ export class AdminService {
           budget: true,
           createdAt: true,
           client: { select: { id: true, name: true } },
+          contract: { select: { id: true } },
           _count: { select: { proposals: true } },
         },
         orderBy: { [sort]: order },
@@ -370,6 +382,10 @@ export class AdminService {
    * Get recent platform activity (latest events across the platform).
    */
   async getRecentActivity(limit: number = 15) {
+    return apiCache.getAdminActivity(limit, () => this._fetchRecentActivity(limit));
+  }
+
+  private async _fetchRecentActivity(limit: number) {
     const [recentUsers, recentJobs, recentDisputes, recentContracts] = await Promise.all([
       prisma.user.findMany({
         select: { id: true, name: true, role: true, createdAt: true },
@@ -577,6 +593,148 @@ export class AdminService {
         medium: flaggedUsers.filter((u) => u.riskLevel === 'MEDIUM').length,
         low: flaggedUsers.filter((u) => u.riskLevel === 'LOW').length,
       },
+    };
+  }
+
+  /**
+   * List all user trust scores with filtering/sorting/pagination.
+   * Used by the admin trust score management page.
+   */
+  async listTrustScores(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+    eligible?: string;
+    minScore?: number;
+    maxScore?: number;
+    sort?: string;
+    order?: string;
+  }) {
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      role = 'all',
+      eligible,
+      minScore,
+      maxScore,
+      sort = 'trustScore',
+      order = 'desc',
+    } = params;
+
+    // Build where clause — only users with a profile (freelancer or client)
+    const where: Prisma.UserWhereInput = {
+      status: 'ACTIVE',
+      OR: [
+        { freelancerProfile: { isNot: null } },
+        { clientProfile: { isNot: null } },
+      ],
+    };
+
+    if (role && role !== 'all') {
+      where.role = role as 'FREELANCER' | 'CLIENT';
+    }
+
+    if (search) {
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        include: {
+          freelancerProfile: {
+            select: {
+              trustScore: true,
+              completedJobs: true,
+              avgRating: true,
+              updatedAt: true,
+            },
+          },
+          clientProfile: {
+            select: {
+              trustScore: true,
+              avgRating: true,
+              totalReviews: true,
+              updatedAt: true,
+            },
+          },
+          _count: {
+            select: {
+              contracts: { where: { status: 'COMPLETED' } },
+              clientContracts: { where: { status: 'COMPLETED' } },
+              disputesInitiated: true,
+              reviewsReceived: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    // Map to flat response entries
+    let entries = users.map((u) => {
+      const ts = Number(u.freelancerProfile?.trustScore ?? u.clientProfile?.trustScore ?? 0);
+      const completedJobs = u.freelancerProfile?.completedJobs ?? 0;
+      const completedContracts = u._count.contracts + u._count.clientContracts;
+      const disputes = u._count.disputesInitiated;
+      const avgRating = Number(u.freelancerProfile?.avgRating ?? u.clientProfile?.avgRating ?? 0);
+      const lastUpdated = (u.freelancerProfile?.updatedAt ?? u.clientProfile?.updatedAt ?? new Date()).toISOString();
+
+      return {
+        id: u.id,
+        userId: u.id,
+        name: u.name,
+        email: u.email,
+        avatarUrl: u.avatarUrl,
+        role: u.role,
+        trustScore: ts,
+        eligible: ts > 50,
+        completedJobs,
+        completedContracts,
+        disputes,
+        avgRating,
+        lastUpdated,
+      };
+    });
+
+    // Post-filter by eligible/score range (easier in JS than Prisma cross-profile)
+    if (eligible === 'true') entries = entries.filter((e) => e.eligible);
+    if (eligible === 'false') entries = entries.filter((e) => !e.eligible);
+    if (minScore !== undefined) entries = entries.filter((e) => e.trustScore >= minScore);
+    if (maxScore !== undefined) entries = entries.filter((e) => e.trustScore <= maxScore);
+
+    // Sort
+    const sortKey = sort as keyof (typeof entries)[0];
+    entries.sort((a, b) => {
+      const aVal = a[sortKey] ?? 0;
+      const bVal = b[sortKey] ?? 0;
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return order === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      return 0;
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: entries,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page * limit < total,
+      hasPrev: page > 1,
     };
   }
 

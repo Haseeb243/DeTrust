@@ -2,6 +2,8 @@ import { Prisma, JobStatus, JobType } from '@prisma/client';
 import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError } from '../middleware';
 import { CreateJobInput, UpdateJobInput, GetJobsQuery } from '../validators';
+import { createHash } from 'crypto';
+import { apiCache } from './cache.service';
 
 export class JobService {
   /**
@@ -62,6 +64,9 @@ export class JobService {
         },
       },
     });
+
+    // Invalidate job list cache
+    apiCache.invalidateJobs().catch(() => {});
 
     return job;
   }
@@ -147,6 +152,7 @@ export class JobService {
       },
     });
 
+    apiCache.invalidateJobs(jobId).catch(() => {});
     return updatedJob;
   }
 
@@ -207,6 +213,7 @@ export class JobService {
       },
     });
 
+    apiCache.invalidateJobs(jobId).catch(() => {});
     return updatedJob;
   }
 
@@ -246,6 +253,7 @@ export class JobService {
       },
     });
 
+    apiCache.invalidateJobs(jobId).catch(() => {});
     return updatedJob;
   }
 
@@ -316,6 +324,15 @@ export class JobService {
    * List jobs with filters
    */
   async listJobs(query: GetJobsQuery, userId?: string) {
+    const queryHash = createHash('md5')
+      .update(JSON.stringify({ ...query, userId }))
+      .digest('hex')
+      .slice(0, 12);
+
+    return apiCache.getJobsList(queryHash, () => this._fetchJobs(query, userId));
+  }
+
+  private async _fetchJobs(query: GetJobsQuery, userId?: string) {
     const {
       status,
       category,
@@ -445,6 +462,7 @@ export class JobService {
       where: { id: jobId },
     });
 
+    apiCache.invalidateJobs(jobId).catch(() => {});
     return { success: true };
   }
 }

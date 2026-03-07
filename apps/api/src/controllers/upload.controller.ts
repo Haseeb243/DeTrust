@@ -260,6 +260,8 @@ export class UploadController {
 
       res.setHeader('Content-Type', secureFile.mimeType);
       res.setHeader('Content-Length', buffer.length.toString());
+      // Allow cross-origin embedding (Next.js on :3000 loading images from API on :4000)
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       if (req.query.download === '1') {
         res.setHeader('Content-Disposition', `attachment; filename="${secureFile.filename}"`);
       }

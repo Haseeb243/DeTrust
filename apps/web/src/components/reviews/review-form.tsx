@@ -4,7 +4,9 @@ import { useState, useCallback } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button, Card, CardContent, Textarea } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { StarRating } from './star-rating';
 import { CLIENT_REVIEW_LABELS, FREELANCER_REVIEW_LABELS } from '@/lib/review-utils';
 import { useSubmitReview } from '@/hooks/queries/use-reviews';

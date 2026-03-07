@@ -10,10 +10,10 @@ import { BrandMark } from './brand-mark';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const NAV_LINKS = [
-  { label: 'Solutions', href: '#solutions' },
+  { label: 'Features', href: '#features' },
+  { label: 'How It Works', href: '#how-it-works' },
   { label: 'Talent', href: '#talent' },
-  { label: 'Workflow', href: '#workflow' },
-  { label: 'Trust', href: '#trust' },
+  { label: 'Testimonials', href: '#testimonials' },
 ];
 
 export function SiteHeader() {

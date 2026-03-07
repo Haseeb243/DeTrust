@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { MapPin, PenLine } from 'lucide-react';
 import { type ReactNode } from 'react';
 
-import { Badge, Button } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { User, FreelancerProfile, ClientProfile } from '@/lib/api/user';
 

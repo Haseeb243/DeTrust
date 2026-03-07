@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
-import { Button, Input, Textarea, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useAdjustTrustScore } from '@/hooks/queries/use-admin';
 import { cn } from '@/lib/utils';
 

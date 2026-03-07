@@ -17,9 +17,10 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 import { useContracts } from '@/hooks/queries/use-contracts';
 

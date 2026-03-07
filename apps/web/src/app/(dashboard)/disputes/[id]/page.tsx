@@ -16,7 +16,10 @@ import {
   ThumbsDown,
 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Textarea } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import type { DisputeVote, DisputeEvidence } from '@detrust/types';
 import {
@@ -28,9 +31,9 @@ import {
   useSubmitEvidence,
   useUploadEvidence,
 } from '@/hooks/queries/use-disputes';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
-import { api } from '@/lib/api';
+import { api } from '@/lib/api/client';
 import { openSecureFileInNewTab } from '@/lib/secure-files';
 
 /** Detect evidence URLs that are inaccessible SHA-256 fallback hashes */

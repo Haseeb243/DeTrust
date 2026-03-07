@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { MessageSquareReply } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/ui/button';
 import { useSubmitReviewResponse } from '@/hooks/queries/use-reviews';
 
 interface ReviewResponseFormProps {

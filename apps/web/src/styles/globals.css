@@ -226,6 +226,18 @@
     pointer-events: none;
   }
 
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(0, 0, 0, 0.55) 50%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
+    pointer-events: none;
+  }
+
   .aura-glow {
     box-shadow: 0 0 80px rgba(51, 255, 193, 0.25);
   }

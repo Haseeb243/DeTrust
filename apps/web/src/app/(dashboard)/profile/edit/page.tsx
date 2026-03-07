@@ -12,11 +12,13 @@ import { FreelancerEducationCard } from '@/components/profile/freelancer-educati
 import { FreelancerDocumentsCard } from '@/components/profile/freelancer-documents-card';
 import { ClientProfileForm } from '@/components/profile/client-profile-form';
 import { ProfileProgressRing } from '@/components/profile/profile-progress-ring';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { type User, type FreelancerProfile, type ClientProfile, type FreelancerSkill, type EducationEntry, type CertificationEntry } from '@/lib/api';
+import type { User, FreelancerProfile, ClientProfile, FreelancerSkill, EducationEntry, CertificationEntry } from '@/lib/api/user';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { useCurrentUser } from '@/hooks/queries/use-user';
 import { useSafeAccount } from '@/hooks/use-safe-account';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';

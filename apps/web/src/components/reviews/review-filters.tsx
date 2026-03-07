@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Search, SlidersHorizontal, Star, X } from 'lucide-react';
-import { Button, Badge } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type { GetUserReviewsParams } from '@/lib/api/review';
 
 interface ReviewFiltersProps {

@@ -5,7 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { MessageCircle } from 'lucide-react';
 
-import { Badge, Card } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import {
   useConversations,
   useMessages,
@@ -13,9 +14,9 @@ import {
   useMarkConversationRead,
   useMessageUnreadCount,
 } from '@/hooks/queries/use-messages';
-import { useContract } from '@/hooks/queries';
+import { useContract } from '@/hooks/queries/use-contracts';
 import { useSupportAdmin } from '@/hooks/queries/use-support';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 
 import { ConversationList } from './components/ConversationList';

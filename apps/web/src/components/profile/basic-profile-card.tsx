@@ -6,9 +6,12 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Copy } from 'lucide-react';
 
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { uploadApi, userApi, type User } from '@/lib/api';
+import { uploadApi } from '@/lib/api/upload';
+import { userApi, type User } from '@/lib/api/user';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
 import { useSafeAccount } from '@/hooks/use-safe-account';
 

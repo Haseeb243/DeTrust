@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
-import { authApi } from '@/lib/api';
+import { authApi } from '@/lib/api/auth';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');

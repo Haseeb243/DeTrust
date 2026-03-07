@@ -4,7 +4,8 @@ import { Loader2, ShieldCheck, Wallet } from 'lucide-react';
 import { useAccount, useConnect } from 'wagmi';
 import { toast } from 'sonner';
 
-import { Button, Card, CardContent } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 type ProviderInfo = {
@@ -77,14 +78,14 @@ export function MetaMaskPriorityConnect({ className, compact }: MetaMaskPriority
   };
 
   return (
-    <Card className={cn('border border-slate-200 bg-white shadow-lg', className)}>
+    <Card className={cn('border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/80 shadow-lg', className)}>
       <CardContent className={cn('space-y-4', compact ? 'p-4' : 'p-6')}>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <p className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
               <ShieldCheck className="h-4 w-4 text-emerald-500" /> Prioritizing MetaMask
             </p>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               {metaMaskDetected
                 ? 'MetaMask detected. Launch the extension instantly to stay in sync.'
                 : 'MetaMask extension not detected — WalletConnect is available as a backup.'}
@@ -108,9 +109,9 @@ export function MetaMaskPriorityConnect({ className, compact }: MetaMaskPriority
           </Button>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
-          <p className="font-semibold text-slate-900">Prefer another wallet?</p>
-          <p className="text-slate-500">
+        <div className="rounded-2xl border border-slate-100 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 p-4 text-sm text-slate-600 dark:text-slate-400">
+          <p className="font-semibold text-slate-900 dark:text-slate-100">Prefer another wallet?</p>
+          <p className="text-slate-500 dark:text-slate-400">
             Launch Rainbow or mobile wallets through WalletConnect without leaving this screen.
           </p>
           <div className="mt-4">

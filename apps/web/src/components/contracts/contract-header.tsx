@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import { Clock, CheckCircle2, ExternalLink, Shield } from 'lucide-react';
-import { Badge, Card, CardContent } from '@/components/ui';
-import { type Contract, type ContractStatus } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import type { Contract, ContractStatus } from '@/lib/api/contract';
 import { CONTRACT_STATUS_COLORS, formatDate } from './constants';
 
 interface ContractHeaderProps {

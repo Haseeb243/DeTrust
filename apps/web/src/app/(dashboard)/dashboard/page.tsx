@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAccount, useBalance } from 'wagmi';
 import {
@@ -17,11 +18,18 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { ProfileProgressRing } from '@/components/profile/profile-progress-ring';
-import { TrustScoreCard, TrustScoreTrendChart } from '@/components/trust-score';
-import { ReviewSummaryCard } from '@/components/reviews';
-import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { TrustScoreCard } from '@/components/trust-score/trust-score-card';
+import { ReviewSummaryCard } from '@/components/reviews/review-summary';
+
+/** Dynamically import recharts-heavy chart (Vercel bundle-dynamic-imports rule) */
+const TrustScoreTrendChart = dynamic(
+  () => import('@/components/trust-score/trust-score-trend-chart').then((m) => m.TrustScoreTrendChart),
+  { ssr: false },
+);
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
 import { useTrustScore, useTrustScoreHistory } from '@/hooks/queries/use-trust-score';
 import { useReviewSummary } from '@/hooks/queries/use-reviews';

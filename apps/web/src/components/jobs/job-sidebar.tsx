@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Briefcase, CheckCircle2, Shield, Star } from 'lucide-react';
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { type Job } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Job } from '@/lib/api/job';
 import { useClientProfile } from '@/hooks/queries/use-client-profile';
 
 function formatBudget(job: Job) {

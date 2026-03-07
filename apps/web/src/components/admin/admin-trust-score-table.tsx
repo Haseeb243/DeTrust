@@ -2,7 +2,7 @@
 
 import { Shield, ShieldOff, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { AdminAdjustScoreDialog } from './admin-adjust-score-dialog';

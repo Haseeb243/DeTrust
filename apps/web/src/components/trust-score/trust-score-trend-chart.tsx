@@ -11,7 +11,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { TRUST_SCORE_EXCELLENT, TRUST_SCORE_GOOD } from '@/lib/review-utils';
 import type { TrustScoreHistoryEntry } from '@/lib/api/user';

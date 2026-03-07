@@ -27,6 +27,7 @@ import disputeRoutes from './routes/dispute.routes';
 import messageRoutes from './routes/message.routes';
 import adminRoutes from './routes/admin.routes';
 import supportRoutes from './routes/support.routes';
+import publicRoutes from './routes/public.routes';
 
 // Create Express app
 const app: Application = express();
@@ -125,6 +126,9 @@ app.use(`${API_PREFIX}/admin`, adminRoutes);
 
 // Support routes
 app.use(`${API_PREFIX}/support`, supportRoutes);
+
+// Public routes (no auth — landing page stats & reviews)
+app.use(`${API_PREFIX}/public`, publicRoutes);
 
 // API documentation (Swagger UI)
 app.use(`${API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

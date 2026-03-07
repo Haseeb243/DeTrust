@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Link2, Shield, MessageSquare, Star } from 'lucide-react';
 
-import { Badge } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
 import type { AdminReview } from '@/lib/api/admin';
 
 interface AdminReviewTableProps {

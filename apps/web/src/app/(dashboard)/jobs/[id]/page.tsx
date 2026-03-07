@@ -5,14 +5,17 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { ArrowLeft, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { type CreateProposalInput } from '@/lib/api';
-import { useAuthStore } from '@/store';
+import type { CreateProposalInput } from '@/lib/api/proposal';
+import { useAuthStore } from '@/store/auth.store';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
 import { useJob } from '@/hooks/queries/use-jobs';
 import { useCreateProposal } from '@/hooks/queries/use-proposals';
-import { JobDetailHeader, JobDescriptionCard, JobSidebar, ProposalForm } from '@/components/jobs';
+import { JobDescriptionCard } from '@/components/jobs/job-description-card';
+import { JobDetailHeader } from '@/components/jobs/job-detail-header';
+import { JobSidebar } from '@/components/jobs/job-sidebar';
+import { ProposalForm } from '@/components/jobs/proposal-form';
 
 export default function JobDetailPage() {
   const { id: jobId } = useParams() as { id: string };
@@ -26,7 +29,7 @@ export default function JobDetailPage() {
   const isOwner = job?.clientId === user?.id;
   const hasSubmittedProposal = !!(job?.proposals?.length);
   const defaultRate =
-    job?.type === 'FIXED_PRICE' && job.budget ? job.budget : (job?.hourlyRateMin ?? 0);
+    job?.type === 'FIXED_PRICE' && job.budget ? Number(job.budget) : Number(job?.hourlyRateMin ?? 0);
 
   useEffect(() => {
     if (error) { toast.error('Job not found'); router.push('/jobs'); }

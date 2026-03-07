@@ -4,14 +4,17 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, BarChart3, ChevronLeft, ChevronRight, Users } from 'lucide-react';
-import { Button, Card, CardContent } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { ProposalCard, AcceptProposalForm, ProposalComparison } from '@/components/proposals';
-import type { MilestoneFormItem } from '@/components/proposals';
+import { AcceptProposalForm } from '@/components/proposals/accept-proposal-form';
+import { ProposalCard } from '@/components/proposals/proposal-card';
+import { ProposalComparison } from '@/components/proposals/proposal-comparison';
+import type { MilestoneFormItem } from '@/components/proposals/accept-proposal-form';
 import { useJob } from '@/hooks/queries/use-jobs';
 import { useJobProposals, useAcceptProposal, useRejectProposal, useShortlistProposal } from '@/hooks/queries/use-proposals';
-import type { GetProposalsParams } from '@/lib/api';
-import { useAuthStore } from '@/store';
+import type { GetProposalsParams } from '@/lib/api/proposal';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function JobProposalsPage() {
   const { id: jobId } = useParams<{ id: string }>();

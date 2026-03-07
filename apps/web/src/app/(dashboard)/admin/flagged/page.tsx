@@ -13,7 +13,9 @@ import {
   Scale,
 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useAdminFlaggedAccounts, useUpdateUserStatus } from '@/hooks/queries/use-admin';
 import { cn } from '@/lib/utils';

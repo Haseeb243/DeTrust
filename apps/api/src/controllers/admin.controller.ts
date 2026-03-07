@@ -114,6 +114,29 @@ const getFlaggedAccounts = async (req: Request, res: Response, next: NextFunctio
 };
 
 /**
+ * GET /api/admin/trust-scores
+ */
+const listTrustScores = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const params = {
+      page: parseInt(req.query.page as string, 10) || 1,
+      limit: Math.min(parseInt(req.query.limit as string, 10) || 20, 100),
+      search: req.query.search as string | undefined,
+      role: (req.query.role as string) || 'all',
+      eligible: req.query.eligible as string | undefined,
+      minScore: req.query.minScore ? parseFloat(req.query.minScore as string) : undefined,
+      maxScore: req.query.maxScore ? parseFloat(req.query.maxScore as string) : undefined,
+      sort: (req.query.sort as string) || 'trustScore',
+      order: (req.query.order as string) || 'desc',
+    };
+    const result = await adminService.listTrustScores(params);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * GET /api/admin/reviews
  */
 const listReviews = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -133,5 +156,6 @@ export const adminController = {
   updateUserStatus,
   listJobs,
   getFlaggedAccounts,
+  listTrustScores,
   listReviews,
 };

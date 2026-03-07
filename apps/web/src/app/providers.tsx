@@ -1,18 +1,20 @@
 'use client';
 
 import { ReactNode, useEffect } from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { Web3Provider } from '@/lib/wagmi';
-import { useAuthStore, useThemeStore } from '@/store';
-import { queryClient } from '@/lib/query-client';
+import dynamic from 'next/dynamic';
+import { useAuthStore } from '@/store/auth.store';
+import { useThemeStore } from '@/store/theme.store';
 import { Toaster } from 'sonner';
-import { useWalletSync } from '@/hooks/use-wallet-sync';
+import { Web3Provider } from '@/lib/wagmi/provider';
 
-/** Mounted inside Web3Provider so wagmi context is available */
-function WalletSyncWatcher() {
-  useWalletSync();
-  return null;
-}
+/**
+ * WalletSyncWatcher is client-only because it calls useAccount/useWalletSync
+ * hooks that depend on the wallet connection state.
+ */
+const WalletSyncWatcher = dynamic(
+  () => import('@/lib/wagmi/wallet-sync-watcher').then((m) => m.WalletSyncWatcher),
+  { ssr: false },
+);
 
 interface ProvidersProps {
   children: ReactNode;
@@ -22,12 +24,10 @@ export function Providers({ children }: ProvidersProps) {
   const fetchUser = useAuthStore((s) => s.fetchUser);
   const theme = useThemeStore((s) => s.theme);
 
-  // Restore user session on mount (cookies carry the auth token)
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
 
-  // Listen for system color-scheme changes when theme is 'system'
   useEffect(() => {
     if (theme !== 'system') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -46,16 +46,14 @@ export function Providers({ children }: ProvidersProps) {
       : theme;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Web3Provider>
-        <WalletSyncWatcher />
-        {children}
-        <Toaster
-          theme={resolvedTheme}
-          position="top-right"
-          richColors
-        />
-      </Web3Provider>
-    </QueryClientProvider>
+    <Web3Provider>
+      <WalletSyncWatcher />
+      {children}
+      <Toaster
+        theme={resolvedTheme}
+        position="top-right"
+        richColors
+      />
+    </Web3Provider>
   );
 }

@@ -27,6 +27,9 @@ router.get('/jobs', adminController.listJobs);
 // Flagged accounts
 router.get('/flagged', adminController.getFlaggedAccounts);
 
+// Trust score management (M4)
+router.get('/trust-scores', adminController.listTrustScores);
+
 // Review oversight (M3 — admin bypasses double-blind)
 router.get('/reviews', validateQuery(adminReviewsQuerySchema), adminController.listReviews);
 

@@ -2,8 +2,9 @@
 
 import { Calendar, Clock, Users } from 'lucide-react';
 
-import { Badge, Card, CardContent } from '@/components/ui';
-import { type Job } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import type { Job } from '@/lib/api/job';
 import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------

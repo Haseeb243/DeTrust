@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, lightTheme, Theme } from '@rainbow-me/rainbowkit';
@@ -36,25 +36,42 @@ interface Web3ProviderProps {
   children: ReactNode;
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,
-      gcTime: 5 * 60 * 1000,
-      retry: 2,
+function makeQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 2,
+        gcTime: 1000 * 60 * 10,
+        retry: 1,
+        refetchOnWindowFocus: false,
+      },
     },
-  },
-});
+  });
+}
 
+let browserQueryClient: QueryClient | undefined;
+
+function getQueryClient(): QueryClient {
+  if (typeof window === 'undefined') return makeQueryClient();
+  if (!browserQueryClient) browserQueryClient = makeQueryClient();
+  return browserQueryClient;
+}
+
+/**
+ * Web3Provider – wagmi → QueryClient → RainbowKit.
+ *
+ * Wrapping order follows the official RainbowKit installation guide:
+ *   WagmiProvider > QueryClientProvider > RainbowKitProvider
+ *
+ * This component is rendered directly (NOT via next/dynamic) to avoid
+ * Turbopack creating separate module instances of @tanstack/react-query
+ * across chunk boundaries.  The wagmi config already has `ssr: true`,
+ * so external stores like localStorage are deferred until hydration –
+ * no SSR errors.
+ */
 export function Web3Provider({ children }: Web3ProviderProps) {
-  const [mounted, setMounted] = useState(false);
+  const queryClient = getQueryClient();
 
-  // Fix hydration issues - only render on client
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Always render providers, but use suppressHydrationWarning
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
@@ -62,7 +79,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
           theme={detrustTheme}
           modalSize="compact"
         >
-          {mounted ? children : <div style={{ visibility: 'hidden' }}>{children}</div>}
+          {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

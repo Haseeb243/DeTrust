@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Flag } from 'lucide-react';
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { type Contract } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Contract } from '@/lib/api/contract';
 import { formatDate } from './constants';
 
 interface ContractSidebarProps {

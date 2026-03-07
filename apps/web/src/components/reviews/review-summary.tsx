@@ -1,7 +1,7 @@
 'use client';
 
 import { Star } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui';
+import { Card, CardContent } from '@/components/ui/card';
 import { StarRating } from './star-rating';
 import { CLIENT_REVIEW_LABELS, FREELANCER_REVIEW_LABELS } from '@/lib/review-utils';
 import { cn } from '@/lib/utils';

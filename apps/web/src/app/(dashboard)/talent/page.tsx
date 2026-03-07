@@ -16,7 +16,10 @@ import {
 } from 'lucide-react';
 
 import { SecureAvatar } from '@/components/secure-avatar';
-import { Badge, Button, Card, CardContent, Input } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useFreelancers } from '@/hooks/queries/use-user';
 import { useSkills } from '@/hooks/queries/use-skills';

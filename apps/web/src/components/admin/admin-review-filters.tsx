@@ -2,7 +2,8 @@
 
 import { Search, X } from 'lucide-react';
 
-import { Button, Input } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import type { AdminReviewListParams } from '@/lib/api/admin';
 
 interface AdminReviewFiltersProps {

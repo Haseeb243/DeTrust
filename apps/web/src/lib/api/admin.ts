@@ -80,11 +80,11 @@ export interface AdminJob {
   title: string;
   status: string;
   type: string;
-  budgetMin: number | null;
-  budgetMax: number | null;
+  budget: string | number | null;
   createdAt: string;
   client: { id: string; name: string | null };
-  _count: { proposals: number; contracts: number };
+  contract: { id: string } | null;
+  _count: { proposals: number };
 }
 
 export interface ActivityItem {
@@ -149,6 +149,34 @@ export interface AdminReviewListParams {
   hasIpfs?: 'true' | 'false';
   sort?: string;
   order?: string;
+}
+
+export interface AdminTrustScoreListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  eligible?: string;
+  minScore?: number;
+  maxScore?: number;
+  sort?: string;
+  order?: string;
+}
+
+export interface AdminTrustScoreEntry {
+  id: string;
+  userId: string;
+  name: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+  role: string;
+  trustScore: number;
+  eligible: boolean;
+  completedJobs: number;
+  completedContracts: number;
+  disputes: number;
+  avgRating: number;
+  lastUpdated: string;
 }
 
 interface PaginatedResponse<T> {
@@ -229,6 +257,12 @@ export const adminApi = {
 
   listReviews: (params?: AdminReviewListParams) =>
     api.get<PaginatedResponse<AdminReview>>(`/admin/reviews${buildQuery(params as Record<string, unknown>)}`),
+
+  listTrustScores: (params?: AdminTrustScoreListParams) =>
+    api.get<PaginatedResponse<AdminTrustScoreEntry>>(`/admin/trust-scores${buildQuery(params as Record<string, unknown>)}`),
+
+  adjustTrustScore: (userId: string, payload: { adjustment: number; reason: string }) =>
+    api.post<{ success: boolean }>(`/admin/users/${userId}/trust-score/adjust`, payload),
 };
 
 export default adminApi;

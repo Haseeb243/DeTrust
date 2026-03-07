@@ -1,13 +1,23 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { MessageSquareText, Star } from 'lucide-react';
 
-import { Badge, Card, CardContent } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { ReviewSummaryCard, ReviewList, ReviewFilters, ReviewAnalytics } from '@/components/reviews';
+import { ReviewSummaryCard } from '@/components/reviews/review-summary';
+import { ReviewList } from '@/components/reviews/review-list';
+import { ReviewFilters } from '@/components/reviews/review-filters';
+
+/** Dynamically import recharts-heavy analytics */
+const ReviewAnalytics = dynamic(
+  () => import('@/components/reviews/review-analytics').then((m) => m.ReviewAnalytics),
+  { ssr: false },
+);
 import { useUserReviews, useReviewSummary } from '@/hooks/queries/use-reviews';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 import type { GetUserReviewsParams } from '@/lib/api/review';
 

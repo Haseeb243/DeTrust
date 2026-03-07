@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { api, authApi, userApi } from '@/lib/api';
-import type { User as ApiUser } from '@/lib/api';
+import { authApi } from '@/lib/api/auth';
+import { api } from '@/lib/api/client';
+import { userApi } from '@/lib/api/user';
+import type { User as ApiUser } from '@/lib/api/user';
 
 type User = ApiUser;
 

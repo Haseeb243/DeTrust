@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Headset, Send, X, Minus } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Badge, Button, Input } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { useSupportAdmin } from '@/hooks/queries/use-support';
 import { useMessages, useSendMessage, useMarkConversationRead } from '@/hooks/queries/use-messages';
 import { MessageBubble } from '@/app/(dashboard)/messages/components/MessageBubble';

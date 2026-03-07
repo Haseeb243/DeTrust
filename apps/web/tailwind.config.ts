@@ -28,7 +28,7 @@ const config: Config = {
           'accent-border': 'hsl(var(--accent-border))',
         },
         brand: {
-          DEFAULT: '#00FF88',
+          DEFAULT: '#22c55e',
           hover: '#00CC6F',
           50: '#f0fdf4',
           100: '#dcfce7',
@@ -40,6 +40,7 @@ const config: Config = {
           700: '#15803d',
           800: '#166534',
           900: '#14532d',
+          
         },
         neon: {
           cyan: '#00ffff',

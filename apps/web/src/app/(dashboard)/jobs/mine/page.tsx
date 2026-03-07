@@ -19,11 +19,13 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { type Job, type GetJobsParams, type JobStatus } from '@/lib/api';
-import { useMyJobs, usePublishJob, useCancelJob, useDeleteJob } from '@/hooks/queries';
-import { useAuthStore } from '@/store';
+import type { Job, GetJobsParams, JobStatus } from '@/lib/api/job';
+import { useMyJobs, usePublishJob, useCancelJob, useDeleteJob } from '@/hooks/queries/use-jobs';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 
 const STATUS_COLORS: Record<JobStatus, string> = {

@@ -4,10 +4,15 @@ import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'rea
 import { toast } from 'sonner';
 import { FileText, ShieldCheck, Trash2, UploadCloud, Wand2 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { uploadApi, userApi, api, type CertificationEntry, type FreelancerProfile } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { api } from '@/lib/api/client';
+import { uploadApi } from '@/lib/api/upload';
+import { userApi, type CertificationEntry, type FreelancerProfile } from '@/lib/api/user';
 import { openSecureFileInNewTab } from '@/lib/secure-files';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 
 const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024; // 8 MB client-side guard
 const ACCEPTED_DOC_TYPES = 'application/pdf,image/png,image/jpeg,image/webp';

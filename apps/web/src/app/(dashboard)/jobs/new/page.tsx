@@ -5,10 +5,15 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, Briefcase, DollarSign, X } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
-import { type CreateJobInput, type SkillSummary } from '@/lib/api';
-import { useAuthStore } from '@/store';
+import type { CreateJobInput } from '@/lib/api/job';
+import type { SkillSummary } from '@/lib/api/skill';
+import { useAuthStore } from '@/store/auth.store';
 import { useSkills } from '@/hooks/queries/use-skills';
 import { useCreateJob, usePublishJob } from '@/hooks/queries/use-jobs';
 

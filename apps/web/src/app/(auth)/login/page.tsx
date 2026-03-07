@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { ShieldCheck } from 'lucide-react';
 
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { isWalletConnectConfigured } from '@/lib/env';
 import { MetaMaskPriorityConnect } from '@/components/wallet/meta-mask-priority';
 
@@ -50,10 +49,8 @@ export default function LoginPage() {
   };
 
   return (
-    <motion.div
-      className="space-y-10 text-dt-text"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
+      className="animate-fade-in space-y-10 text-dt-text"
     >
       <div>
         <p className="text-xs uppercase tracking-[0.4em] text-emerald-600">Sign in</p>
@@ -62,18 +59,18 @@ export default function LoginPage() {
       </div>
 
       <div className="space-y-4">
-        <div className="rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4 text-sm text-emerald-900">
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/40 p-4 text-sm text-emerald-900 dark:text-emerald-200">
           <p className="flex items-center gap-2 font-semibold">
             <ShieldCheck className="h-4 w-4 text-emerald-500" /> Wallet connection + email required
           </p>
-          <p className="text-emerald-700">
+          <p className="text-emerald-700 dark:text-emerald-400">
             Connect your wallet first, then confirm with your email credentials for dual-factor access.
           </p>
         </div>
         {!walletReady && (
-          <div className="rounded-3xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
+          <div className="rounded-3xl border border-amber-200 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/40 p-4 text-sm text-amber-900 dark:text-amber-200">
             <p className="font-semibold">WalletConnect project ID recommended</p>
-            <p className="mt-1 text-amber-700">
+            <p className="mt-1 text-amber-700 dark:text-amber-400">
               Add <code className="text-dt-text">NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID</code> to enable mobile wallets. MetaMask desktop still works instantly.
             </p>
           </div>
@@ -123,7 +120,7 @@ export default function LoginPage() {
           </div>
         )}
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div className="rounded-2xl border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/40 p-3 text-sm text-red-700 dark:text-red-400">
             {error}
           </div>
         )}
@@ -143,6 +140,6 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 }

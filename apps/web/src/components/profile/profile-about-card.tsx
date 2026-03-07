@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FileText } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { FreelancerProfile, ClientProfile } from '@/lib/api/user';
 
 export interface ProfileAboutCardProps {

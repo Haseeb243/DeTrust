@@ -30,6 +30,22 @@ const nextConfig: NextConfig = {
 
   // Transpile packages from monorepo
   transpilePackages: ['@detrust/types', '@detrust/config'],
+
+  // Tree-shake barrel imports for heavy libraries (Vercel bundle-barrel-imports rule)
+  // This tells the bundler to resolve named imports to individual modules,
+  // avoiding the full 1,583-module lucide-react parse, etc.
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'recharts',
+      '@radix-ui/react-icons',
+      'framer-motion',
+      'date-fns',
+      // NOTE: Do NOT add @rainbow-me/rainbowkit here — it uses React context
+      // internally (QueryClientProvider) and optimizePackageImports breaks the
+      // context wiring, causing "No QueryClient set" errors at runtime.
+    ],
+  },
   
   // Image optimization
   images: {
@@ -43,8 +59,15 @@ const nextConfig: NextConfig = {
   },
   
   // Turbopack (default for dev in Next.js 16)
-  // Webpack externals/fallbacks are not needed — Turbopack handles SSR imports natively
-  turbopack: {},
+  // Force @tanstack/react-query to resolve to a single ESM entry so that
+  // Turbopack doesn't create duplicate module instances (CJS vs ESM) which
+  // would cause separate React contexts and "No QueryClient set" errors.
+  turbopack: {
+    resolveAlias: {
+      '@tanstack/react-query':
+        './node_modules/@tanstack/react-query/build/modern/index.js',
+    },
+  },
 
   // Webpack configuration (used for production build via --webpack flag)
   webpack: (config) => {

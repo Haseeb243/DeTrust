@@ -6,8 +6,11 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@/components/ui';
-import { userApi, type ClientProfile } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { userApi, type ClientProfile } from '@/lib/api/user';
 
 const companySizeOptions = ['1-10', '11-50', '51-200', '201-500', '500+'] as const;
 type CompanySizeOption = (typeof companySizeOptions)[number];

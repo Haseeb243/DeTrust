@@ -81,12 +81,6 @@ docker-compose ps
 ```
 
 
-
-pkill -f "ts-node.*server.ts" 2>/dev/null; pkill -f "next dev" 2>/dev/null; pkill -f "nodemon" 2>/dev/null; echo "Killed any stale dev processes"
-
-Killed any stale dev processes 
-
-
 The PostgreSQL container is provisioned with:
 
 | Variable | Value |
@@ -159,6 +153,9 @@ uvicorn app.main:app --reload --port 8000
 pnpm dev
 ```
 
+> Note: the web app currently runs via `webpack` in development and production builds.
+> This avoids a known `wagmi` + `RainbowKit` + React Query context issue seen with Turbopack in this repository.
+
 Or start individually:
 
 ```bash
@@ -230,6 +227,21 @@ lsof -i :3000
 # Kill process
 kill -9 <PID>
 ```
+
+### React Query / RainbowKit runtime error
+
+If you see `No QueryClient set, use QueryClientProvider to set one`, do a full dev reset:
+
+```bash
+pkill -f "ts-node.*server.ts" 2>/dev/null
+pkill -f "next dev" 2>/dev/null
+pkill -f "nodemon" 2>/dev/null
+pkill -f "turbo" 2>/dev/null
+rm -rf apps/web/.next
+pnpm dev
+```
+
+If a browser tab still shows the old overlay, open a fresh tab or hard-refresh after the restart.
 
 ### Docker (Redis) Issues
 

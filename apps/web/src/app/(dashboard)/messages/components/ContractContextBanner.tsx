@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Briefcase, X } from 'lucide-react';
-import { useContract } from '@/hooks/queries';
+import { useContract } from '@/hooks/queries/use-contracts';
 
 interface ContractContextBannerProps {
   contractId: string;

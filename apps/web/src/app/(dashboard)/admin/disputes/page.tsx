@@ -11,7 +11,9 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useDisputes } from '@/hooks/queries/use-disputes';
 import { useAdminStats } from '@/hooks/queries/use-admin';
@@ -22,7 +24,7 @@ interface DisputeListItem {
   id: string;
   status: string;
   reason: string;
-  createdAt: string;
+  createdAt: string | Date;
   contract?: { id: string; title: string };
   initiator?: { id: string; name: string | null };
   _count?: { votes: number };
@@ -131,11 +133,12 @@ export default function AdminDisputesPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {disputes.map((dispute: DisputeListItem) => {
-            const status = statusConfig[dispute.status] ?? statusConfig.OPEN;
-            const contract = dispute.contract;
+          {disputes.map((dispute) => {
+            const d = dispute as DisputeListItem;
+            const status = statusConfig[d.status] ?? statusConfig.OPEN;
+            const contract = d.contract;
             return (
-              <Card key={dispute.id} className="border-dt-border bg-dt-surface transition hover:shadow-md">
+              <Card key={d.id} className="border-dt-border bg-dt-surface transition hover:shadow-md">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
@@ -144,25 +147,25 @@ export default function AdminDisputesPage() {
                           {contract?.title ?? 'Unknown Contract'}
                         </h3>
                         <Badge className={cn('flex items-center gap-1 text-xs', status.color)}>
-                          {status.icon} {dispute.status}
+                          {status.icon} {d.status}
                         </Badge>
                       </div>
                       <p className="mt-1 text-xs text-dt-text-muted">
-                        <span className="font-medium">Reason:</span> {dispute.reason}
+                        <span className="font-medium">Reason:</span> {d.reason}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-dt-text-muted">
-                        <span>By {dispute.initiator?.name ?? 'Unknown'}</span>
+                        <span>By {d.initiator?.name ?? 'Unknown'}</span>
                         <span>•</span>
-                        <span>{new Date(dispute.createdAt).toLocaleDateString()}</span>
-                        {dispute._count?.votes > 0 && (
+                        <span>{new Date(d.createdAt).toLocaleDateString()}</span>
+                        {d._count?.votes && d._count.votes > 0 && (
                           <>
                             <span>•</span>
-                            <span>{dispute._count.votes} vote{dispute._count.votes !== 1 ? 's' : ''}</span>
+                            <span>{d._count.votes} vote{d._count.votes !== 1 ? 's' : ''}</span>
                           </>
                         )}
                       </div>
                     </div>
-                    <Link href={`/disputes/${dispute.id}`}>
+                    <Link href={`/disputes/${d.id}`}>
                       <Button variant="outline" size="sm" className="text-xs">
                         <ExternalLink className="mr-1 h-3 w-3" /> Review
                       </Button>

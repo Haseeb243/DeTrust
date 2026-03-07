@@ -3,8 +3,14 @@
 import { ReactNode, Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+
+/** Dynamically import heavy RainbowKit ConnectButton */
+const ConnectButton = dynamic(
+  () => import('@rainbow-me/rainbowkit').then((m) => m.ConnectButton),
+  { ssr: false },
+);
 import {
   AlertTriangle,
   BarChart3,
@@ -31,7 +37,7 @@ import {
   Scale,
 } from 'lucide-react';
 
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';
 import { useLiveNotifications } from '@/hooks/use-live-notifications';
@@ -39,7 +45,7 @@ import { useSafeAccount } from '@/hooks/use-safe-account';
 import { BrandMark } from '@/components/layout/brand-mark';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { TokenBalance } from '@/components/layout/token-balance';
-import { ThemeToggle } from '@/components/ui';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { SupportWidget } from '@/components/layout/SupportWidget';
 import { NotificationPermissionBanner } from '@/components/layout/NotificationPermissionBanner';
 

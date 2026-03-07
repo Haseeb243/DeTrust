@@ -2,7 +2,8 @@
 
 import { Clock3 } from 'lucide-react';
 
-import { Button, Card, CardContent } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { shortWallet } from '@/lib/profile-utils';
 import { useProfileViewData } from '@/hooks/use-profile-view-data';

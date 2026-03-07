@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { Briefcase, GraduationCap, Layers, ScrollText, UploadCloud } from 'lucide-react';
 
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { openSecureFileInNewTab } from '@/lib/secure-files';
-import { api } from '@/lib/api';
+import { api } from '@/lib/api/client';
 import type { FreelancerProfile, FreelancerSkill, EducationEntry, CertificationEntry } from '@/lib/api/user';
 import { DossierCredentials } from './dossier-credentials';
 

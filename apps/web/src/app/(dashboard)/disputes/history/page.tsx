@@ -12,7 +12,10 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent, Input } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import type { Dispute } from '@detrust/types';
 import { useDisputes } from '@/hooks/queries/use-disputes';

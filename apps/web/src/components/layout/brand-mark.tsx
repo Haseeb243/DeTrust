@@ -34,7 +34,7 @@ export function BrandMark({ href = '/', showWordmark = true, className, contentC
       {showWordmark && (
         <span className="text-lg font-semibold tracking-tight">
           <span className="text-dt-text">De</span>
-          <span className="text-emerald-500">Trust</span>
+          <span className="text-brand">Trust</span>
         </span>
       )}
     </motion.span>

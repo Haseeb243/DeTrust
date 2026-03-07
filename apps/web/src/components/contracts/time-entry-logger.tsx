@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Clock, Plus, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useTimeEntries, useCreateTimeEntry, useDeleteTimeEntry } from '@/hooks/queries/use-time-entries';
 import type { TimeEntryResponse } from '@/lib/api/contract';

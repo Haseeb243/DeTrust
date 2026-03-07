@@ -6,8 +6,8 @@ import { Bell, Check, CheckCheck, Inbox } from 'lucide-react';
 import { NotificationType } from '@detrust/types';
 
 import { cn, formatRelativeTime } from '@/lib/utils';
-import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead } from '@/hooks/queries';
-import { useAuthStore } from '@/store';
+import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead } from '@/hooks/queries/use-notifications';
+import { useAuthStore } from '@/store/auth.store';
 
 /** Map notification types to the page the user should land on. */
 function getNotificationHref(type: NotificationType, data: Record<string, unknown> | null, isAdmin: boolean): string | null {

@@ -3,10 +3,15 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { CheckCircle2, Clock, FileCheck, FileUp, Link2, Upload, XCircle, AlertTriangle, RotateCcw } from 'lucide-react';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { contractApi, uploadApi, api, type Contract, type MilestoneStatus } from '@/lib/api';
+import { api } from '@/lib/api/client';
+import { contractApi, type Contract, type MilestoneStatus } from '@/lib/api/contract';
+import { uploadApi } from '@/lib/api/upload';
 import { openSecureFileInNewTab } from '@/lib/secure-files';
 import { cn } from '@/lib/utils';
 import { MILESTONE_STATUS_COLORS, formatDate } from './constants';

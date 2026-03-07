@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { Clock3, Shield } from 'lucide-react';
 
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface ChecklistTask {
   label: string;

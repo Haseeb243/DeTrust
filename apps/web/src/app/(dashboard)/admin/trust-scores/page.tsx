@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Shield, Users, ShieldOff, ChevronLeft, ChevronRight } from 'lucide-react';
 
-import { Card, CardContent, Button } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { AdminTrustScoreFilters } from '@/components/admin/admin-trust-score-filters';
 import { AdminTrustScoreTable } from '@/components/admin/admin-trust-score-table';

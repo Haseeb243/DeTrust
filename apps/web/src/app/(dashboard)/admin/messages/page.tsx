@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { MessageCircle, TrendingUp } from 'lucide-react';
 
-import { Badge, Card, CardContent } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import {
   useConversations,
@@ -14,7 +15,7 @@ import {
   useMessageUnreadCount,
 } from '@/hooks/queries/use-messages';
 import { useAdminStats } from '@/hooks/queries/use-admin';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 
 import { ConversationList } from '../../messages/components/ConversationList';

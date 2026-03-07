@@ -3,7 +3,8 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { ArrowLeft, Send, Headset, Paperclip, X, FileText, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button, Input } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import type { Conversation, Message } from '@detrust/types';
 import { useUploadAttachment } from '@/hooks/queries/use-messages';

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { MessageSquare, MessageSquareReply, Calendar, ExternalLink } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui';
+import { Card, CardContent } from '@/components/ui/card';
 import { SecureAvatar } from '@/components/secure-avatar';
 import { StarRating } from './star-rating';
 import { ReviewResponseForm } from './review-response-form';

@@ -4,9 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { CheckCircle2, Send } from 'lucide-react';
-import { Button, Card, CardContent, CardHeader, CardTitle, Textarea } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
-import { type Job, type CreateProposalInput } from '@/lib/api';
+import type { Job } from '@/lib/api/job';
+import type { CreateProposalInput } from '@/lib/api/proposal';
 
 export interface ProposalFormProps {
   job: Job;

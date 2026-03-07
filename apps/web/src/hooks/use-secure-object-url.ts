@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fetchSecureFile, releaseObjectUrl } from '@/lib/secure-files';
-import { api } from '@/lib/api';
-import { useAuthStore } from '@/store';
+import { api } from '@/lib/api/client';
+import { useAuthStore } from '@/store/auth.store';
 
 export function useSecureObjectUrl(sourceUrl?: string | null) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);

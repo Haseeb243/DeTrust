@@ -2,7 +2,7 @@
 
 import { PenLine } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface ActivityCard {
   label: string;

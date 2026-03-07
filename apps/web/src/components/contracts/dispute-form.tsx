@@ -4,7 +4,9 @@ import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { AlertTriangle, Paperclip, Upload, X } from 'lucide-react';
 
-import { Button, Card, CardContent, CardHeader, CardTitle, Textarea } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { uploadApi } from '@/lib/api/upload';
 

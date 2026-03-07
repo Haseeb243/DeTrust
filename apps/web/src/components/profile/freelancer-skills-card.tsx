@@ -4,8 +4,12 @@ import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'r
 import { Loader2, Plus, ShieldCheck, Sparkles, Target, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui';
-import { skillApi, type SkillSummary, userApi, type FreelancerSkill } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { skillApi, type SkillSummary } from '@/lib/api/skill';
+import { userApi, type FreelancerSkill } from '@/lib/api/user';
 
 interface FreelancerSkillsCardProps {
   skills?: FreelancerSkill[];

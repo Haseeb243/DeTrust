@@ -6,10 +6,11 @@ import { AlertTriangle, CheckCircle2, Copy, DollarSign, ExternalLink, Shield, Wa
 import { useAccount, useBalance, useChainId } from 'wagmi';
 import { type Address } from 'viem';
 
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useJobEscrow } from '@/hooks/use-job-escrow';
-import { contractApi, type Contract } from '@/lib/api';
+import { contractApi, type Contract } from '@/lib/api/contract';
 
 interface EscrowFundingProps {
   contract: Contract;

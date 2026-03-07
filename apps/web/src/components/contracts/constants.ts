@@ -1,4 +1,4 @@
-import { type ContractStatus, type MilestoneStatus } from '@/lib/api';
+import type { ContractStatus, MilestoneStatus } from '@/lib/api/contract';
 
 export const CONTRACT_STATUS_COLORS: Record<ContractStatus, string> = {
   PENDING: 'bg-amber-100 text-amber-700',

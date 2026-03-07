@@ -13,10 +13,12 @@ import {
 } from 'lucide-react';
 
 import { SecureAvatar } from '@/components/secure-avatar';
-import { Badge, Button, Card, CardContent } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { type Contract, type ContractStatus, type GetContractsParams } from '@/lib/api';
-import { useAuthStore } from '@/store';
+import type { Contract, ContractStatus, GetContractsParams } from '@/lib/api/contract';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 import { useContracts } from '@/hooks/queries/use-contracts';
 

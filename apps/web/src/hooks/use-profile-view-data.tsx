@@ -5,8 +5,8 @@ import { Building2, Shield, Sparkles, WalletMinimal } from 'lucide-react';
 
 import type { HighlightStat } from '@/components/profile/profile-hero';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
-import { useAuthStore } from '@/store';
-import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/auth.store';
+import { api } from '@/lib/api/client';
 import { useSafeAccount } from '@/hooks/use-safe-account';
 import { fetchSecureFile, releaseObjectUrl } from '@/lib/secure-files';
 import { useSecureObjectUrl } from '@/hooks/use-secure-object-url';

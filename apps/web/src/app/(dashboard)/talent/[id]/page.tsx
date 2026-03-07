@@ -23,13 +23,16 @@ import {
 } from 'lucide-react';
 
 import { SecureAvatar } from '@/components/secure-avatar';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/hooks/queries/use-user';
 import { useUserReviews, useReviewSummary } from '@/hooks/queries/use-reviews';
 import { useTrustScore } from '@/hooks/queries/use-trust-score';
-import { ReviewSummaryCard, ReviewList } from '@/components/reviews';
-import { TrustScoreCard } from '@/components/trust-score';
+import { ReviewSummaryCard } from '@/components/reviews/review-summary';
+import { ReviewList } from '@/components/reviews/review-list';
+import { TrustScoreCard } from '@/components/trust-score/trust-score-card';
 import { openSecureFileInNewTab } from '@/lib/secure-files';
 import { api } from '@/lib/api/client';
 import { useAuthStore } from '@/store/auth.store';

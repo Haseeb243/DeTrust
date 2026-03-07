@@ -1,7 +1,7 @@
 'use client';
 
 import { Shield, ShieldOff } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TRUST_SCORE_EXCELLENT, TRUST_SCORE_GOOD } from '@/lib/review-utils';
 import { cn } from '@/lib/utils';
 import type { TrustScoreBreakdown } from '@/lib/api/user';

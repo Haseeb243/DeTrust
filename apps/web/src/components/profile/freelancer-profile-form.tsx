@@ -7,8 +7,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Plus, Trash2 } from 'lucide-react';
 
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea, Badge } from '@/components/ui';
-import { userApi, type FreelancerProfile } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { userApi, type FreelancerProfile } from '@/lib/api/user';
 
 const availabilityOptions = ['Full-time', 'Part-time', 'Not Available'] as const;
 

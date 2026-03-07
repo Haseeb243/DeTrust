@@ -139,6 +139,79 @@ export class ContractService {
   }
 
   /**
+   * List ALL contracts (admin view — no user-scoping).
+   */
+  async listAllContracts(query: GetContractsQuery) {
+    const { status, page, limit, sort, order } = query;
+
+    const where: Record<string, unknown> = {};
+    if (status) {
+      where.status = status;
+    }
+
+    const [contracts, total] = await Promise.all([
+      prisma.contract.findMany({
+        where,
+        include: {
+          job: {
+            select: { id: true, title: true, type: true, category: true },
+          },
+          client: {
+            select: {
+              id: true,
+              name: true,
+              avatarUrl: true,
+              clientProfile: {
+                select: { companyName: true, trustScore: true, paymentVerified: true },
+              },
+            },
+          },
+          freelancer: {
+            select: {
+              id: true,
+              name: true,
+              avatarUrl: true,
+              freelancerProfile: {
+                select: { title: true, trustScore: true },
+              },
+            },
+          },
+          milestones: { orderBy: { orderIndex: 'asc' } },
+          disputes: {
+            select: {
+              id: true, status: true, outcome: true, resolution: true,
+              resolutionTxHash: true, resolvedAt: true, createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
+        },
+        orderBy: { [sort]: order },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.contract.count({ where }),
+    ]);
+
+    const contractsWithPaidAmount = contracts.map((contract: { milestones: Array<{ status: string; amount: unknown }> }) => {
+      const paidAmount = contract.milestones
+        .filter((m: { status: string }) => m.status === 'PAID' || m.status === 'APPROVED')
+        .reduce((sum: number, m: { amount: unknown }) => sum + Number(m.amount), 0);
+      return { ...contract, paidAmount };
+    });
+
+    return {
+      items: contractsWithPaidAmount,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrev: page > 1,
+    };
+  }
+
+  /**
    * Get contract by ID
    */
   async getContractById(contractId: string, userId: string) {

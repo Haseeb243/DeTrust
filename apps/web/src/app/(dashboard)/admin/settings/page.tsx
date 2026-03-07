@@ -2,7 +2,8 @@
 
 import { Settings, Shield, Globe, Database, Mail, Blocks, Server, Info } from 'lucide-react';
 
-import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface SettingRowProps {

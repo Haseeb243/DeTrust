@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { clientProfileApi } from '@/lib/api';
+import { clientProfileApi } from '@/lib/api/client-profile';
 
 export function useClientProfile(id: string) {
   return useQuery({

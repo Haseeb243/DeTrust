@@ -4,11 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Shield, AlertTriangle, CheckCircle2, Clock, Scale } from 'lucide-react';
 
-import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import type { Dispute } from '@detrust/types';
 import { useDisputes } from '@/hooks/queries/use-disputes';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 import type { GetDisputesParams } from '@/lib/api/dispute';
 
@@ -147,10 +148,10 @@ export default function DisputesPage() {
                               <span className="font-medium">{outcomeLabels[dispute.outcome] ?? dispute.outcome}</span>
                             </>
                           )}
-                          {dispute._count?.votes > 0 && (
+                          {(dispute._count?.votes ?? 0) > 0 && (
                             <>
                               <span>•</span>
-                              <span>{dispute._count.votes} vote{dispute._count.votes !== 1 ? 's' : ''}</span>
+                              <span>{dispute._count!.votes} vote{dispute._count!.votes !== 1 ? 's' : ''}</span>
                             </>
                           )}
                         </div>

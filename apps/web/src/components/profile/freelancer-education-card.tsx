@@ -7,8 +7,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { GraduationCap, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@/components/ui';
-import { userApi, type EducationEntry, type EducationPayload } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { userApi, type EducationEntry, type EducationPayload } from '@/lib/api/user';
 
 const educationSchema = z.object({
   institution: z.string().min(2, 'Institution name is required').max(200),

@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { Briefcase, Clock, DollarSign, Shield, Sparkles, Star, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { SecureAvatar } from '@/components/secure-avatar';
-import { Badge, Button, Card, CardContent } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import type { Proposal } from '@/lib/api/proposal';
 
 const STATUS_COLORS: Record<string, string> = {

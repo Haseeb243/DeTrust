@@ -55,6 +55,16 @@ export class ProposalService {
       );
     }
 
+    // Enforce budget ceiling for FIXED_PRICE jobs
+    if (job.type === 'FIXED_PRICE' && job.budget) {
+      const budget = Number(job.budget);
+      if (data.proposedRate > budget) {
+        throw new ValidationError(
+          `Bid cannot exceed the job budget of $${budget}`
+        );
+      }
+    }
+
     // Enforce hourly rate range for HOURLY jobs
     if (job.type === 'HOURLY') {
       const min = job.hourlyRateMin ? Number(job.hourlyRateMin) : null;

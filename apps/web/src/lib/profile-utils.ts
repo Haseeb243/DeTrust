@@ -1,4 +1,4 @@
-import type { User, ClientProfile } from '@/lib/api';
+import type { User, ClientProfile } from '@/lib/api/user';
 
 export const computeClientCompletion = (profile?: ClientProfile | null) => {
   if (!profile) return 0;

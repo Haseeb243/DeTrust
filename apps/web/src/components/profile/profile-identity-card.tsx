@@ -2,7 +2,7 @@
 
 import { BadgeCheck } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { User } from '@/lib/api/user';
 
 export interface ProfileIdentityCardProps {

@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { Award, UploadCloud } from 'lucide-react';
 
-import { Badge, Button } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type { CertificationEntry } from '@/lib/api/user';
 
 export interface DossierCredentialsProps {

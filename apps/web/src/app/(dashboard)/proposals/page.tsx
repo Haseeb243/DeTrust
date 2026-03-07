@@ -19,11 +19,13 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { Badge, Button, Card, CardContent } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useMyProposals, useWithdrawProposal } from '@/hooks/queries/use-proposals';
-import { type GetProposalsParams, type ProposalStatus } from '@/lib/api';
-import { useAuthStore } from '@/store';
+import type { GetProposalsParams, ProposalStatus } from '@/lib/api/proposal';
+import { useAuthStore } from '@/store/auth.store';
 import { cn } from '@/lib/utils';
 
 const STATUS_COLORS: Record<ProposalStatus, string> = {

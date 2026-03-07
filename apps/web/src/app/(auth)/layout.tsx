@@ -7,7 +7,7 @@ import { AnimatedSection } from '@/components/ui/animated-section';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-slate-100 px-4 py-6 text-dt-text sm:px-6 lg:flex-row lg:px-12 lg:py-12">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-slate-100 dark:from-slate-950 dark:via-gray-950 dark:to-slate-900 px-4 py-6 text-dt-text sm:px-6 lg:flex-row lg:px-12 lg:py-12">
       <AnimatedSection
         className="flex-1"
         initial={{ opacity: 0, y: 20 }}

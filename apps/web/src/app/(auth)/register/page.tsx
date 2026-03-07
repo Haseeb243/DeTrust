@@ -3,15 +3,15 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+
 import { useAccount, useSignMessage } from 'wagmi';
 import { toast } from 'sonner';
 import { Check, Wallet } from 'lucide-react';
 
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/store/auth.store';
 import { isWalletConnectConfigured } from '@/lib/env';
 import { MetaMaskPriorityConnect } from '@/components/wallet/meta-mask-priority';
-import { userApi } from '@/lib/api';
+import { userApi } from '@/lib/api/user';
 
 type Role = 'FREELANCER' | 'CLIENT';
 
@@ -174,11 +174,10 @@ function RegisterPageContent() {
             points: ['Verified talent pools', 'Smart escrow controls', 'Enterprise compliance'],
           },
         ].map((card) => (
-          <motion.button
+          <button
             key={card.role}
             onClick={() => handleRoleSelect(card.role)}
-            whileHover={{ y: -4 }}
-            className="glass-card flex h-full flex-col rounded-3xl p-6 text-left"
+            className="glass-card flex h-full flex-col rounded-3xl p-6 text-left transition-transform hover:-translate-y-1"
           >
             <span className="text-sm uppercase tracking-[0.4em] text-emerald-600">{card.role}</span>
             <h3 className="mt-3 text-2xl font-semibold text-dt-text">{card.title}</h3>
@@ -189,7 +188,7 @@ function RegisterPageContent() {
                 </li>
               ))}
             </ul>
-          </motion.button>
+          </button>
         ))}
       </div>
       <p className="text-center text-sm text-dt-text-muted">
@@ -210,16 +209,16 @@ function RegisterPageContent() {
         </button>
       </div>
 
-      <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4 text-sm text-emerald-900">
+      <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/40 p-4 text-sm text-emerald-900 dark:text-emerald-200">
         <Wallet className="h-5 w-5 text-emerald-500" />
         Wallet login is primary. Emails simply keep notifications flowing.
       </div>
 
       <div className="space-y-4 rounded-3xl border border-dt-border bg-dt-surface-alt/80 p-4 text-center">
         {!walletReady && (
-          <div className="space-y-2 text-left text-sm text-amber-900">
-            <p className="font-semibold text-amber-700">WalletConnect project ID recommended</p>
-            <p className="text-amber-700/90">
+          <div className="space-y-2 text-left text-sm text-amber-900 dark:text-amber-200">
+            <p className="font-semibold text-amber-700 dark:text-amber-300">WalletConnect project ID recommended</p>
+            <p className="text-amber-700/90 dark:text-amber-400">
               Add your WalletConnect Cloud project ID to <code className="text-dt-text">apps/web/.env.local</code> so mobile wallets can pair. MetaMask desktop still launches instantly.
             </p>
           </div>
@@ -302,7 +301,7 @@ function RegisterPageContent() {
         )}
       </div>
 
-      {error && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+      {error && <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/40 p-3 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       <div className="flex items-center justify-between">
         <button className="btn-secondary" onClick={() => setCurrentStep(1)}>Back</button>
@@ -327,7 +326,7 @@ function RegisterPageContent() {
             <div
               key={step.id}
               className={`rounded-2xl p-4 ${
-                index === currentStep ? 'bg-emerald-50 border border-emerald-100' : 'bg-dt-surface-alt'
+                index === currentStep ? 'bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-800' : 'bg-dt-surface-alt'
               }`}
             >
               <p className="text-xs uppercase tracking-[0.4em] text-emerald-600">Step {index + 1}</p>

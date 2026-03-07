@@ -1,7 +1,8 @@
 'use client';
 
 import { Search, MessageCircle, Headset } from 'lucide-react';
-import { Badge, Input } from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import type { Conversation } from '@detrust/types';

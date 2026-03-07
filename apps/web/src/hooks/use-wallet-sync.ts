@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/store';
-import { userApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth.store';
+import { userApi } from '@/lib/api/user';
 import { userKeys } from '@/hooks/queries/use-user';
 
 /**
