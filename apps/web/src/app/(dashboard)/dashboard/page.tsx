@@ -22,6 +22,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { ProfileProgressRing } from '@/components/profile/profile-progress-ring';
 import { TrustScoreCard } from '@/components/trust-score/trust-score-card';
 import { ReviewSummaryCard } from '@/components/reviews/review-summary';
+import { useNotifications } from '@/hooks/queries/use-notifications';
+import { cn, formatRelativeTime } from '@/lib/utils';
 
 /** Dynamically import recharts-heavy chart (Vercel bundle-dynamic-imports rule) */
 const TrustScoreTrendChart = dynamic(
@@ -293,36 +295,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-dt-text">
-              <BellRing className="h-4 w-4 text-amber-400" /> Notification center
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {notifications.map((notification) => (
-              <div
-                key={notification.title}
-                className={`rounded-2xl border px-4 py-3 text-sm ${toneClasses[notification.tone]}`}
-              >
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold">{notification.title}</p>
-                  {notification.tone === 'success' ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : null}
-                </div>
-                <p className="text-xs text-dt-text-muted">{notification.detail}</p>
-                {notification.action ? (
-                  <Link
-                    href={notification.action.href}
-                    className="mt-2 inline-flex items-center text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-dt-text-muted"
-                  >
-                    {notification.action.label}
-                    <ArrowUpRight className="ml-1 h-3 w-3" />
-                  </Link>
-                ) : null}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <DashboardNotificationCard statusHints={notifications} />
       </div>
 
       {/* Trust Score Breakdown (Module 4) */}
@@ -436,5 +409,91 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// ─── Dashboard Notification Card ─────────────────────────────────────────────
+function DashboardNotificationCard({ statusHints }: {
+  statusHints: Array<{
+    title: string;
+    detail: string;
+    tone: 'success' | 'warning' | 'info';
+    action?: { label: string; href: string };
+  }>;
+}) {
+  const { data: notificationsData } = useNotifications({ limit: 5 });
+  const realNotifications = notificationsData?.items ?? [];
+  const hasRealNotifications = realNotifications.length > 0;
+
+  return (
+    <Card className="border border-dt-border bg-dt-surface/90 shadow-xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base text-dt-text">
+          <BellRing className="h-4 w-4 text-amber-400" /> Notification center
+          {hasRealNotifications && (
+            <span className="ml-auto text-xs font-normal text-dt-text-muted">
+              {realNotifications.length} recent
+            </span>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {hasRealNotifications ? (
+          <>
+            {realNotifications.map((n) => (
+              <div
+                key={n.id}
+                className={cn(
+                  'rounded-2xl border px-4 py-3 text-sm transition-colors',
+                  n.read
+                    ? 'border-dt-border bg-dt-surface'
+                    : 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20'
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className={cn('truncate text-sm', n.read ? 'text-dt-text-muted' : 'font-semibold text-dt-text')}>
+                      {n.title}
+                    </p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-dt-text-muted">{n.message}</p>
+                  </div>
+                  <span className="flex-shrink-0 text-[11px] text-dt-text-muted">
+                    {formatRelativeTime(n.createdAt)}
+                  </span>
+                </div>
+              </div>
+            ))}
+            <Link
+              href="/notifications"
+              className="inline-flex w-full items-center justify-center gap-1 rounded-xl border border-dt-border bg-dt-surface px-4 py-2.5 text-xs font-semibold text-dt-text-muted transition hover:bg-dt-surface-alt"
+            >
+              View all notifications <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          </>
+        ) : (
+          statusHints.map((notification) => (
+            <div
+              key={notification.title}
+              className={`rounded-2xl border px-4 py-3 text-sm ${toneClasses[notification.tone]}`}
+            >
+              <div className="flex items-center justify-between">
+                <p className="font-semibold">{notification.title}</p>
+                {notification.tone === 'success' ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : null}
+              </div>
+              <p className="text-xs text-dt-text-muted">{notification.detail}</p>
+              {notification.action ? (
+                <Link
+                  href={notification.action.href}
+                  className="mt-2 inline-flex items-center text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-dt-text-muted"
+                >
+                  {notification.action.label}
+                  <ArrowUpRight className="ml-1 h-3 w-3" />
+                </Link>
+              ) : null}
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { AiCapabilityBadge } from '@/components/trust-score/ai-capability-badge';
 import { userApi, type FreelancerProfile } from '@/lib/api/user';
 
 const availabilityOptions = ['Full-time', 'Part-time', 'Not Available'] as const;
@@ -167,7 +168,7 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
             {completenessScore}% complete
           </Badge>
           <span>Trust score {profile?.trustScore ?? 0}%</span>
-          <span>AI capability {profile?.aiCapabilityScore ?? 0}%</span>
+          <AiCapabilityBadge score={Number(profile?.aiCapabilityScore ?? 0)} size="sm" showScore />
         </div>
       </CardHeader>
       <CardContent>

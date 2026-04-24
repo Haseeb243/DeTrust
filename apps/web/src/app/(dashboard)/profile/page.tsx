@@ -60,6 +60,7 @@ export default function ProfileViewPage() {
             <ProfileDossierCard
               freelancerProfile={d.freelancerProfile} isAuthenticated={d.isAuthenticated}
               topSkills={d.topSkills} educationEntries={d.educationEntries}
+              experienceEntries={d.experienceEntries} portfolioItems={d.portfolioItems}
               certifications={d.certifications} certPreviewMap={d.certPreviewMap}
               resumeUploaded={d.resumeUploaded} formatEducationRange={d.formatEducationRange}
             />

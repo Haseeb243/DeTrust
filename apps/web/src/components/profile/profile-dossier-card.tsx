@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Briefcase, GraduationCap, Layers, ScrollText, UploadCloud } from 'lucide-react';
+import { Briefcase, ExternalLink, FolderOpen, GraduationCap, Layers, ScrollText, UploadCloud } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { openSecureFileInNewTab } from '@/lib/secure-files';
 import { api } from '@/lib/api/client';
-import type { FreelancerProfile, FreelancerSkill, EducationEntry, CertificationEntry } from '@/lib/api/user';
+import type { FreelancerProfile, FreelancerSkill, EducationEntry, CertificationEntry, ExperienceEntry, PortfolioItemEntry } from '@/lib/api/user';
 import { DossierCredentials } from './dossier-credentials';
 
 export interface ProfileDossierCardProps {
@@ -15,6 +15,8 @@ export interface ProfileDossierCardProps {
   isAuthenticated: boolean;
   topSkills: FreelancerSkill[];
   educationEntries: EducationEntry[];
+  experienceEntries: ExperienceEntry[];
+  portfolioItems: PortfolioItemEntry[];
   certifications: CertificationEntry[];
   certPreviewMap: Record<string, { url: string; mimeType: string }>;
   resumeUploaded: boolean;
@@ -26,6 +28,8 @@ export function ProfileDossierCard({
   isAuthenticated,
   topSkills,
   educationEntries,
+  experienceEntries,
+  portfolioItems,
   certifications,
   certPreviewMap,
   resumeUploaded,
@@ -123,6 +127,79 @@ export function ProfileDossierCard({
 
           {/* Credentials */}
           <DossierCredentials certifications={certifications} certPreviewMap={certPreviewMap} />
+
+          {/* Experience */}
+          <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/50 via-dt-surface to-dt-surface p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Work experience</p>
+                <p className="text-lg font-semibold text-dt-text">{experienceEntries.length ? 'Career timeline' : 'No entries yet'}</p>
+              </div>
+              <Briefcase className="h-7 w-7 text-dt-text-muted" />
+            </div>
+            {experienceEntries.length ? (
+              <div className="mt-4 space-y-3">
+                {experienceEntries.map((exp) => (
+                  <div key={exp.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/70 p-3">
+                    <p className="text-sm font-semibold text-dt-text">{exp.title}</p>
+                    <p className="text-xs text-dt-text-muted">{exp.company}{exp.location ? ` · ${exp.location}` : ''}</p>
+                    <p className="text-xs text-dt-text-muted">
+                      {formatEducationRange(exp.startDate, exp.isCurrent ? null : exp.endDate)}
+                      {exp.isCurrent && <span className="ml-2 text-emerald-500">· Current</span>}
+                    </p>
+                    {exp.description && <p className="mt-1 text-xs text-dt-text-muted">{exp.description}</p>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 rounded-2xl border border-dashed border-dt-border bg-dt-surface-alt/60 p-4 text-sm text-dt-text-muted">Add work experience from your profile editor.</p>
+            )}
+          </div>
+
+          {/* Portfolio */}
+          <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/40 via-dt-surface to-dt-surface p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Portfolio</p>
+                <p className="text-lg font-semibold text-dt-text">{portfolioItems.length ? 'Showcase projects' : 'No projects yet'}</p>
+              </div>
+              <FolderOpen className="h-7 w-7 text-dt-text-muted" />
+            </div>
+            {portfolioItems.length ? (
+              <div className="mt-4 space-y-3">
+                {portfolioItems.map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/70 p-3">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-dt-text">{item.title}</p>
+                      {item.isFeatured && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">Featured</span>}
+                    </div>
+                    {item.description && <p className="mt-1 text-xs text-dt-text-muted">{item.description}</p>}
+                    {item.techStack.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {item.techStack.map((tech) => (
+                          <span key={tech} className="rounded-full border border-dt-border bg-dt-surface px-2 py-0.5 text-[10px] text-dt-text-muted">{tech}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-2 flex gap-3">
+                      {item.projectUrl && (
+                        <a href={item.projectUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline">
+                          Live <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                      {item.repoUrl && (
+                        <a href={item.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline">
+                          Repo <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 rounded-2xl border border-dashed border-dt-border bg-dt-surface-alt/60 p-4 text-sm text-dt-text-muted">Showcase your best projects from the profile editor.</p>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

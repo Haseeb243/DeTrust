@@ -156,7 +156,7 @@ pnpm contracts:deploy:local
 # 7. Start development (Terminal 3)
 pnpm dev
 ```
-
+cd apps/ai-service && app/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ---
 
 ## 📚 Documentation

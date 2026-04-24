@@ -78,6 +78,18 @@ export const addExperienceSchema = z.object({
   description: safeText(z.string().max(2000)).optional(),
 });
 
+export const addPortfolioItemSchema = z.object({
+  title: safeText(z.string().min(2).max(200)),
+  description: safeText(z.string().max(2000)).optional(),
+  projectUrl: z.string().url().optional(),
+  repoUrl: z.string().url().optional(),
+  imageUrl: z.string().url().optional(),
+  techStack: z.array(safeText(z.string().min(1).max(50))).max(20).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  isFeatured: z.boolean().optional(),
+});
+
 // =============================================================================
 // CLIENT PROFILE
 // =============================================================================
@@ -127,3 +139,5 @@ export type UpdateClientProfileInput = z.infer<typeof updateClientProfileSchema>
 export type AddSkillInput = z.infer<typeof addSkillSchema>;
 export type GetUsersQuery = z.infer<typeof getUsersQuerySchema>;
 export type AddEducationInput = z.infer<typeof addEducationSchema>;
+export type AddExperienceInput = z.infer<typeof addExperienceSchema>;
+export type AddPortfolioItemInput = z.infer<typeof addPortfolioItemSchema>;

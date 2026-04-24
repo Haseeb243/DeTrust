@@ -191,6 +191,146 @@ export class UserController {
   }
 
   /**
+   * Add experience entry to freelancer profile
+   * POST /users/me/experience
+   */
+  async addExperience(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const entry = await userService.addExperience(req.userId!, req.body);
+      res.status(201).json({
+        success: true,
+        message: 'Experience entry added',
+        data: entry,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Remove experience entry
+   * DELETE /users/me/experience/:experienceId
+   */
+  async removeExperience(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      await userService.removeExperience(req.userId!, req.params.experienceId);
+      res.json({
+        success: true,
+        message: 'Experience entry removed',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Add portfolio item to freelancer profile
+   * POST /users/me/portfolio
+   */
+  async addPortfolioItem(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const item = await userService.addPortfolioItem(req.userId!, req.body);
+      res.status(201).json({
+        success: true,
+        message: 'Portfolio item added',
+        data: item,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Remove portfolio item
+   * DELETE /users/me/portfolio/:itemId
+   */
+  async removePortfolioItem(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      await userService.removePortfolioItem(req.userId!, req.params.itemId);
+      res.json({
+        success: true,
+        message: 'Portfolio item removed',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Force recalculate AI capability score
+   * POST /users/me/ai-capability/recalculate
+   */
+  async recalculateAiCapability(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const score = await userService.calculateAiCapabilityScore(req.userId!);
+      res.json({
+        success: true,
+        message: 'AI capability score recalculated',
+        data: { score },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Start a skill verification test
+   * POST /users/me/skills/:skillId/verify/start
+   */
+  async startSkillVerification(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const result = await userService.startVerification(req.userId!, req.params.skillId);
+      res.json({
+        success: true,
+        message: 'Skill verification test started',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Submit skill verification answers
+   * POST /users/me/skills/:skillId/verify/submit
+   */
+  async submitSkillVerification(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { testId, answers, timeTaken } = req.body;
+      const result = await userService.submitVerification(
+        req.userId!,
+        req.params.skillId,
+        testId,
+        answers,
+        timeTaken,
+      );
+      res.json({
+        success: true,
+        message: result.passed ? 'Congratulations! Skill verified.' : 'Test not passed. Try again in 30 days.',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get skill test history
+   * GET /users/me/skill-tests
+   */
+  async getSkillTests(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const history = await userService.getSkillTestHistory(req.userId!);
+      res.json({
+        success: true,
+        data: history,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Search freelancers
    * GET /users/freelancers
    */

@@ -9,6 +9,7 @@ export interface User {
   avatarUrl?: string;
   role: 'CLIENT' | 'FREELANCER' | 'ADMIN';
   status: string;
+  twoFactorEnabled?: boolean;
   createdAt: string;
   freelancerProfile?: FreelancerProfile;
   clientProfile?: ClientProfile;
@@ -35,6 +36,8 @@ export interface FreelancerProfile {
   skills: FreelancerSkill[];
   education?: EducationEntry[];
   certifications?: CertificationEntry[];
+  experience?: ExperienceEntry[];
+  portfolioItems?: PortfolioItemEntry[];
 }
 
 export interface FreelancerSkill {
@@ -73,6 +76,56 @@ export interface CertificationEntry {
   credentialUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ExperienceEntry {
+  id: string;
+  title: string;
+  company: string;
+  location?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  isCurrent: boolean;
+  description?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PortfolioItemEntry {
+  id: string;
+  title: string;
+  description?: string | null;
+  projectUrl?: string | null;
+  repoUrl?: string | null;
+  imageUrl?: string | null;
+  techStack: string[];
+  startDate?: string | null;
+  endDate?: string | null;
+  isFeatured: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ExperiencePayload {
+  title: string;
+  company: string;
+  location?: string;
+  startDate: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  description?: string;
+}
+
+export interface PortfolioItemPayload {
+  title: string;
+  description?: string;
+  projectUrl?: string;
+  repoUrl?: string;
+  imageUrl?: string;
+  techStack?: string[];
+  startDate?: string;
+  endDate?: string;
+  isFeatured?: boolean;
 }
 
 export interface EducationPayload {
@@ -185,6 +238,18 @@ export const userApi = {
 
   removeCertification: (certificationId: string) =>
     api.delete(`/users/me/certifications/${certificationId}`),
+
+  addExperience: (data: ExperiencePayload) =>
+    api.post<ExperienceEntry>('/users/me/experience', data),
+
+  removeExperience: (experienceId: string) =>
+    api.delete(`/users/me/experience/${experienceId}`),
+
+  addPortfolioItem: (data: PortfolioItemPayload) =>
+    api.post<PortfolioItemEntry>('/users/me/portfolio', data),
+
+  removePortfolioItem: (itemId: string) =>
+    api.delete(`/users/me/portfolio/${itemId}`),
   
   // Client profile
   updateClientProfile: (data: Partial<Omit<ClientProfile, 'id'>>) =>
@@ -217,6 +282,41 @@ export const userApi = {
     const params = limit ? `?limit=${limit}` : '';
     return api.get<TrustScoreHistoryResponse>(`/users/${userId}/trust-score/history${params}`);
   },
+
+  // AI Capability
+  recalculateAiCapability: () =>
+    api.post<{ score: number }>('/users/me/ai-capability/recalculate', {}),
+
+  // Skill Verification
+  startSkillVerification: (skillId: string) =>
+    api.post<{
+      testId: string;
+      skillName: string;
+      skillCategory: string;
+      questions: { id: string; text: string; options: string[]; difficulty: string }[];
+      timeLimit: number;
+      passingScore: number;
+    }>(`/users/me/skills/${skillId}/verify/start`, {}),
+
+  submitSkillVerification: (
+    skillId: string,
+    data: {
+      testId: string;
+      answers: { question_id: string; selected_answer: string }[];
+      timeTaken: number;
+    },
+  ) =>
+    api.post<{
+      attemptId: string;
+      score: number;
+      correctCount: number;
+      totalQuestions: number;
+      passed: boolean;
+      timeTaken: number;
+    }>(`/users/me/skills/${skillId}/verify/submit`, data),
+
+  getSkillTestHistory: () =>
+    api.get<any[]>('/users/me/skill-tests'),
 };
 
 export default userApi;

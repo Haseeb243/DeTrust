@@ -29,3 +29,8 @@ export const shortWallet = (address?: string | null) => {
   if (!address) return 'Not linked yet';
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 };
+
+/**
+ * Alias for Chapter 5 naming convention — delegates to computeProfileCompletion.
+ */
+export const calculateProfileCompletion = computeProfileCompletion;

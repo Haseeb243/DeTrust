@@ -8,6 +8,7 @@ import { type ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { AiCapabilityBadge } from '@/components/trust-score/ai-capability-badge';
 import type { User, FreelancerProfile, ClientProfile } from '@/lib/api/user';
 
 export interface HighlightStat {
@@ -86,6 +87,9 @@ export function ProfileHero({
               <Badge variant="outline" className="border-dt-border text-dt-text-muted">
                 {walletBadgeLabel}
               </Badge>
+              {isFreelancer && typeof freelancerProfile?.aiCapabilityScore === 'number' ? (
+                <AiCapabilityBadge score={freelancerProfile.aiCapabilityScore} size="sm" />
+              ) : null}
             </div>
           </div>
         </div>

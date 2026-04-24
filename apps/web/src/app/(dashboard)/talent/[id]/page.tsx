@@ -10,6 +10,7 @@ import {
   Clock3,
   ExternalLink,
   FileText,
+  FolderOpen,
   GraduationCap,
   Layers,
   Mail,
@@ -55,6 +56,20 @@ export default function FreelancerProfilePage() {
   const certifications = profile?.certifications ?? [];
   const certificationCount = certifications.length;
   const resumeUploaded = Boolean(profile?.resumeUrl);
+
+  const experienceEntries = useMemo(() => {
+    const entries = profile?.experience ?? [];
+    return [...entries]
+      .sort((a, b) => {
+        const aDate = a.endDate ?? a.startDate ?? new Date(0);
+        const bDate = b.endDate ?? b.startDate ?? new Date(0);
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      });
+  }, [profile?.experience]);
+
+  const portfolioItems = useMemo(() => {
+    return profile?.portfolioItems ?? [];
+  }, [profile?.portfolioItems]);
 
   const highlightStats = useMemo(
     () => [
@@ -383,6 +398,79 @@ export default function FreelancerProfilePage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Experience */}
+          {experienceEntries.length > 0 && (
+            <Card className="border-dt-border bg-dt-surface text-dt-text shadow-xl">
+              <CardHeader className="space-y-3">
+                <p className="text-xs uppercase tracking-[0.45em] text-dt-text-muted">Career history</p>
+                <CardTitle className="flex items-center gap-3 text-2xl text-dt-text">
+                  <Briefcase className="h-6 w-6 text-emerald-500" /> Work experience
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {experienceEntries.map((exp) => (
+                    <div key={exp.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/80 p-4 dark:border-slate-700">
+                      <h4 className="text-base font-semibold text-dt-text">{exp.title}</h4>
+                      <p className="text-sm text-dt-text-muted">{exp.company}{exp.location ? ` · ${exp.location}` : ''}</p>
+                      <p className="mt-1 text-xs text-dt-text-muted">
+                        {formatEducationRange(exp.startDate, exp.isCurrent ? null : exp.endDate)}
+                        {exp.isCurrent && <span className="ml-2 text-emerald-500">· Current</span>}
+                      </p>
+                      {exp.description && <p className="mt-2 text-sm text-dt-text-muted">{exp.description}</p>}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Portfolio Items */}
+          {portfolioItems.length > 0 && (
+            <Card className="border-dt-border bg-dt-surface text-dt-text shadow-xl">
+              <CardHeader className="space-y-3">
+                <p className="text-xs uppercase tracking-[0.45em] text-dt-text-muted">Showcase</p>
+                <CardTitle className="flex items-center gap-3 text-2xl text-dt-text">
+                  <FolderOpen className="h-6 w-6 text-emerald-500" /> Portfolio projects
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {portfolioItems.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/80 p-4 dark:border-slate-700">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="text-base font-semibold text-dt-text">{item.title}</h4>
+                        {item.isFeatured && (
+                          <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">Featured</Badge>
+                        )}
+                      </div>
+                      {item.description && <p className="mt-1 text-sm text-dt-text-muted">{item.description}</p>}
+                      {item.techStack && item.techStack.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {item.techStack.map((tech) => (
+                            <span key={tech} className="rounded-full border border-dt-border bg-dt-surface px-2.5 py-0.5 text-xs text-dt-text-muted">{tech}</span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        {item.projectUrl && (
+                          <a href={item.projectUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline dark:text-emerald-400">
+                            Live demo <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                        {item.repoUrl && (
+                          <a href={item.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:underline dark:text-emerald-400">
+                            Source code <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">

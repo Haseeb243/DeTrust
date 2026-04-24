@@ -15,11 +15,11 @@ This document provides a comprehensive status report across all 8 SRS modules, s
 | 3 | Review & Feedback System | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **98%** |
 | 4 | Trust Scoring Module | ✅ Complete | ✅ Complete | — | **95%** |
 | 5 | Dispute Resolution | ✅ Complete | ✅ Complete | ✅ Deployed (Hardhat) | **80%** |
-| 6 | AI Capability Prediction | 🔜 **Deferred** | 🔜 **Deferred** | — | **Deferred** |
+| 6 | AI Capability Prediction | ✅ Complete | ✅ Complete | — | **85%** |
 | 7 | Admin Dashboard | ✅ Complete | ✅ Complete | — | **90%** |
 | 8 | Notifications & Communication | ✅ Complete | ✅ Complete | — | **90%** |
 
-> **Note:** Module 6 (AI Capability Prediction) is deferred to a future phase and will not be implemented now. The Python AI service scaffolding (`apps/ai-service/`) remains in the repo for future use.
+> **Note:** Module 6 (AI Capability Prediction) is implemented with a two-model XGBoost pipeline (Cold-Start + Performance). FE-2 (microtask tests) is scaffolded but the quiz engine is deferred.
 >
 > **Blockchain:** All smart contracts are deployed and tested on **Hardhat local node** (chain 31337). Production blockchain deployment (Polygon/testnet) is not planned for the current phase.
 

@@ -9,6 +9,8 @@ import { BasicProfileCard } from '@/components/profile/basic-profile-card';
 import { FreelancerProfileForm } from '@/components/profile/freelancer-profile-form';
 import { FreelancerSkillsCard } from '@/components/profile/freelancer-skills-card';
 import { FreelancerEducationCard } from '@/components/profile/freelancer-education-card';
+import { FreelancerExperienceCard } from '@/components/profile/freelancer-experience-card';
+import { FreelancerPortfolioCard } from '@/components/profile/freelancer-portfolio-card';
 import { FreelancerDocumentsCard } from '@/components/profile/freelancer-documents-card';
 import { ClientProfileForm } from '@/components/profile/client-profile-form';
 import { ProfileProgressRing } from '@/components/profile/profile-progress-ring';
@@ -16,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import type { User, FreelancerProfile, ClientProfile, FreelancerSkill, EducationEntry, CertificationEntry } from '@/lib/api/user';
+import type { User, FreelancerProfile, ClientProfile, FreelancerSkill, EducationEntry, CertificationEntry, ExperienceEntry, PortfolioItemEntry } from '@/lib/api/user';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
 import { useAuthStore } from '@/store/auth.store';
 import { useCurrentUser } from '@/hooks/queries/use-user';
@@ -107,6 +109,50 @@ export default function ProfileEditPage() {
       freelancerProfile: {
         ...user.freelancerProfile,
         education: (user.freelancerProfile.education ?? []).filter((entry) => entry.id !== educationId),
+      },
+    });
+  }, [user, setUser]);
+
+  const handleExperienceAdded = useCallback((entry: ExperienceEntry) => {
+    if (!user || !user.freelancerProfile) return;
+    setUser({
+      ...user,
+      freelancerProfile: {
+        ...user.freelancerProfile,
+        experience: [...(user.freelancerProfile.experience ?? []), entry],
+      },
+    });
+  }, [user, setUser]);
+
+  const handleExperienceRemoved = useCallback((experienceId: string) => {
+    if (!user || !user.freelancerProfile) return;
+    setUser({
+      ...user,
+      freelancerProfile: {
+        ...user.freelancerProfile,
+        experience: (user.freelancerProfile.experience ?? []).filter((e) => e.id !== experienceId),
+      },
+    });
+  }, [user, setUser]);
+
+  const handlePortfolioItemAdded = useCallback((item: PortfolioItemEntry) => {
+    if (!user || !user.freelancerProfile) return;
+    setUser({
+      ...user,
+      freelancerProfile: {
+        ...user.freelancerProfile,
+        portfolioItems: [...(user.freelancerProfile.portfolioItems ?? []), item],
+      },
+    });
+  }, [user, setUser]);
+
+  const handlePortfolioItemRemoved = useCallback((itemId: string) => {
+    if (!user || !user.freelancerProfile) return;
+    setUser({
+      ...user,
+      freelancerProfile: {
+        ...user.freelancerProfile,
+        portfolioItems: (user.freelancerProfile.portfolioItems ?? []).filter((item) => item.id !== itemId),
       },
     });
   }, [user, setUser]);
@@ -314,10 +360,22 @@ export default function ProfileEditPage() {
                   onSkillRemoved={handleSkillRemoved}
                   onSync={() => { void refetch(); }}
                 />
+                <FreelancerExperienceCard
+                  experience={freelancerProfile?.experience ?? []}
+                  onAdded={handleExperienceAdded}
+                  onRemoved={handleExperienceRemoved}
+                  onSync={() => { void refetch(); }}
+                />
                 <FreelancerEducationCard
                   education={freelancerProfile?.education ?? []}
                   onAdded={handleEducationAdded}
                   onRemoved={handleEducationRemoved}
+                  onSync={() => { void refetch(); }}
+                />
+                <FreelancerPortfolioCard
+                  portfolioItems={freelancerProfile?.portfolioItems ?? []}
+                  onAdded={handlePortfolioItemAdded}
+                  onRemoved={handlePortfolioItemRemoved}
                   onSync={() => { void refetch(); }}
                 />
                 <FreelancerDocumentsCard

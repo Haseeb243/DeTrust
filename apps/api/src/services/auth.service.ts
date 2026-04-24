@@ -6,6 +6,8 @@ import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import { SiweMessage } from 'siwe';
 
+import { sendEmail, emailTemplates } from './email.service';
+
 import { prisma } from '../config/database';
 import { config } from '../config';
 import { cacheGet, cacheSet, cacheDelete } from '../config/redis';
@@ -298,6 +300,54 @@ export class AuthService {
   }
   
   /**
+   * Disable 2FA (requires current 2FA code and password)
+   */
+  async disable2FA(userId: string, code: string, password: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+    
+    if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+      throw new AppError('2FA is not enabled', 400);
+    }
+    
+    if (!user.passwordHash) {
+      throw new AppError('Password not set for this account', 400);
+    }
+    
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!isValidPassword) {
+      throw new UnauthorizedError('Invalid password');
+    }
+    
+    // Verify current 2FA code
+    const isValidCode = authenticator.verify({
+      token: code,
+      secret: user.twoFactorSecret,
+    });
+    
+    if (!isValidCode) {
+      throw new UnauthorizedError('Invalid 2FA code');
+    }
+    
+    // Disable 2FA
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+      },
+    });
+    
+    return { success: true };
+  }
+  
+  /**
    * Generate password reset token
    */
   async forgotPassword(email: string) {
@@ -316,10 +366,14 @@ export class AuthService {
     // Store token in Redis
     await cacheSet(`reset:${resetToken}`, user.id, RESET_TOKEN_TTL);
     
-    // TODO: Send email with reset link
-    // await emailService.sendPasswordReset(email, resetToken);
+    // Send password reset email
+    await sendEmail({
+      to: email,
+      subject: 'Reset Your Password — DeTrust',
+      html: emailTemplates.passwordReset(resetToken),
+    });
     
-    return { success: true, resetToken }; // Remove resetToken in production
+    return { success: true };
   }
   
   /**

@@ -1,11 +1,14 @@
 import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError, ConflictError } from '../middleware';
+import { aiService } from './ai.service';
 import { 
   UpdateUserInput, 
   UpdateFreelancerProfileInput, 
   UpdateClientProfileInput,
   GetUsersQuery,
   AddEducationInput,
+  AddExperienceInput,
+  AddPortfolioItemInput,
 } from '../validators';
 
 export class UserService {
@@ -24,6 +27,7 @@ export class UserService {
             certifications: true,
             education: true,
             experience: true,
+            portfolioItems: true,
           },
         },
         clientProfile: true,
@@ -75,6 +79,7 @@ export class UserService {
             certifications: true,
             education: true,
             experience: true,
+            portfolioItems: true,
           },
         },
         clientProfile: {
@@ -235,6 +240,7 @@ export class UserService {
         certifications: true,
         education: true,
         experience: true,
+        portfolioItems: true,
       },
     });
     
@@ -383,6 +389,127 @@ export class UserService {
     await this.updateProfileCompleteness(userId);
     await this.calculateAiCapabilityScore(userId);
     return education;
+  }
+
+  /**
+   * Add experience entry to freelancer profile
+   */
+  async addExperience(userId: string, data: AddExperienceInput) {
+    const profile = await prisma.freelancerProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!profile) {
+      throw new NotFoundError('Freelancer profile not found');
+    }
+
+    const experience = await prisma.experience.create({
+      data: {
+        freelancerProfileId: profile.id,
+        title: data.title,
+        company: data.company,
+        location: data.location,
+        startDate: new Date(data.startDate),
+        endDate: data.endDate ? new Date(data.endDate) : undefined,
+        isCurrent: data.isCurrent ?? false,
+        description: data.description,
+      },
+    });
+
+    await this.updateProfileCompleteness(userId);
+    await this.calculateAiCapabilityScore(userId);
+    return experience;
+  }
+
+  /**
+   * Remove experience entry
+   */
+  async removeExperience(userId: string, experienceId: string) {
+    const profile = await prisma.freelancerProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!profile) {
+      throw new NotFoundError('Freelancer profile not found');
+    }
+
+    const deleted = await prisma.experience.deleteMany({
+      where: {
+        id: experienceId,
+        freelancerProfileId: profile.id,
+      },
+    });
+
+    if (deleted.count === 0) {
+      throw new NotFoundError('Experience entry not found');
+    }
+
+    await this.updateProfileCompleteness(userId);
+    await this.calculateAiCapabilityScore(userId);
+    return { success: true };
+  }
+
+  /**
+   * Add portfolio item to freelancer profile
+   */
+  async addPortfolioItem(userId: string, data: AddPortfolioItemInput) {
+    const profile = await prisma.freelancerProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!profile) {
+      throw new NotFoundError('Freelancer profile not found');
+    }
+
+    const item = await prisma.portfolioItem.create({
+      data: {
+        freelancerProfileId: profile.id,
+        title: data.title,
+        description: data.description,
+        projectUrl: data.projectUrl,
+        repoUrl: data.repoUrl,
+        imageUrl: data.imageUrl,
+        techStack: data.techStack ?? [],
+        startDate: data.startDate ? new Date(data.startDate) : undefined,
+        endDate: data.endDate ? new Date(data.endDate) : undefined,
+        isFeatured: data.isFeatured ?? false,
+      },
+    });
+
+    await this.updateProfileCompleteness(userId);
+    await this.calculateAiCapabilityScore(userId);
+    return item;
+  }
+
+  /**
+   * Remove portfolio item
+   */
+  async removePortfolioItem(userId: string, itemId: string) {
+    const profile = await prisma.freelancerProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!profile) {
+      throw new NotFoundError('Freelancer profile not found');
+    }
+
+    const deleted = await prisma.portfolioItem.deleteMany({
+      where: {
+        id: itemId,
+        freelancerProfileId: profile.id,
+      },
+    });
+
+    if (deleted.count === 0) {
+      throw new NotFoundError('Portfolio item not found');
+    }
+
+    await this.updateProfileCompleteness(userId);
+    return { success: true };
   }
 
   /**
@@ -582,6 +709,7 @@ export class UserService {
         certifications: true,
         education: true,
         experience: true,
+        portfolioItems: true,
       },
     });
     
@@ -593,7 +721,7 @@ export class UserService {
       bio: 12,
       hourlyRate: 8,
       skills: 20, // At least 3 skills
-      portfolioLinks: 12,
+      portfolio: 12, // portfolio items OR legacy portfolio links
       location: 5,
       languages: 5,
       timezone: 3,
@@ -605,7 +733,7 @@ export class UserService {
     if (profile.bio && profile.bio.length >= 120) score += weights.bio;
     if (profile.hourlyRate) score += weights.hourlyRate;
     if (profile.skills.length >= 3) score += weights.skills;
-    if (profile.portfolioLinks.length > 0) score += weights.portfolioLinks;
+    if (profile.portfolioItems.length > 0 || profile.portfolioLinks.length > 0) score += weights.portfolio;
     if (profile.location) score += weights.location;
     if (profile.languages.length > 0) score += weights.languages;
     if (profile.timezone) score += weights.timezone;
@@ -658,7 +786,8 @@ export class UserService {
   }
 
   /**
-   * Calculate and update AI capability score (0-100) for a freelancer
+   * Calculate and update AI capability score (0-100) for a freelancer.
+   * Attempts to call the Python AI service first; falls back to heuristic scoring.
    */
   async calculateAiCapabilityScore(userId: string): Promise<number> {
     const profile = await prisma.freelancerProfile.findUnique({
@@ -671,59 +800,217 @@ export class UserService {
 
     if (!profile) return 0;
 
-    // Query contract counts for this freelancer
-    const [totalContracts, completedContracts] = await Promise.all([
-      prisma.contract.count({
-        where: { freelancerId: userId },
-      }),
-      prisma.contract.count({
-        where: { freelancerId: userId, status: 'COMPLETED' },
-      }),
-    ]);
+    // Try AI service first
+    const aiScore = await aiService.predictCapabilityScore(userId);
 
-    // Query average rating from reviews received
-    const reviewAgg = await prisma.review.aggregate({
-      where: { subjectId: userId },
-      _avg: { overallRating: true },
-    });
+    let finalScore: number;
 
-    // Skills breadth (25 points): up to 5 skills = max
-    const skillPoints = Math.min(25, profile.skills.length * 5);
+    if (aiScore > 0) {
+      finalScore = Math.min(100, Math.max(0, Math.round(aiScore)));
+    } else {
+      // Heuristic fallback when AI service is unavailable
+      const [totalContracts, completedContracts] = await Promise.all([
+        prisma.contract.count({ where: { freelancerId: userId } }),
+        prisma.contract.count({ where: { freelancerId: userId, status: 'COMPLETED' } }),
+      ]);
 
-    // Completed jobs (25 points): up to 5 jobs = max
-    const completedJobPoints = Math.min(25, completedContracts * 5);
+      const reviewAgg = await prisma.review.aggregate({
+        where: { subjectId: userId },
+        _avg: { overallRating: true },
+      });
 
-    // Success rate (20 points): successfulJobs / totalJobs * 20 (0 if no jobs)
-    const successRatePoints = totalContracts > 0
-      ? (completedContracts / totalContracts) * 20
-      : 0;
+      const skillPoints       = Math.min(25, profile.skills.length * 5);
+      const completedJobPts   = Math.min(25, completedContracts * 5);
+      const successRatePts    = totalContracts > 0 ? (completedContracts / totalContracts) * 20 : 0;
+      const avgRating         = reviewAgg._avg.overallRating ? Number(reviewAgg._avg.overallRating) : 0;
+      const ratingPts         = avgRating > 0 ? (avgRating / 5) * 15 : 0;
+      const certPts           = Math.min(10, profile.certifications.length * 5);
+      const completenessPts   = (profile.completenessScore / 100) * 5;
 
-    // Average rating (15 points): avgRating / 5 * 15 (0 if no reviews)
-    const avgRating = reviewAgg._avg.overallRating
-      ? Number(reviewAgg._avg.overallRating)
-      : 0;
-    const ratingPoints = avgRating > 0 ? (avgRating / 5) * 15 : 0;
+      finalScore = Math.min(100, Math.max(0, Math.round(
+        skillPoints + completedJobPts + successRatePts + ratingPts + certPts + completenessPts
+      )));
+    }
 
-    // Certifications (10 points): up to 2 certs = max
-    const certPoints = Math.min(10, profile.certifications.length * 5);
-
-    // Profile completeness (5 points): completenessScore / 100 * 5
-    const completenessPoints = (profile.completenessScore / 100) * 5;
-
-    const totalScore = Math.round(
-      skillPoints + completedJobPoints + successRatePoints + ratingPoints + certPoints + completenessPoints
-    );
-
-    // Clamp to 0-100
-    const finalScore = Math.min(100, Math.max(0, totalScore));
-
-    // Update the freelancer profile
     await prisma.freelancerProfile.update({
       where: { userId },
       data: { aiCapabilityScore: finalScore },
     });
 
     return finalScore;
+  }
+
+  // ─── Skill Verification ──────────────────────────────────────────────────
+
+  /**
+   * Start a skill verification test.
+   * Checks 30-day cooldown, generates quiz via AI service, saves SkillTest to DB.
+   */
+  async startVerification(userId: string, skillId: string) {
+    // 1. Validate user has this skill
+    const profile = await prisma.freelancerProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (!profile) throw new NotFoundError('Freelancer profile not found');
+
+    const freelancerSkill = await prisma.freelancerSkill.findUnique({
+      where: {
+        freelancerProfileId_skillId: {
+          freelancerProfileId: profile.id,
+          skillId,
+        },
+      },
+      include: { skill: true },
+    });
+    if (!freelancerSkill) throw new NotFoundError('Skill not found on your profile');
+
+    // 2. Check 30-day cooldown
+    const lastAttempt = await prisma.skillTestAttempt.findFirst({
+      where: {
+        userId,
+        test: { skillId },
+      },
+      orderBy: { completedAt: 'desc' },
+    });
+
+    if (lastAttempt) {
+      const daysSince = (Date.now() - lastAttempt.completedAt.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSince < 30) {
+        const nextDate = new Date(lastAttempt.completedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+        throw new ForbiddenError(
+          `Cooldown active. You can retake this test on ${nextDate.toLocaleDateString()}.`
+        );
+      }
+    }
+
+    // 3. Set status to PENDING
+    await prisma.freelancerSkill.update({
+      where: { id: freelancerSkill.id },
+      data: { verificationStatus: 'PENDING' },
+    });
+
+    // 4. Generate quiz via AI service
+    const quizResult = await aiService.generateQuiz(
+      freelancerSkill.skill.name,
+      freelancerSkill.skill.category,
+    );
+
+    // 5. Save SkillTest to DB (with correct answers in questions JSON)
+    const skillTest = await prisma.skillTest.create({
+      data: {
+        skillId,
+        name: `${freelancerSkill.skill.name} Verification`,
+        description: `AI-generated verification test for ${freelancerSkill.skill.name}`,
+        questions: quizResult.questions_full as any, // JSON column stores full questions with answers
+        timeLimit: quizResult.time_limit_minutes,
+        passingScore: quizResult.passing_score,
+      },
+    });
+
+    // 6. Return test info + public questions (no answers)
+    return {
+      testId: skillTest.id,
+      skillName: freelancerSkill.skill.name,
+      skillCategory: freelancerSkill.skill.category,
+      questions: quizResult.questions, // public - no correct_answer
+      timeLimit: quizResult.time_limit_minutes,
+      passingScore: quizResult.passing_score,
+    };
+  }
+
+  /**
+   * Submit answers for a skill verification test.
+   * Grades answers, creates SkillTestAttempt, updates verification status.
+   */
+  async submitVerification(
+    userId: string,
+    skillId: string,
+    testId: string,
+    answers: { question_id: string; selected_answer: string }[],
+    timeTaken: number, // in seconds
+  ) {
+    // 1. Load the test (with correct answers)
+    const skillTest = await prisma.skillTest.findUnique({
+      where: { id: testId },
+    });
+    if (!skillTest) throw new NotFoundError('Test not found');
+    if (skillTest.skillId !== skillId) throw new ForbiddenError('Test does not match skill');
+
+    // 2. Check not already submitted
+    const existing = await prisma.skillTestAttempt.findFirst({
+      where: { testId, userId },
+    });
+    if (existing) throw new ConflictError('Test already submitted');
+
+    // 3. Grade locally
+    const questionsJson = skillTest.questions as any[];
+    const result = aiService.gradeQuiz(questionsJson, answers);
+
+    // 4. Save attempt
+    const attempt = await prisma.skillTestAttempt.create({
+      data: {
+        testId,
+        userId,
+        answers: answers as any,
+        score: result.score,
+        passed: result.passed,
+        timeTaken,
+      },
+    });
+
+    // 5. Update FreelancerSkill verification status
+    const profile = await prisma.freelancerProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (profile) {
+      await prisma.freelancerSkill.updateMany({
+        where: {
+          freelancerProfileId: profile.id,
+          skillId,
+        },
+        data: {
+          verificationStatus: result.passed ? 'VERIFIED' : 'UNVERIFIED',
+          verificationScore: result.score,
+          verifiedAt: result.passed ? new Date() : null,
+        },
+      });
+
+      // 6. Recalculate AI capability score
+      await this.calculateAiCapabilityScore(userId);
+    }
+
+    return {
+      attemptId: attempt.id,
+      score: result.score,
+      correctCount: result.correct_count,
+      totalQuestions: result.total_questions,
+      passed: result.passed,
+      timeTaken,
+    };
+  }
+
+  /**
+   * Get skill test history for a user.
+   */
+  async getSkillTestHistory(userId: string) {
+    const attempts = await prisma.skillTestAttempt.findMany({
+      where: { userId },
+      include: {
+        test: {
+          select: {
+            skillId: true,
+            name: true,
+            passingScore: true,
+          },
+        },
+      },
+      orderBy: { completedAt: 'desc' },
+      take: 20,
+    });
+
+    return attempts;
   }
 
   private extractSecureFileId(url?: string | null) {

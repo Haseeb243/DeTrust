@@ -138,6 +138,23 @@ export class AuthController {
   }
 
   /**
+   * Disable 2FA
+   * POST /auth/2fa/disable
+   */
+  async disable2FA(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const result = await authService.disable2FA(req.userId!, req.body.code, req.body.password);
+      res.json({
+        success: true,
+        message: '2FA disabled successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Forgot password
    * POST /auth/forgot-password
    */

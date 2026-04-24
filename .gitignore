@@ -46,6 +46,8 @@ env/
 .pytest_cache/
 .mypy_cache/
 *.spec
+apps/ai-service/app/ml/training/dataset/
+*.csv
 
 # Hardhat / Blockchain
 artifacts/

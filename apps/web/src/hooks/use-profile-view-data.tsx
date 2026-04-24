@@ -70,6 +70,20 @@ export function useProfileViewData() {
       .slice(0, 3);
   }, [freelancerProfile?.education]);
 
+  const experienceEntries = useMemo(() => {
+    const entries = freelancerProfile?.experience ?? [];
+    return [...entries]
+      .sort((a, b) => {
+        const aDate = a.endDate ?? a.startDate ?? new Date(0);
+        const bDate = b.endDate ?? b.startDate ?? new Date(0);
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      });
+  }, [freelancerProfile?.experience]);
+
+  const portfolioItems = useMemo(() => {
+    return freelancerProfile?.portfolioItems ?? [];
+  }, [freelancerProfile?.portfolioItems]);
+
   const formatEducationRange = useCallback((start?: Date | string | null, end?: Date | string | null) => {
     if (!start && !end) return 'Dates not provided';
     const startYear = start ? new Date(start).getFullYear() : '\u2014';
@@ -201,6 +215,8 @@ export function useProfileViewData() {
     certifications,
     topSkills,
     educationEntries,
+    experienceEntries,
+    portfolioItems,
     formatEducationRange,
     taskList,
     activityCards,

@@ -71,6 +71,9 @@ export const authApi = {
   verify2FA: (code: string) => 
     api.post<{ success: boolean; backupCodes: string[] }>('/auth/2fa/verify', { code }),
   
+  disable2FA: (code: string, password: string) =>
+    api.post<{ success: boolean }>('/auth/2fa/disable', { code, password }),
+  
   // Session
   getMe: () =>
     api.get<{ userId: string; userRole: string; email?: string; walletAddress?: string }>('/auth/me'),

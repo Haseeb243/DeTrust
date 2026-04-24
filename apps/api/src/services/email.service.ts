@@ -107,6 +107,14 @@ export const emailTemplates = {
        <p style="color:#3f3f46;line-height:1.6;">Welcome to DeTrust — the decentralized freelance marketplace with trustless payments, transparent reputation, and fair dispute resolution.</p>
        <a href="${config.server.frontendUrl}/dashboard" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;margin-top:16px;">Go to Dashboard</a>`,
     ),
+
+  passwordReset: (resetToken: string) =>
+    baseTemplate(
+      'Reset Your Password',
+      `<p style="color:#3f3f46;line-height:1.6;">We received a request to reset your password. Click the button below to choose a new one.</p>
+       <a href="${config.server.frontendUrl}/forgot-password?token=${encodeURIComponent(resetToken)}" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;margin-top:16px;">Reset Password</a>
+       <p style="color:#71717a;font-size:13px;margin-top:24px;">This link expires in 1 hour. If you did not request a password reset, you can safely ignore this email.</p>`,
+    ),
 };
 
 // =============================================================================

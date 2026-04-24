@@ -12,6 +12,7 @@ import {
   walletNonceSchema,
   walletVerifySchema,
   verify2FASchema,
+  disable2FASchema,
 } from '../validators';
 const router: ExpressRouter = Router();
 
@@ -129,6 +130,18 @@ router.post(
   authenticate,
   validateBody(verify2FASchema),
   authController.verify2FA
+);
+
+/**
+ * @route   POST /auth/2fa/disable
+ * @desc    Disable 2FA (requires current code + password)
+ * @access  Private
+ */
+router.post(
+  '/2fa/disable',
+  authenticate,
+  validateBody(disable2FASchema),
+  authController.disable2FA
 );
 
 // =============================================================================

@@ -8,6 +8,8 @@ import {
   updateClientProfileSchema,
   addSkillSchema,
   addEducationSchema,
+  addExperienceSchema,
+  addPortfolioItemSchema,
   setRoleSchema,
   updateKycSchema,
 } from '../validators';
@@ -138,6 +140,104 @@ router.delete(
   authenticate,
   requireFreelancer,
   userController.removeCertification
+);
+
+/**
+ * @route   POST /users/me/experience
+ * @desc    Add experience entry
+ * @access  Private (Freelancer)
+ */
+router.post(
+  '/me/experience',
+  authenticate,
+  requireFreelancer,
+  validateBody(addExperienceSchema),
+  userController.addExperience
+);
+
+/**
+ * @route   DELETE /users/me/experience/:experienceId
+ * @desc    Remove experience entry
+ * @access  Private (Freelancer)
+ */
+router.delete(
+  '/me/experience/:experienceId',
+  authenticate,
+  requireFreelancer,
+  userController.removeExperience
+);
+
+/**
+ * @route   POST /users/me/portfolio
+ * @desc    Add portfolio item
+ * @access  Private (Freelancer)
+ */
+router.post(
+  '/me/portfolio',
+  authenticate,
+  requireFreelancer,
+  validateBody(addPortfolioItemSchema),
+  userController.addPortfolioItem
+);
+
+/**
+ * @route   DELETE /users/me/portfolio/:itemId
+ * @desc    Remove portfolio item
+ * @access  Private (Freelancer)
+ */
+router.delete(
+  '/me/portfolio/:itemId',
+  authenticate,
+  requireFreelancer,
+  userController.removePortfolioItem
+);
+
+/**
+ * @route   POST /users/me/ai-capability/recalculate
+ * @desc    Force recalculate AI capability score
+ * @access  Private (Freelancer)
+ */
+router.post(
+  '/me/ai-capability/recalculate',
+  authenticate,
+  requireFreelancer,
+  userController.recalculateAiCapability
+);
+
+/**
+ * @route   POST /users/me/skills/:skillId/verify/start
+ * @desc    Start a skill verification test (generates AI quiz)
+ * @access  Private (Freelancer)
+ */
+router.post(
+  '/me/skills/:skillId/verify/start',
+  authenticate,
+  requireFreelancer,
+  userController.startSkillVerification
+);
+
+/**
+ * @route   POST /users/me/skills/:skillId/verify/submit
+ * @desc    Submit skill verification answers
+ * @access  Private (Freelancer)
+ */
+router.post(
+  '/me/skills/:skillId/verify/submit',
+  authenticate,
+  requireFreelancer,
+  userController.submitSkillVerification
+);
+
+/**
+ * @route   GET /users/me/skill-tests
+ * @desc    Get skill test history
+ * @access  Private (Freelancer)
+ */
+router.get(
+  '/me/skill-tests',
+  authenticate,
+  requireFreelancer,
+  userController.getSkillTests
 );
 
 // =============================================================================

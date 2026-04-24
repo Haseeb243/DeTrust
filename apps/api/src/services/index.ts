@@ -10,3 +10,4 @@ export { reviewService, ReviewService } from './review.service';
 export { trustScoreService, TrustScoreService } from './trustScore.service';
 export { ipfsService, IpfsService } from './ipfs.service';
 export { blockchainService, BlockchainService } from './blockchain.service';
+export { aiService, AiService } from './ai.service';
