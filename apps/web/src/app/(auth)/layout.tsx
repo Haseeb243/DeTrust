@@ -7,7 +7,7 @@ import { AnimatedSection } from '@/components/ui/animated-section';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-slate-100 dark:from-slate-950 dark:via-gray-950 dark:to-slate-900 px-4 py-6 text-dt-text sm:px-6 lg:flex-row lg:px-12 lg:py-12">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-dt-base px-4 py-6 text-dt-text sm:px-6 lg:flex-row lg:px-12 lg:py-12">
       <AnimatedSection
         className="flex-1"
         initial={{ opacity: 0, y: 20 }}
@@ -23,40 +23,40 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
         <div className="mt-10 flex items-center justify-center lg:mt-16">
-          <div className="w-full max-w-xl rounded-[32px] border border-dt-border bg-dt-surface/90 p-8 shadow-2xl backdrop-blur-xl">
+          <div className="w-full max-w-xl rounded-2xl border border-dt-border bg-dt-surface p-8">
             {children}
           </div>
         </div>
       </AnimatedSection>
 
-      <aside className="relative mt-12 hidden w-full max-w-md flex-col justify-between gap-10 overflow-hidden rounded-[28px] border border-dt-border bg-dt-surface/90 p-8 text-dt-text-muted shadow-2xl lg:mt-0 lg:ml-12 lg:flex">
+      <aside className="relative mt-12 hidden w-full max-w-md flex-col justify-between gap-10 overflow-hidden rounded-[28px] border border-dt-border p-8 text-dt-text-muted lg:mt-0 lg:ml-12 lg:flex">
         <div className="space-y-6">
-          <p className="text-xs uppercase tracking-[0.4em] text-emerald-600">Security stack</p>
-          <h2 className="text-2xl font-semibold text-dt-text">Wallet-first onboarding, email pairing, optional KYC.</h2>
+          <p className="text-xs uppercase tracking-[0.4em] text-dt-text-muted">How it works</p>
+          <h2 className="text-2xl font-semibold text-dt-text">Dual-factor authentication for Web3.</h2>
           <p>
-            Connect with RainbowKit, add email for continuity, and toggle KYC only when enterprise buyers require it. We mirror Fiverr-level polish without sacrificing Web3-native assurances.
+            Your wallet proves ownership. Your email ensures continuity. Together they create a secure, recoverable identity that works across devices.
           </p>
-          <div className="rounded-3xl border border-dt-border bg-dt-surface-alt/80 p-6 text-sm text-dt-text-muted">
+          <div className="rounded-2xl border border-dt-border p-6 text-sm text-dt-text-muted">
             <ul className="space-y-4">
               <li>
-                <span className="font-semibold text-dt-text">• Wallet signature</span> powers SIWE + session lift.
+                <span className="font-semibold text-dt-text">1. Connect wallet</span> — Sign with MetaMask or any WalletConnect wallet to prove identity.
               </li>
               <li>
-                <span className="font-semibold text-dt-text">• Email sync</span> keeps notifications flowing.
+                <span className="font-semibold text-dt-text">2. Verify email</span> — Add your email for notifications and account recovery.
               </li>
               <li>
-                <span className="font-semibold text-dt-text">• KYC</span> stays optional — unlocks ≥$25k contracts when flipped on.
+                <span className="font-semibold text-dt-text">3. Optional KYC</span> — Enable identity verification to unlock contracts ≥$25k.
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="space-y-4 rounded-3xl border border-dt-border bg-dt-surface-alt/80 p-6 text-sm">
-          <p className="text-xs uppercase tracking-[0.3em] text-emerald-600">Juror feedback</p>
+        <div className="space-y-4 rounded-2xl border border-dt-border p-6 text-sm">
+          <p className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Why DeTrust?</p>
           <blockquote className="text-lg font-medium text-dt-text">
-            "The onboarding experience is the first crypto marketplace that actually feels enterprise-ready."
+            "Finally, a freelance platform where I own my reputation and pay under 3% in fees."
           </blockquote>
-          <p className="text-dt-text-muted">— Maya H., Product Ops @ LayerZero</p>
+          <p className="text-dt-text-muted">— Sarah K., Smart Contract Developer</p>
         </div>
       </aside>
     </div>

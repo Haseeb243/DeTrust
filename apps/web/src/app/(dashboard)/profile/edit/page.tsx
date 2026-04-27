@@ -211,13 +211,13 @@ export default function ProfileEditPage() {
           label: 'Trust Score',
           value: `${freelancerProfile?.trustScore ?? 0}%`,
           detail: `${freelancerProfile?.totalReviews ?? 0} on-chain reviews`,
-          icon: <Shield className="h-4 w-4 text-emerald-300" />,
+          icon: <Shield className="h-4 w-4 text-dt-text" />,
         },
         {
           label: 'AI Capability',
           value: `${freelancerProfile?.aiCapabilityScore ?? 0}%`,
           detail: 'Updated after each skills update',
-          icon: <Sparkles className="h-4 w-4 text-cyan-300" />,
+          icon: <Sparkles className="h-4 w-4 text-dt-text" />,
         },
         {
           label: 'Completed Jobs',
@@ -231,13 +231,13 @@ export default function ProfileEditPage() {
           label: 'Trust Score',
           value: `${clientProfile?.trustScore ?? 0}%`,
           detail: `${clientProfile?.totalReviews ?? 0} feedback cycles`,
-          icon: <Shield className="h-4 w-4 text-emerald-300" />,
+          icon: <Shield className="h-4 w-4 text-dt-text" />,
         },
         {
           label: 'Hire Rate',
           value: `${clientProfile?.hireRate ?? 0}%`,
           detail: `${clientProfile?.jobsPosted ?? 0} jobs posted`,
-          icon: <Building2 className="h-4 w-4 text-cyan-500" />,
+          icon: <Building2 className="h-4 w-4 text-dt-text" />,
         },
         {
           label: 'Payment Status',
@@ -269,77 +269,91 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[36px] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-8 text-dt-text shadow-[0_30px_120px_rgba(16,185,129,0.14)]">
-        <div className="absolute inset-0 opacity-80" aria-hidden>
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(94,234,212,0.25),_transparent_65%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.12),_transparent_60%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.5)_35%,rgba(255,255,255,0)_70%)]" />
-        </div>
-        <div className="relative z-10 grid gap-8 lg:grid-cols-[1.2fr,auto]">
-          <div className="space-y-4 text-dt-text">
-            <p className="text-[0.7rem] uppercase tracking-[0.7em] text-emerald-500">Module 1 · Profile {profileComplete ? 'ready' : 'in progress'}</p>
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <div className="group relative h-24 w-24 overflow-hidden rounded-3xl border border-emerald-200 bg-dt-surface p-1 shadow-xl">
-                {avatarObjectUrl ? (
-                  <Image src={avatarObjectUrl} alt={user?.name || 'Avatar'} fill className="rounded-2xl object-cover" sizes="96px" unoptimized />
-                ) : avatarLoading ? (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <Spinner size="sm" />
-                  </div>
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-3xl">🪪</div>
-                )}
-                <div className="pointer-events-none absolute inset-0 rounded-3xl border border-emerald-400/40 opacity-0 transition group-hover:opacity-100" />
-              </div>
-              <div className="space-y-3">
-                <h1 className="text-3xl font-semibold leading-tight">
-                  {profileComplete ? 'Your on-chain identity is ready for work.' : 'Finish crafting a profile that earns trust instantly.'}
-                </h1>
-                <p className="text-sm uppercase tracking-[0.4em] text-dt-text-muted">{user?.name || 'Unnamed talent'}</p>
-              </div>
+    <div className="space-y-6">
+      {/* LinkedIn-style Header */}
+      <div className="overflow-hidden rounded-2xl border border-dt-border bg-dt-surface">
+        {/* Cover */}
+        <div className="h-32 bg-gradient-to-r from-emerald-500 to-emerald-600" />
+        
+        {/* Profile Header */}
+        <div className="px-6 pb-6">
+          {/* Avatar */}
+          <div className="-mt-16 mb-4 flex items-end justify-between">
+            <div className="group relative inline-block h-32 w-32 overflow-hidden rounded-full border-4 border-dt-surface bg-dt-surface shadow-lg">
+              {avatarObjectUrl ? (
+                <Image 
+                  src={avatarObjectUrl} 
+                  alt={user?.name || 'Avatar'} 
+                  fill 
+                  className="object-cover" 
+                  sizes="128px" 
+                  unoptimized 
+                />
+              ) : avatarLoading ? (
+                <div className="flex h-full w-full items-center justify-center">
+                  <Spinner size="sm" />
+                </div>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-4xl">🪪</div>
+              )}
             </div>
-            <p className="text-dt-text-muted">
-              {isFreelancer
-                ? 'Profiles that cross the 70% threshold appear in curated searches, unlocking smart escrow proposals and AI capability boosts.'
-                : 'A complete organization profile reassures top-tier talent. Verified payment signals and context improve proposal quality.'}
+            {!profileComplete && (
+              <div className="mb-2">
+                <ProfileProgressRing
+                  value={completion}
+                  caption={profileComplete ? 'Ready' : 'In progress'}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Name & Info */}
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold text-dt-text">{user?.name || 'Unnamed talent'}</h1>
+            <p className="text-base text-dt-text-muted">
+              {isFreelancer 
+                ? freelancerProfile?.title || 'Add a headline to unlock discovery' 
+                : clientProfile?.companyName || 'Add your organization name'
+              }
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Badge variant={profileComplete ? 'success' : 'warning'} className="text-sm">
-                {profileComplete ? 'Ready for proposals' : 'Complete profile to unlock proposals'}
+            
+            {/* Badges */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge variant={profileComplete ? 'success' : 'warning'} className="text-xs">
+                {profileComplete ? 'Ready for proposals' : 'Complete profile to unlock'}
               </Badge>
-              <Badge variant="secondary" className="bg-dt-surface/70 text-dt-text-muted uppercase tracking-[0.3em]">
+              <Badge variant="secondary" className="text-xs uppercase tracking-wide">
                 {role.toLowerCase()}
               </Badge>
-              <Badge variant="outline" className={walletBadgeTone}>{walletBadgeLabel}</Badge>
-            </div>
-            <div className="flex flex-wrap gap-4 text-xs text-dt-text-muted">
-              <span className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" /> Signal-dense onboarding
-              </span>
-              <span className="flex items-center gap-2">
-                <Shield className="h-4 w-4" /> Trust-first scoring
-              </span>
+              <Badge variant="outline" className={`text-xs ${walletBadgeTone}`}>{walletBadgeLabel}</Badge>
             </div>
           </div>
-          <ProfileProgressRing
-            value={completion}
-            caption={profileComplete ? 'Great! You meet the 70% completeness threshold.' : 'Reach at least 70% to unlock proposals and escrow contracts.'}
-          />
-        </div>
-        <div className="relative z-10 mt-8 grid gap-4 md:grid-cols-3">
-          {insightStats.map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-dt-border bg-dt-surface-alt p-4">
-              <div className="flex items-center gap-3 text-sm text-dt-text-muted">
-                {stat.icon}
-                <span>{stat.label}</span>
+
+          {/* Action Buttons */}
+          <div className="mb-6 flex items-center gap-3">
+            <Button asChild variant="outline" className="border-dt-border">
+              <Link href="/profile">View profile</Link>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => { void refetch(); }} disabled={isFetching}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} /> Sync
+            </Button>
+          </div>
+
+          {/* Highlight Stats */}
+          <div className="grid gap-4 md:grid-cols-3">
+            {insightStats.map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-dt-border bg-white p-4">
+                <div className="flex items-center gap-3 text-sm text-dt-text-muted">
+                  {stat.icon}
+                  <span>{stat.label}</span>
+                </div>
+                <div className="mt-3 text-2xl font-semibold text-dt-text">{stat.value}</div>
+                <p className="text-sm text-dt-text-muted">{stat.detail}</p>
               </div>
-              <div className="mt-3 text-2xl font-semibold text-dt-text">{stat.value}</div>
-              <p className="text-sm text-dt-text-muted">{stat.detail}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </section>
+      </div>
 
       {error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -347,104 +361,101 @@ export default function ProfileEditPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1.8fr,1fr]">
-        <div className="rounded-[32px] border border-emerald-100 bg-gradient-to-b from-emerald-50 via-white to-white p-6 shadow-[0_25px_70px_rgba(16,185,129,0.12)]">
-          <div className="space-y-6">
-            <BasicProfileCard user={user} onUpdated={(updatedUser) => setUser(updatedUser)} />
-            {isFreelancer ? (
-              <>
-                <FreelancerProfileForm profile={freelancerProfile} onUpdated={handleFreelancerUpdated} />
-                <FreelancerSkillsCard
-                  skills={freelancerProfile?.skills ?? []}
-                  onSkillAdded={handleSkillAdded}
-                  onSkillRemoved={handleSkillRemoved}
-                  onSync={() => { void refetch(); }}
-                />
-                <FreelancerExperienceCard
-                  experience={freelancerProfile?.experience ?? []}
-                  onAdded={handleExperienceAdded}
-                  onRemoved={handleExperienceRemoved}
-                  onSync={() => { void refetch(); }}
-                />
-                <FreelancerEducationCard
-                  education={freelancerProfile?.education ?? []}
-                  onAdded={handleEducationAdded}
-                  onRemoved={handleEducationRemoved}
-                  onSync={() => { void refetch(); }}
-                />
-                <FreelancerPortfolioCard
-                  portfolioItems={freelancerProfile?.portfolioItems ?? []}
-                  onAdded={handlePortfolioItemAdded}
-                  onRemoved={handlePortfolioItemRemoved}
-                  onSync={() => { void refetch(); }}
-                />
-                <FreelancerDocumentsCard
-                  profile={freelancerProfile}
-                  onResumeUpdated={handleResumeUpdated}
-                  onCertificationAdded={handleCertificationAdded}
-                  onCertificationRemoved={handleCertificationRemoved}
-                />
-              </>
-            ) : (
-              <ClientProfileForm profile={clientProfile} onUpdated={handleClientUpdated} />
-            )}
-          </div>
+      <div className="grid gap-6 lg:grid-cols-[1fr,380px]">
+        {/* Main Form Area */}
+        <div className="space-y-6">
+          <BasicProfileCard user={user} onUpdated={(updatedUser) => setUser(updatedUser)} />
+          {isFreelancer ? (
+            <>
+              <FreelancerProfileForm profile={freelancerProfile} onUpdated={handleFreelancerUpdated} />
+              <FreelancerSkillsCard
+                skills={freelancerProfile?.skills ?? []}
+                onSkillAdded={handleSkillAdded}
+                onSkillRemoved={handleSkillRemoved}
+                onSync={() => { void refetch(); }}
+              />
+              <FreelancerExperienceCard
+                experience={freelancerProfile?.experience ?? []}
+                onAdded={handleExperienceAdded}
+                onRemoved={handleExperienceRemoved}
+                onSync={() => { void refetch(); }}
+              />
+              <FreelancerEducationCard
+                education={freelancerProfile?.education ?? []}
+                onAdded={handleEducationAdded}
+                onRemoved={handleEducationRemoved}
+                onSync={() => { void refetch(); }}
+              />
+              <FreelancerPortfolioCard
+                portfolioItems={freelancerProfile?.portfolioItems ?? []}
+                onAdded={handlePortfolioItemAdded}
+                onRemoved={handlePortfolioItemRemoved}
+                onSync={() => { void refetch(); }}
+              />
+              <FreelancerDocumentsCard
+                profile={freelancerProfile}
+                onResumeUpdated={handleResumeUpdated}
+                onCertificationAdded={handleCertificationAdded}
+                onCertificationRemoved={handleCertificationRemoved}
+              />
+            </>
+          ) : (
+            <ClientProfileForm profile={clientProfile} onUpdated={handleClientUpdated} />
+          )}
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-6">
-          <Card className="border-none bg-gradient-to-br from-emerald-50 via-white to-white shadow-lg shadow-emerald-100/60">
+          <Card className="border-dt-border bg-dt-surface shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-base text-dt-text">
                 Completion checklist
-                <Button variant="ghost" size="sm" className="text-xs text-dt-text-muted" onClick={() => { void refetch(); }} disabled={isFetching}>
-                  <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} /> Sync
-                </Button>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {taskList.map((task) => (
-                <div key={task.label} className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-dt-surface/60 px-4 py-3 backdrop-blur">
+                <div key={task.label} className="flex items-center justify-between rounded-2xl border border-dt-border bg-white px-4 py-3">
                   <div>
                     <p className="text-sm font-medium text-dt-text">{task.label}</p>
-                    <p className="text-xs text-dt-text-muted">{task.complete ? 'Looks great' : 'Required for Module 1 completion'}</p>
+                    <p className="text-xs text-dt-text-muted">{task.complete ? 'Looks great' : 'Required'}</p>
                   </div>
                   {task.complete ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <CheckCircle2 className="h-5 w-5 text-dt-text" />
                   ) : (
-                    <Clock3 className="h-5 w-5 text-amber-500" />
+                    <Clock3 className="h-5 w-5 text-dt-text-muted" />
                   )}
                 </div>
               ))}
               <p className="text-xs text-dt-text-muted">
-                Need help? Explore our <Link href="/docs" className="font-semibold text-emerald-600">profile playbook</Link> to see what world-class entries look like.
+                Need help? <Link href="/docs" className="font-semibold text-dt-text">Profile playbook →</Link>
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-none bg-gradient-to-br from-emerald-50 via-white to-white shadow-lg shadow-emerald-100/60">
+          <Card className="border-dt-border bg-dt-surface shadow-lg">
             <CardHeader>
               <CardTitle className="text-base text-dt-text">Identity & channels</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-dt-text-muted">
-              <div className="rounded-2xl border border-emerald-100 bg-dt-surface/70 p-4">
+              <div className="rounded-2xl border border-dt-border bg-white p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Email</p>
                 <p className="text-dt-text">{user.email}</p>
               </div>
-              <div className="rounded-2xl border border-emerald-100 bg-dt-surface/70 p-4">
+              <div className="rounded-2xl border border-dt-border bg-white p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Wallet</p>
-                <p className="font-mono text-dt-text">{walletDisplayAddress ? shortWallet(walletDisplayAddress) : 'Not paired yet'}</p>
+                <p className="font-mono text-dt-text">{walletDisplayAddress ? shortWallet(walletDisplayAddress) : 'Not paired'}</p>
                 {walletDisplayAddress && !isSyncedWithConnected ? (
-                  <p className="text-xs text-cyan-600">Syncing new wallet automatically…</p>
+                  <p className="text-xs text-dt-text-muted">Syncing…</p>
                 ) : !walletDisplayAddress ? (
-                  <p className="text-xs text-dt-text-muted">Connect a wallet from the navigation bar.</p>
+                  <p className="text-xs text-dt-text-muted">Connect from navigation</p>
                 ) : null}
               </div>
-              <div className="rounded-2xl border border-emerald-100 bg-dt-surface/70 p-4">
+              <div className="rounded-2xl border border-dt-border bg-white p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Created</p>
-                <p className="text-dt-text">{new Date(user.createdAt).toLocaleString()}</p>
+                <p className="text-dt-text">{new Date(user.createdAt).toLocaleDateString()}</p>
               </div>
-              <Link href="/dashboard" className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-600">
-                Head back to dashboard →
+              <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-dt-text">
+                Back to dashboard →
               </Link>
             </CardContent>
           </Card>

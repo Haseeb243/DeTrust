@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { useAccount, useSignMessage } from 'wagmi';
 import { toast } from 'sonner';
-import { Check, Wallet } from 'lucide-react';
+import { Check, Wallet, Eye, EyeOff } from 'lucide-react';
 
 import { useAuthStore } from '@/store/auth.store';
 import { isWalletConnectConfigured } from '@/lib/env';
@@ -51,6 +51,8 @@ function RegisterPageContent() {
     password: '',
     confirmPassword: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const handleRoleSelect = (role: Role) => {
@@ -157,9 +159,8 @@ function RegisterPageContent() {
   const renderRoleStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <p className="text-xs uppercase tracking-[0.4em] text-emerald-600">Module 1</p>
-        <h1 className="mt-2 text-3xl font-semibold text-dt-text">Choose your workspace type</h1>
-        <p className="text-dt-text-muted">Same polished UI regardless of role.</p>
+        <h1 className="text-3xl font-semibold text-dt-text">Choose your workspace type</h1>
+        <p className="mt-2 text-dt-text-muted">Create an account to start working or hiring.</p>
       </div>
       <div className="grid gap-6 md:grid-cols-2">
         {[
@@ -177,14 +178,13 @@ function RegisterPageContent() {
           <button
             key={card.role}
             onClick={() => handleRoleSelect(card.role)}
-            className="glass-card flex h-full flex-col rounded-3xl p-6 text-left transition-transform hover:-translate-y-1"
+            className="glass-card flex h-full flex-col rounded-2xl p-6 text-left transition-transform hover:-translate-y-1 border border-dt-border"
           >
-            <span className="text-sm uppercase tracking-[0.4em] text-emerald-600">{card.role}</span>
-            <h3 className="mt-3 text-2xl font-semibold text-dt-text">{card.title}</h3>
-            <ul className="mt-4 space-y-2 text-sm text-dt-text-muted">
+            <h3 className="text-xl font-semibold text-dt-text">{card.title}</h3>
+            <ul className="mt-3 space-y-2 text-sm text-dt-text-muted">
               {card.points.map((point) => (
                 <li key={point} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-500" /> {point}
+                  <Check className="h-4 w-4" /> {point}
                 </li>
               ))}
             </ul>
@@ -192,7 +192,7 @@ function RegisterPageContent() {
         ))}
       </div>
       <p className="text-center text-sm text-dt-text-muted">
-        Already with us? <Link href="/login" className="font-semibold text-emerald-600">Sign in</Link>
+        Already with us? <Link href="/login" className="font-medium text-dt-text hover:underline">Sign in</Link>
       </p>
     </div>
   );
@@ -209,17 +209,21 @@ function RegisterPageContent() {
         </button>
       </div>
 
-      <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/40 p-4 text-sm text-emerald-900 dark:text-emerald-200">
-        <Wallet className="h-5 w-5 text-emerald-500" />
-        Wallet login is primary. Emails simply keep notifications flowing.
+      <div className="rounded-2xl border border-dt-border bg-dt-surface p-4">
+        <p className="flex items-center gap-2 text-sm font-medium text-dt-text">
+          <Wallet className="h-4 w-4" /> Step 1: Connect your wallet
+        </p>
+        <p className="mt-1 text-sm text-dt-text-muted">
+          Your wallet proves identity. Email keeps you notified.
+        </p>
       </div>
 
       <div className="space-y-4 rounded-3xl border border-dt-border bg-dt-surface-alt/80 p-4 text-center">
         {!walletReady && (
-          <div className="space-y-2 text-left text-sm text-amber-900 dark:text-amber-200">
-            <p className="font-semibold text-amber-700 dark:text-amber-300">WalletConnect project ID recommended</p>
-            <p className="text-amber-700/90 dark:text-amber-400">
-              Add your WalletConnect Cloud project ID to <code className="text-dt-text">apps/web/.env.local</code> so mobile wallets can pair. MetaMask desktop still launches instantly.
+          <div className="text-left text-sm">
+            <p className="font-medium text-dt-text">Mobile wallet support</p>
+            <p className="text-dt-text-muted">
+              Add WalletConnect project ID to enable mobile wallet connections.
             </p>
           </div>
         )}
@@ -235,32 +239,66 @@ function RegisterPageContent() {
 
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-dt-text-muted">Full Name</label>
-          <input name="name" value={formData.name} onChange={handleInputChange} className="input-glass mt-2" placeholder="Avery Collins" />
-          {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
+          <label className="text-sm font-medium text-dt-text">Full name</label>
+          <input name="name" value={formData.name} onChange={handleInputChange} className="input-glass mt-2" placeholder="Jane Doe" />
+          {formErrors.name && <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>}
         </div>
         <div>
-          <label className="text-sm font-medium text-dt-text-muted">Email</label>
-          <input name="email" type="email" value={formData.email} onChange={handleInputChange} className="input-glass mt-2" placeholder="team@studio.xyz" />
-          {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
+          <label className="text-sm font-medium text-dt-text">Email address</label>
+          <input name="email" type="email" value={formData.email} onChange={handleInputChange} className="input-glass mt-2" placeholder="you@example.com" />
+          {formErrors.email && <p className="mt-1 text-sm text-red-500">{formErrors.email}</p>}
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="text-sm font-medium text-dt-text-muted">Password</label>
-            <input name="password" type="password" value={formData.password} onChange={handleInputChange} className="input-glass mt-2" placeholder="••••••••" />
-            {formErrors.password && <p className="text-sm text-red-500">{formErrors.password}</p>}
+            <label className="text-sm font-medium text-dt-text">Password</label>
+            <div className="relative mt-2">
+              <input
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleInputChange}
+                className="input-glass w-full pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-dt-text-muted hover:text-dt-text"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {formErrors.password && <p className="mt-1 text-sm text-red-500">{formErrors.password}</p>}
           </div>
           <div>
-            <label className="text-sm font-medium text-dt-text-muted">Confirm</label>
-            <input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleInputChange} className="input-glass mt-2" placeholder="••••••••" />
-            {formErrors.confirmPassword && <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>}
+            <label className="text-sm font-medium text-dt-text">Confirm password</label>
+            <div className="relative mt-2">
+              <input
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className="input-glass w-full pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-dt-text-muted hover:text-dt-text"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {formErrors.confirmPassword && <p className="mt-1 text-sm text-red-500">{formErrors.confirmPassword}</p>}
           </div>
         </div>
       </div>
 
       <div className="flex items-center justify-between">
         <button className="btn-secondary" onClick={() => setCurrentStep(0)}>Back</button>
-        <button className="btn-primary" onClick={handleAccountContinue}>Continue</button>
+        <button className="btn-primary" onClick={handleAccountContinue}>Continue to KYC</button>
       </div>
     </div>
   );
@@ -277,10 +315,10 @@ function RegisterPageContent() {
         </button>
       </div>
 
-      <div className="rounded-3xl border border-dt-border bg-dt-surface-alt/80 p-6 text-sm text-dt-text-muted">
-        <p>KYC unlocks higher-value contracts (≥ $25k) and curated talent pools. Completely optional otherwise.</p>
+      <div className="rounded-2xl border border-dt-border bg-dt-surface p-6">
+        <p className="text-sm text-dt-text-muted">KYC verification unlocks contracts ≥$25k and curated talent pools. Completely optional for standard use.</p>
         <label className="mt-4 flex items-center justify-between">
-          <span className="font-medium text-dt-text">Enable KYC now?</span>
+          <span className="text-sm font-medium text-dt-text">Enable KYC now?</span>
           <input type="checkbox" checked={kycEnabled} onChange={(e) => setKycEnabled(e.target.checked)} className="h-5 w-5" />
         </label>
         {kycEnabled && (
@@ -303,41 +341,43 @@ function RegisterPageContent() {
 
       {error && <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/40 p-3 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
+      <div className="rounded-xl border border-dt-border bg-dt-surface-alt p-3">
+        <p className="text-xs text-dt-text-muted">
+          By creating an account you agree to our <Link href="/terms" className="underline hover:text-dt-text">Terms</Link> and <Link href="/privacy" className="underline hover:text-dt-text">Privacy Policy</Link>.
+        </p>
+      </div>
+
       <div className="flex items-center justify-between">
         <button className="btn-secondary" onClick={() => setCurrentStep(1)}>Back</button>
         <button className="btn-primary" onClick={handleEmailRegister} disabled={isLoading}>
-          {isLoading ? 'Creating…' : 'Create workspace'}
+          {isLoading ? 'Creating account…' : 'Create account'}
         </button>
       </div>
-
-      <p className="text-center text-xs text-dt-text-muted">
-        By continuing you accept our <Link href="/terms" className="underline">Terms</Link> & <Link href="/privacy" className="underline">Privacy</Link>.
-      </p>
     </div>
   );
 
   const stepContent = [renderRoleStep(), renderAccountStep(), renderComplianceStep()];
 
   return (
-    <div className="space-y-8 text-dt-text">
-      <div className="rounded-3xl border border-dt-border bg-dt-surface/90 p-4 text-sm shadow-lg">
-        <div className="grid gap-4 md:grid-cols-3">
+    <div className="space-y-6 text-dt-text">
+      <div className="rounded-2xl border border-dt-border bg-dt-surface p-4">
+        <div className="grid gap-3 md:grid-cols-3">
           {STEPS.map((step, index) => (
             <div
               key={step.id}
-              className={`rounded-2xl p-4 ${
-                index === currentStep ? 'bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-800' : 'bg-dt-surface-alt'
+              className={`rounded-xl p-3 ${
+                index === currentStep ? 'bg-dt-surface-alt border border-dt-border' : ''
               }`}
             >
-              <p className="text-xs uppercase tracking-[0.4em] text-emerald-600">Step {index + 1}</p>
-              <p className="font-semibold text-dt-text">{step.label}</p>
-              <p className="text-dt-text-muted">{step.description}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-dt-text-muted">Step {index + 1}</p>
+              <p className="font-medium text-dt-text">{step.label}</p>
+              <p className="text-xs text-dt-text-muted">{step.description}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="rounded-[32px] border border-dt-border bg-dt-surface/95 p-6 shadow-2xl">
+      <div className="rounded-2xl border border-dt-border bg-dt-surface p-6">
         {stepContent[currentStep]}
       </div>
     </div>

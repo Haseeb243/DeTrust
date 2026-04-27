@@ -108,14 +108,11 @@ export function FreelancerPortfolioCard({
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-base text-dt-text">
           <span className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-amber-500" />
-            Portfolio showcase
+            <Layers className="h-4 w-4 text-dt-text" />
+            Portfolio
           </span>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-amber-200 dark:border-amber-800 text-amber-600">
-              {portfolioItems.length}/{maxItems}
-            </Badge>
-            <Badge variant="secondary" className="bg-amber-50 text-amber-600">FR-C3.1 signal</Badge>
+            <Badge variant="outline">{portfolioItems.length}/{maxItems}</Badge>
           </div>
         </CardTitle>
       </CardHeader>
@@ -132,7 +129,7 @@ export function FreelancerPortfolioCard({
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-semibold text-dt-text">{item.title}</p>
                       {item.isFeatured ? (
-                        <Star className="h-3.5 w-3.5 flex-shrink-0 fill-amber-400 text-amber-400" />
+                        <Star className="h-3.5 w-3.5 flex-shrink-0 fill-dt-text text-dt-text" />
                       ) : null}
                     </div>
                     {item.description ? (
@@ -148,7 +145,7 @@ export function FreelancerPortfolioCard({
                     disabled={removingId === item.id}
                     aria-label="Remove portfolio item"
                   >
-                    <Trash2 className={`h-4 w-4 ${removingId === item.id ? 'animate-pulse text-amber-500' : 'text-dt-text-muted'}`} />
+                    <Trash2 className={`h-4 w-4 ${removingId === item.id ? 'animate-pulse text-dt-text-muted' : 'text-dt-text-muted'}`} />
                   </Button>
                 </div>
 
@@ -168,7 +165,7 @@ export function FreelancerPortfolioCard({
                       href={item.projectUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 hover:text-amber-600 transition-colors"
+                      className="flex items-center gap-1 hover:text-dt-text transition-colors"
                     >
                       <ExternalLink className="h-3.5 w-3.5" /> Live
                     </a>
@@ -178,7 +175,7 @@ export function FreelancerPortfolioCard({
                       href={item.repoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 hover:text-amber-600 transition-colors"
+                      className="flex items-center gap-1 hover:text-dt-text transition-colors"
                     >
                       <Github className="h-3.5 w-3.5" /> Repo
                     </a>
@@ -194,7 +191,7 @@ export function FreelancerPortfolioCard({
         )}
 
         {reachedLimit ? (
-          <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/70 p-4 text-sm text-amber-900 dark:text-amber-200">
+          <div className="rounded-2xl border border-dt-border bg-dt-surface-alt p-4 text-sm text-dt-text">
             You&apos;ve reached the maximum of {maxItems} portfolio items. Remove one to add another.
           </div>
         ) : (
@@ -272,7 +269,7 @@ export function FreelancerPortfolioCard({
               <label className="flex items-center gap-2 text-sm text-dt-text-muted cursor-pointer select-none">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 accent-amber-500"
+                  className="h-4 w-4"
                   {...register('isFeatured')}
                 />
                 Pin as featured project

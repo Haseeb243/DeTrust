@@ -131,10 +131,9 @@ export function FreelancerExperienceCard({
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-base text-dt-text">
           <span className="flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-violet-500" />
+            <Briefcase className="h-4 w-4 text-dt-text" />
             Work experience
           </span>
-          <Badge variant="secondary" className="bg-violet-50 text-violet-600">FR-C3.1 signal</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -153,7 +152,7 @@ export function FreelancerExperienceCard({
                       {formatRange(entry.startDate, entry.endDate, entry.isCurrent)}
                     </p>
                     {entry.isCurrent ? (
-                      <Badge variant="secondary" className="mt-1 bg-violet-50 text-violet-600 text-[10px]">Current</Badge>
+                      <Badge variant="secondary" className="mt-1 text-[10px]">Current</Badge>
                     ) : null}
                     {entry.description ? (
                       <p className="mt-2 whitespace-pre-wrap text-sm text-dt-text-muted">{entry.description}</p>
@@ -167,7 +166,7 @@ export function FreelancerExperienceCard({
                     disabled={removingId === entry.id}
                     aria-label="Remove experience entry"
                   >
-                    <Trash2 className={`h-4 w-4 ${removingId === entry.id ? 'animate-pulse text-amber-500' : 'text-dt-text-muted'}`} />
+                    <Trash2 className={`h-4 w-4 ${removingId === entry.id ? 'animate-pulse text-dt-text-muted' : 'text-dt-text-muted'}`} />
                   </Button>
                 </div>
               </div>
@@ -202,19 +201,19 @@ export function FreelancerExperienceCard({
           <div className="grid gap-4 md:grid-cols-3">
             <div>
               <label className="text-sm text-dt-text-muted">Start month</label>
-              <Input type="month" className="mt-2" {...register('startMonth')} />
+              <Input type="month" placeholder="YYYY-MM" className="mt-2" {...register('startMonth')} />
               {errors.startMonth ? <p className="mt-1 text-xs text-red-500">{errors.startMonth.message}</p> : null}
             </div>
             <div>
               <label className="text-sm text-dt-text-muted">End month</label>
-              <Input type="month" className="mt-2" disabled={!!isCurrent} {...register('endMonth')} />
+              <Input type="month" placeholder="YYYY-MM" className="mt-2" disabled={!!isCurrent} {...register('endMonth')} />
               {errors.endMonth ? <p className="mt-1 text-xs text-red-500">{errors.endMonth.message}</p> : null}
             </div>
             <div className="flex items-end pb-1">
               <label className="flex items-center gap-2 text-sm text-dt-text-muted cursor-pointer select-none">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 accent-violet-500"
+                  className="h-4 w-4 accent-dt-text"
                   {...register('isCurrent')}
                 />
                 I currently work here
@@ -233,7 +232,7 @@ export function FreelancerExperienceCard({
           </div>
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving…' : 'Add experience signal'}
+              {isSubmitting ? 'Saving…' : 'Add experience'}
             </Button>
           </div>
         </form>

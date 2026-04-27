@@ -76,12 +76,12 @@ export function ProfileHero({
             <h1 className="text-3xl font-semibold text-dt-text">{profile.name || 'Unnamed talent'}</h1>
             <p className="text-base text-dt-text-muted">{isFreelancer ? freelancerProfile?.title || 'Add a headline to unlock discovery' : clientProfile?.companyName || 'Add your organization name'}</p>
             <div className="flex flex-wrap gap-3 text-sm text-dt-text-muted">
-              <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4 text-emerald-400" /> {freelancerProfile?.location || clientProfile?.location || 'Location TBD'}</span>
+              <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4 text-dt-text" /> {freelancerProfile?.location || clientProfile?.location || 'Location TBD'}</span>
               {freelancerProfile?.timezone && <span>UTC {freelancerProfile.timezone}</span>}
               {languages && <span>{languages}</span>}
             </div>
             <div className="flex flex-wrap gap-3">
-              <Badge variant="success" className="bg-emerald-50 text-emerald-700">
+              <Badge variant="success">
                 {profileComplete ? 'Profile clears trust threshold' : 'Complete profile to unlock proposals'}
               </Badge>
               <Badge variant="outline" className="border-dt-border text-dt-text-muted">
@@ -99,7 +99,7 @@ export function ProfileHero({
             <p className="text-5xl font-light text-dt-text">{completion}%</p>
             <p className="text-sm text-dt-text-muted">Reach 70%+ to surface in curated searches.</p>
           </div>
-          <Button asChild variant="secondary" className="bg-emerald-500 text-white shadow-lg shadow-emerald-300/70">
+          <Button asChild variant="secondary">
             <Link href="/profile/edit" className="flex items-center gap-2">
               <PenLine className="h-4 w-4" /> Edit profile
             </Link>

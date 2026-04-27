@@ -22,7 +22,7 @@ export function ProfileAboutCard({ isFreelancer, freelancerProfile, clientProfil
     <Card className="border-dt-border bg-dt-surface text-dt-text-muted shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg text-dt-text">
-          <FileText className="h-5 w-5 text-emerald-500" /> About me
+          <FileText className="h-5 w-5 text-dt-text" /> About
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm leading-relaxed text-dt-text-muted">
@@ -31,7 +31,7 @@ export function ProfileAboutCard({ isFreelancer, freelancerProfile, clientProfil
           {isFreelancer ? (
             <>
               {portfolio ? (
-                <Link href={portfolio} target="_blank" className="text-emerald-600 transition hover:text-emerald-500">
+                <Link href={portfolio} target="_blank" className="text-dt-text underline">
                   Portfolio &rarr;
                 </Link>
               ) : (
@@ -43,7 +43,7 @@ export function ProfileAboutCard({ isFreelancer, freelancerProfile, clientProfil
           ) : (
             <>
               {clientWebsite ? (
-                <Link href={clientWebsite} target="_blank" className="text-emerald-600 transition hover:text-emerald-500">
+                <Link href={clientWebsite} target="_blank" className="text-dt-text underline">
                   Company site &rarr;
                 </Link>
               ) : (

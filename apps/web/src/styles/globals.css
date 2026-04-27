@@ -50,16 +50,12 @@
 
   body {
     font-family: var(--font-body);
-    background: radial-gradient(circle at 10% 20%, rgba(213, 255, 246, 0.6), transparent 60%),
-      radial-gradient(circle at 80% 0%, rgba(243, 233, 255, 0.6), transparent 55%),
-      hsl(var(--base));
+    background: hsl(var(--base));
     color: hsl(var(--text-strong));
   }
 
   .dark body {
-    background: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.08), transparent 60%),
-      radial-gradient(circle at 80% 0%, rgba(139, 92, 246, 0.06), transparent 55%),
-      hsl(var(--base));
+    background: hsl(var(--base));
   }
 
   ::-webkit-scrollbar {
@@ -86,9 +82,9 @@
     padding: 0.85rem 1.75rem;
     font-weight: 600;
     transition: transform 200ms ease;
-    background: linear-gradient(120deg, hsl(var(--brand-primary)), hsl(var(--brand-iris)));
-    color: #f7fdfc;
-    box-shadow: 0 15px 35px rgba(16, 185, 129, 0.2);
+    background: linear-gradient(to right, #059669, #10b981);
+    color: white;
+    box-shadow: 0 10px 30px rgba(5, 150, 105, 0.3);
   }
 
   .btn-primary:hover {

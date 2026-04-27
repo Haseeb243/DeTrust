@@ -63,7 +63,7 @@ export function FreelancerSkillsCard({
       setIsLoadingCatalog(false);
 
       if (!response.success || !response.data) {
-        setCatalogError(response.error?.message || 'Skill directory unavailable. Please seed skills via admin tools.');
+        setCatalogError(response.error?.message || 'Skill directory unavailable.');
         setCatalog([]);
         return;
       }
@@ -108,7 +108,7 @@ export function FreelancerSkillsCard({
     }
 
     if (reachedLimit) {
-      toast.error(`You can only showcase ${maxSkills} skills per FR-C3.2.`);
+      toast.error(`You can only showcase ${maxSkills} skills.`);
       return;
     }
 
@@ -163,9 +163,9 @@ export function FreelancerSkillsCard({
 
   const emptyState = (
     <div className="rounded-2xl border border-dashed border-dt-border bg-dt-surface-alt p-6 text-center">
-      <Sparkles className="mx-auto h-6 w-6 text-emerald-500" />
+      <Sparkles className="mx-auto h-6 w-6 text-dt-text" />
       <p className="mt-3 text-sm font-medium text-dt-text">No skills yet</p>
-      <p className="text-sm text-dt-text-muted">Adding at least three skills unlocks the trust scoring portion of Module 1.</p>
+      <p className="text-sm text-dt-text-muted">Add at least three skills to improve your profile.</p>
     </div>
   );
 
@@ -215,118 +215,13 @@ export function FreelancerSkillsCard({
     );
   };
 
-  const addSection = (
-    <div className="space-y-4 rounded-3xl border border-dt-border bg-dt-surface/90 p-5 shadow-sm">
-      <div className="flex items-center justify-between text-sm text-dt-text-muted">
-        <span>Skill directory (FR-C3.2 · FR-P5.1)</span>
-        <Badge variant="outline" className="border-emerald-200 dark:border-emerald-800 text-emerald-600">
-          {skills.length}/{maxSkills} filled
-        </Badge>
-      </div>
-      <Input
-        value={searchTerm}
-        onChange={(event) => setSearchTerm(event.target.value)}
-        placeholder="Search e.g. Solidity, React, Zero-Knowledge"
-        onKeyDown={handleSearchKeyDown}
-      />
-      {catalogError ? (
-        <p className="text-sm text-red-500">{catalogError}</p>
-      ) : isLoadingCatalog ? (
-        <div className="flex items-center gap-2 text-sm text-dt-text-muted">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading catalog…
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filteredCatalog.length === 0 ? (
-            <p className="text-sm text-dt-text-muted">No matching skills yet. Try a different search term.</p>
-          ) : (
-            filteredCatalog.slice(0, 6).map((skill) => (
-              <button
-                key={skill.id}
-                type="button"
-                className={`w-full rounded-2xl border px-3 py-2 text-left transition hover:border-emerald-200 ${
-                  selectedSkill?.id === skill.id ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-950' : 'border-dt-border bg-dt-surface'
-                }`}
-                onClick={() => setSelectedSkill(skill)}
-                disabled={pendingSkillId !== null}
-              >
-                <p className="text-sm font-medium text-dt-text">{skill.name}</p>
-                <p className="text-xs text-dt-text-muted">{skill.category}</p>
-              </button>
-            ))
-          )}
-        </div>
-      )}
-      {selectedSkill ? (
-        <div className="space-y-4 rounded-2xl border border-dt-border bg-dt-surface-alt p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-sm font-semibold text-dt-text">{selectedSkill.name}</p>
-              <p className="text-xs text-dt-text-muted">{selectedSkill.category}</p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={resetSelection}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Years experience</label>
-              <Input
-                type="number"
-                min={0}
-                max={50}
-                value={yearsExperience}
-                onChange={(event) => setYearsExperience(event.target.value)}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Proficiency (1-5)</label>
-              <div className="mt-3 flex items-center gap-3">
-                <input
-                  type="range"
-                  min={PROFICIENCY_MIN}
-                  max={PROFICIENCY_MAX}
-                  value={proficiency}
-                  onChange={(event) => setProficiency(Number(event.target.value))}
-                  className="h-1 flex-1 accent-emerald-500"
-                />
-                <span className="text-sm text-dt-text-muted">Lvl {proficiency}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-dt-border bg-dt-surface/70 p-4 text-sm text-dt-text-muted">
-          Select a skill from the directory or press Enter to auto-select the top match.
-        </div>
-      )}
-      <Button
-        type="button"
-        className="w-full"
-        disabled={!selectedSkill || pendingSkillId !== null}
-        onClick={handleAddSkill}
-      >
-        {pendingSkillId ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding skill…
-          </>
-        ) : (
-          <>
-            <Plus className="mr-2 h-4 w-4" /> Add skill
-          </>
-        )}
-      </Button>
-    </div>
-  );
-
   return (
     <Card className="border-dt-border bg-dt-surface shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base text-dt-text">
-          <ShieldCheck className="h-5 w-5 text-emerald-500" /> Skills & verification
+          <ShieldCheck className="h-5 w-5 text-dt-text" /> Skills
         </CardTitle>
-        <p className="text-sm text-dt-text-muted">FR-C3.2 · FR-P5 · Track up to {maxSkills} skills and surface verification status.</p>
+        <p className="text-sm text-dt-text-muted">Track up to {maxSkills} skills.</p>
       </CardHeader>
       <CardContent className="space-y-6">
         <section>
@@ -340,17 +235,118 @@ export function FreelancerSkillsCard({
 
         <section>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-dt-text-muted">
-            <Sparkles className="h-4 w-4 text-amber-500" /> Add skills to unlock AI capability boosts
+            <Sparkles className="h-4 w-4 text-dt-text" /> Add skills
           </div>
           {reachedLimit ? (
-            <div className="mt-4 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/70 p-4 text-sm text-emerald-900">
-              You&apos;ve added the maximum number of skills for now. Remove one to add another.
+            <div className="mt-4 rounded-2xl border border-dt-border bg-dt-surface-alt p-4 text-sm text-dt-text">
+              You&apos;ve added the maximum number of skills. Remove one to add another.
             </div>
           ) : (
-            <div className="mt-4">{addSection}</div>
+            <div className="mt-4 space-y-4 rounded-3xl border border-dt-border bg-dt-surface/90 p-5 shadow-sm">
+              <div className="flex items-center justify-between text-sm text-dt-text-muted">
+                <span>Skill directory</span>
+                <Badge variant="outline">{skills.length}/{maxSkills} filled</Badge>
+              </div>
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search e.g. Solidity, React"
+                onKeyDown={handleSearchKeyDown}
+              />
+              {catalogError ? (
+                <p className="text-sm text-red-500">{catalogError}</p>
+              ) : isLoadingCatalog ? (
+                <div className="flex items-center gap-2 text-sm text-dt-text-muted">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading catalog…
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredCatalog.length === 0 ? (
+                    <p className="text-sm text-dt-text-muted">No matching skills found.</p>
+                  ) : (
+                    filteredCatalog.slice(0, 6).map((skill) => (
+                      <button
+                        key={skill.id}
+                        type="button"
+                        className={`w-full rounded-2xl border px-3 py-2 text-left transition hover:border-dt-border ${
+                          selectedSkill?.id === skill.id ? 'border-dt-border bg-dt-surface-alt' : 'border-dt-border bg-dt-surface'
+                        }`}
+                        onClick={() => setSelectedSkill(skill)}
+                        disabled={pendingSkillId !== null}
+                      >
+                        <p className="text-sm font-medium text-dt-text">{skill.name}</p>
+                        <p className="text-xs text-dt-text-muted">{skill.category}</p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+              {selectedSkill ? (
+                <div className="space-y-4 rounded-2xl border border-dt-border bg-dt-surface-alt p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-dt-text">{selectedSkill.name}</p>
+                      <p className="text-xs text-dt-text-muted">{selectedSkill.category}</p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={resetSelection}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Years experience</label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={50}
+                        value={yearsExperience}
+                        onChange={(event) => setYearsExperience(event.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Proficiency (1-5)</label>
+                      <div className="mt-3 flex items-center gap-3">
+                        <input
+                          type="range"
+                          min={PROFICIENCY_MIN}
+                          max={PROFICIENCY_MAX}
+                          value={proficiency}
+                          onChange={(event) => setProficiency(Number(event.target.value))}
+                          className="h-1 flex-1"
+                        />
+                        <span className="text-sm text-dt-text-muted">Lvl {proficiency}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-dt-border bg-dt-surface/70 p-4 text-sm text-dt-text-muted">
+                  Select a skill from the directory.
+                </div>
+              )}
+              <Button
+                type="button"
+                className="w-full"
+                disabled={!selectedSkill || pendingSkillId !== null}
+                onClick={handleAddSkill}
+              >
+                {pendingSkillId ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding skill…
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" /> Add skill
+                  </>
+                )}
+              </Button>
+            </div>
           )}
         </section>
       </CardContent>
     </Card>
   );
 }
+
+export default FreelancerSkillsCard;

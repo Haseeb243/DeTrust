@@ -19,9 +19,6 @@ export function HeroSection() {
         <source src="/hero-video.mp4" type="video/mp4" />
       </video>
 
-      {/* Gradient overlay */}
-      <div className="hero-overlay rounded-3xl" />
-
       {/* Content */}
       <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
         <motion.span

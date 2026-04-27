@@ -40,22 +40,22 @@ export function ProfileDossierCard({
       <CardHeader className="space-y-3">
         <p className="text-xs uppercase tracking-[0.45em] text-dt-text-muted">Professional dossier</p>
         <CardTitle className="flex flex-wrap items-center gap-3 text-2xl text-dt-text">
-          <Layers className="h-6 w-6 text-emerald-500" /> Proof that travels well
+          <Layers className="h-6 w-6 text-dt-text" /> Professional dossier
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4">
           {/* Resume */}
-          <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-dt-surface to-dt-surface p-5 shadow-sm">
+          <div className="rounded-3xl border border-dt-border bg-dt-surface-alt p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-emerald-500">Resume</p>
+                <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Resume</p>
                 <p className="text-lg font-semibold text-dt-text">{resumeUploaded ? 'Private PDF ready' : 'No resume uploaded'}</p>
               </div>
-              <ScrollText className="h-8 w-8 text-emerald-400" />
+              <ScrollText className="h-8 w-8 text-dt-text" />
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button asChild variant="outline" className="border-emerald-200 text-emerald-700">
+              <Button asChild variant="outline">
                 <Link href="/profile/edit#documents" className="flex items-center gap-2">
                   <UploadCloud className="h-4 w-4" /> Manage
                 </Link>
@@ -64,8 +64,7 @@ export function ProfileDossierCard({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="bg-emerald-500 text-white shadow-md shadow-emerald-200/70"
-                  onClick={() =>
+                                    onClick={() =>
                     openSecureFileInNewTab(freelancerProfile.resumeUrl!, { token: api.getToken() ?? undefined, fallbackName: 'resume.pdf' })
                   }
                 >
@@ -76,7 +75,7 @@ export function ProfileDossierCard({
           </div>
 
           {/* Skills */}
-          <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 via-dt-surface to-dt-surface p-5 shadow-sm">
+          <div className="rounded-3xl border border-dt-border bg-dt-surface-alt p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Skills</p>
@@ -92,7 +91,7 @@ export function ProfileDossierCard({
                     className="group inline-flex items-center gap-2 rounded-full border border-dt-border bg-dt-surface px-3 py-1 text-sm font-medium text-dt-text-muted"
                   >
                     <span>{skill.skill?.name ?? 'Unnamed skill'}</span>
-                    <span className="text-xs uppercase tracking-wide text-emerald-500">{skill.verificationStatus ? skill.verificationStatus.toLowerCase() : 'unverified'}</span>
+                    <span className="text-xs uppercase tracking-wide text-dt-text-muted">{skill.verificationStatus ? skill.verificationStatus.toLowerCase() : 'unverified'}</span>
                   </div>
                 ))}
               </div>
@@ -102,7 +101,7 @@ export function ProfileDossierCard({
           </div>
 
           {/* Education */}
-          <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/60 via-dt-surface to-dt-surface p-5 shadow-sm">
+          <div className="rounded-3xl border border-dt-border bg-dt-surface-alt p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Education</p>
@@ -129,7 +128,7 @@ export function ProfileDossierCard({
           <DossierCredentials certifications={certifications} certPreviewMap={certPreviewMap} />
 
           {/* Experience */}
-          <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/50 via-dt-surface to-dt-surface p-5 shadow-sm">
+          <div className="rounded-3xl border border-dt-border bg-dt-surface-alt p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Work experience</p>
@@ -145,7 +144,7 @@ export function ProfileDossierCard({
                     <p className="text-xs text-dt-text-muted">{exp.company}{exp.location ? ` · ${exp.location}` : ''}</p>
                     <p className="text-xs text-dt-text-muted">
                       {formatEducationRange(exp.startDate, exp.isCurrent ? null : exp.endDate)}
-                      {exp.isCurrent && <span className="ml-2 text-emerald-500">· Current</span>}
+                      {exp.isCurrent && <span className="ml-2 text-dt-text-muted">· Current</span>}
                     </p>
                     {exp.description && <p className="mt-1 text-xs text-dt-text-muted">{exp.description}</p>}
                   </div>
@@ -157,7 +156,7 @@ export function ProfileDossierCard({
           </div>
 
           {/* Portfolio */}
-          <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/40 via-dt-surface to-dt-surface p-5 shadow-sm">
+          <div className="rounded-3xl border border-dt-border bg-dt-surface-alt p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-dt-text-muted">Portfolio</p>
@@ -171,7 +170,7 @@ export function ProfileDossierCard({
                   <div key={item.id} className="rounded-2xl border border-slate-100 bg-dt-surface-alt/70 p-3">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold text-dt-text">{item.title}</p>
-                      {item.isFeatured && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">Featured</span>}
+                      {item.isFeatured && <span className="rounded-full bg-dt-surface px-2 py-0.5 text-[10px] font-medium text-dt-text">Featured</span>}
                     </div>
                     {item.description && <p className="mt-1 text-xs text-dt-text-muted">{item.description}</p>}
                     {item.techStack.length > 0 && (
@@ -183,12 +182,12 @@ export function ProfileDossierCard({
                     )}
                     <div className="mt-2 flex gap-3">
                       {item.projectUrl && (
-                        <a href={item.projectUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline">
+                        <a href={item.projectUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-dt-text underline">
                           Live <ExternalLink className="h-3 w-3" />
                         </a>
                       )}
                       {item.repoUrl && (
-                        <a href={item.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline">
+                        <a href={item.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-dt-text underline">
                           Repo <ExternalLink className="h-3 w-3" />
                         </a>
                       )}

@@ -144,7 +144,7 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
                 )}
               </div>
               <div className="space-y-2 text-sm text-dt-text-muted">
-                <p className="text-xs text-dt-text-muted">Square images work best. We cap uploads at 4&nbsp;MB per FR-C3.1.</p>
+                <p className="text-xs text-dt-text-muted">Square images work best. Max 4 MB.</p>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" onClick={openFileDialog} disabled={isUploading}>
                     {isUploading ? 'Uploading…' : 'Upload photo'}
@@ -179,7 +179,7 @@ export function BasicProfileCard({ user, onUpdated }: BasicProfileCardProps) {
                 )}
               </div>
               {isConnected && !isSyncedWithConnected && (
-                <p className="mt-1 text-xs text-cyan-600">Syncing new wallet to your account…</p>
+                <p className="mt-1 text-xs text-dt-text-muted">Syncing new wallet to your account…</p>
               )}
             </div>
           </div>

@@ -5,13 +5,9 @@ import { Clock3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { shortWallet } from '@/lib/profile-utils';
 import { useProfileViewData } from '@/hooks/use-profile-view-data';
 
-import { ProfileHero } from '@/components/profile/profile-hero';
-import { ProfileAboutCard } from '@/components/profile/profile-about-card';
-import { ProfileDossierCard } from '@/components/profile/profile-dossier-card';
-import { ProfileIdentityCard } from '@/components/profile/profile-identity-card';
+import { LinkedInProfileCard } from '@/components/profile/linkedin-profile-card';
 import { ProfileChecklistCard } from '@/components/profile/profile-checklist-card';
 import { ProfileActivityCard } from '@/components/profile/profile-activity-card';
 
@@ -40,33 +36,36 @@ export default function ProfileViewPage() {
   }
 
   return (
-    <div className="space-y-10">
-      <ProfileHero
-        profile={d.profile} completion={d.completion} profileComplete={d.profileComplete}
-        avatarObjectUrl={d.avatarObjectUrl} avatarLoading={d.avatarLoading}
-        highlightStats={d.highlightStats} walletBadgeLabel={d.walletBadgeLabel}
-        role={d.role} isFreelancer={d.isFreelancer}
-        freelancerProfile={d.freelancerProfile} clientProfile={d.clientProfile} languages={d.languages}
-      />
-
+    <div className="space-y-6">
       {d.error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">{d.error.message}</div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1.65fr,1fr]">
-        <div className="space-y-6">
-          <ProfileAboutCard isFreelancer={d.isFreelancer} freelancerProfile={d.freelancerProfile} clientProfile={d.clientProfile} />
-          {d.isFreelancer && d.freelancerProfile && (
-            <ProfileDossierCard
-              freelancerProfile={d.freelancerProfile} isAuthenticated={d.isAuthenticated}
-              topSkills={d.topSkills} educationEntries={d.educationEntries}
-              experienceEntries={d.experienceEntries} portfolioItems={d.portfolioItems}
-              certifications={d.certifications} certPreviewMap={d.certPreviewMap}
-              resumeUploaded={d.resumeUploaded} formatEducationRange={d.formatEducationRange}
-            />
-          )}
-          <ProfileIdentityCard profile={d.profile} walletDisplayAddress={d.walletDisplayAddress} shortWallet={shortWallet} />
+      <div className="grid gap-6 lg:grid-cols-[1fr,380px]">
+        {/* Main Profile - LinkedIn Style */}
+        <div>
+          <LinkedInProfileCard
+            profile={d.profile}
+            isFreelancer={d.isFreelancer}
+            freelancerProfile={d.freelancerProfile}
+            clientProfile={d.clientProfile}
+            avatarObjectUrl={d.avatarObjectUrl}
+            avatarLoading={d.avatarLoading}
+            walletBadgeLabel={d.walletBadgeLabel}
+            completion={d.completion}
+            languages={d.languages}
+            topSkills={d.topSkills}
+            educationEntries={d.educationEntries}
+            experienceEntries={d.experienceEntries}
+            portfolioItems={d.portfolioItems}
+            certifications={d.certifications}
+            certPreviewMap={d.certPreviewMap}
+            resumeUploaded={d.resumeUploaded}
+            formatEducationRange={d.formatEducationRange}
+          />
         </div>
+
+        {/* Sidebar */}
         <div className="space-y-6">
           <ProfileChecklistCard taskList={d.taskList} onRefetch={() => void d.refetch()} isFetching={d.isFetching} />
           <ProfileActivityCard activityCards={d.activityCards} />

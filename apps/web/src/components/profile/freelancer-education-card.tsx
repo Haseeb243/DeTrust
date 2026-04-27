@@ -120,10 +120,9 @@ export function FreelancerEducationCard({ education = [], onAdded, onRemoved, on
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-base text-dt-text">
           <span className="flex items-center gap-2">
-            <GraduationCap className="h-4 w-4 text-indigo-500" />
-            Education timeline
+            <GraduationCap className="h-4 w-4 text-dt-text" />
+            Education
           </span>
-          <Badge variant="secondary" className="bg-indigo-50 text-indigo-600">FR-C3.1 signal</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -151,7 +150,7 @@ export function FreelancerEducationCard({ education = [], onAdded, onRemoved, on
                     disabled={removingId === entry.id}
                     aria-label="Remove education entry"
                   >
-                    <Trash2 className={`h-4 w-4 ${removingId === entry.id ? 'animate-pulse text-amber-500' : 'text-dt-text-muted'}`} />
+                    <Trash2 className={`h-4 w-4 ${removingId === entry.id ? 'animate-pulse text-dt-text-muted' : 'text-dt-text-muted'}`} />
                   </Button>
                 </div>
               </div>
@@ -184,12 +183,12 @@ export function FreelancerEducationCard({ education = [], onAdded, onRemoved, on
             </div>
             <div>
               <label className="text-sm text-dt-text-muted">Start month</label>
-              <Input type="month" className="mt-2" {...register('startMonth')} />
+              <Input type="month" placeholder="YYYY-MM" className="mt-2" {...register('startMonth')} />
               {errors.startMonth ? <p className="mt-1 text-xs text-red-500">{errors.startMonth.message}</p> : null}
             </div>
             <div>
               <label className="text-sm text-dt-text-muted">End month</label>
-              <Input type="month" className="mt-2" {...register('endMonth')} />
+              <Input type="month" placeholder="YYYY-MM" className="mt-2" {...register('endMonth')} />
               {errors.endMonth ? <p className="mt-1 text-xs text-red-500">{errors.endMonth.message}</p> : null}
             </div>
           </div>
@@ -200,7 +199,7 @@ export function FreelancerEducationCard({ education = [], onAdded, onRemoved, on
           </div>
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving…' : 'Add education signal'}
+              {isSubmitting ? 'Saving…' : 'Add education'}
             </Button>
           </div>
         </form>

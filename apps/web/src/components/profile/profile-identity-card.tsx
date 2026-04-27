@@ -16,7 +16,7 @@ export function ProfileIdentityCard({ profile, walletDisplayAddress, shortWallet
     <Card className="border-dt-border bg-dt-surface shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base text-dt-text">
-          <BadgeCheck className="h-4 w-4 text-emerald-500" /> Identity &amp; channels
+          <BadgeCheck className="h-4 w-4 text-dt-text" /> Identity
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm text-dt-text-muted">

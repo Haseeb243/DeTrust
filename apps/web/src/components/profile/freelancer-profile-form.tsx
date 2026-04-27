@@ -164,7 +164,7 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
       <CardHeader className="flex flex-col gap-2">
         <CardTitle className="text-xl text-dt-text">Freelancer profile</CardTitle>
         <div className="flex items-center gap-3 text-sm text-dt-text-muted">
-          <Badge variant="secondary" className="bg-emerald-50 dark:bg-emerald-950 text-emerald-600">
+          <Badge variant="secondary">
             {completenessScore}% complete
           </Badge>
           <span>Trust score {profile?.trustScore ?? 0}%</span>
@@ -182,7 +182,7 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
           <div>
             <div className="flex items-center justify-between text-sm text-dt-text-muted">
               <label>Bio</label>
-              <span className="text-xs text-slate-400">Share ~100 words on what you deliver (FR-C3.1)</span>
+              <span className="text-xs text-dt-text-muted">Share ~100 words on what you deliver</span>
             </div>
             <Textarea
               rows={6}
@@ -269,7 +269,7 @@ export function FreelancerProfileForm({ profile, onUpdated }: FreelancerProfileF
                 </div>
               ))}
             </div>
-            <Button type="button" variant="ghost" className="mt-2 text-sm text-emerald-600" onClick={addLink}>
+            <Button type="button" variant="ghost" className="mt-2 text-sm" onClick={addLink}>
               <Plus className="mr-2 h-4 w-4" /> Add link
             </Button>
           </div>

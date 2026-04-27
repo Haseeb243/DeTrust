@@ -33,17 +33,17 @@ export function ProfileChecklistCard({ taskList, onRefetch, isFetching }: Profil
           <div key={task.label} className="flex items-center justify-between rounded-2xl border border-dt-border bg-dt-surface-alt px-4 py-3">
             <div>
               <p className="text-sm font-medium text-dt-text">{task.label}</p>
-              <p className="text-xs text-dt-text-muted">{task.complete ? 'Looks great' : 'Required for Module 1 completion'}</p>
+              <p className="text-xs text-dt-text-muted">{task.complete ? 'Looks great' : 'Required'}</p>
             </div>
             {task.complete ? (
-              <Shield className="h-5 w-5 text-emerald-500" />
+              <Shield className="h-5 w-5 text-dt-text" />
             ) : (
-              <Clock3 className="h-5 w-5 text-amber-500" />
+              <Clock3 className="h-5 w-5 text-dt-text-muted" />
             )}
           </div>
         ))}
         <p className="text-xs text-dt-text-muted">
-          Ready to edit? <Link href="/profile/edit" className="font-semibold text-emerald-600">Jump to the editor &rarr;</Link>
+          Ready to edit? <Link href="/profile/edit" className="font-semibold text-dt-text underline">Jump to the editor &rarr;</Link>
         </p>
       </CardContent>
     </Card>

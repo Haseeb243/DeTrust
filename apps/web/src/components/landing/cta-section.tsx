@@ -8,7 +8,7 @@ export function CtaSection() {
   return (
     <section className="mx-auto max-w-7xl">
       <AnimatedSection
-        className="relative overflow-hidden rounded-[32px] border border-dt-border bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-10 text-center shadow-[0_35px_120px_rgba(15,23,42,0.1)] dark:from-emerald-950/20 dark:via-dt-surface dark:to-sky-950/20 dark:shadow-[0_35px_120px_rgba(0,0,0,0.25)]"
+        className="relative overflow-hidden rounded-[32px] border border-dt-border bg-dt-surface p-10 text-center shadow-[0_35px_120px_rgba(15,23,42,0.1)] dark:shadow-[0_35px_120px_rgba(0,0,0,0.25)]"
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}

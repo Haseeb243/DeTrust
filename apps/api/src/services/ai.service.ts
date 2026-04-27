@@ -115,14 +115,59 @@ export class AiService {
       where: { freelancerId: userId, status: 'COMPLETED' },
     });
 
-    const totalContracts = contractStats._count.id;
+    // --- Success rate: only count terminal states (not ACTIVE/PENDING) ---
+    // ACTIVE and PENDING contracts are still in progress and shouldn't
+    // penalise the freelancer's success rate.
+    const terminalContracts = await prisma.contract.count({
+      where: {
+        freelancerId: userId,
+        status: { in: ['COMPLETED', 'CANCELLED', 'DISPUTED'] },
+      },
+    });
+
     const totalEarnings  = Number(contractStats._sum.totalAmount ?? 0);
     const rawAvgRating   = reviewAgg._avg.overallRating != null
       ? Number(reviewAgg._avg.overallRating)
       : null;
-    const successRate    = totalContracts > 0
-      ? (completedContracts / totalContracts) * 100
+    const successRate    = terminalContracts > 0
+      ? (completedContracts / terminalContracts) * 100
       : 0;
+
+    // --- Avg job duration (days) from completed contracts ---
+    const completedWithDates = await prisma.contract.findMany({
+      where: {
+        freelancerId: userId,
+        status: 'COMPLETED',
+        completedAt: { not: null },
+      },
+      select: { createdAt: true, completedAt: true },
+    });
+
+    let avgJobDurationDays = 0;
+    if (completedWithDates.length > 0) {
+      const totalDays = completedWithDates.reduce((sum, c) => {
+        const created = new Date(c.createdAt).getTime();
+        const completed = new Date(c.completedAt!).getTime();
+        return sum + (completed - created) / (1000 * 60 * 60 * 24);
+      }, 0);
+      avgJobDurationDays = Math.round((totalDays / completedWithDates.length) * 100) / 100;
+    }
+
+    // --- Rehire rate: % of distinct clients who hired this freelancer more than once ---
+    const clientGroups = await prisma.contract.groupBy({
+      by: ['clientId'],
+      where: {
+        freelancerId: userId,
+        status: 'COMPLETED',
+      },
+      _count: { id: true },
+    });
+
+    let rehireRate = 0;
+    if (clientGroups.length > 0) {
+      const repeatClients = clientGroups.filter(g => g._count.id > 1).length;
+      rehireRate = Math.round((repeatClients / clientGroups.length) * 100 * 100) / 100;
+    }
 
     // --- Primary skill: map DB category → model category ---
     const dbCategory   = profile?.skills?.[0]?.skill?.category ?? undefined;
@@ -156,8 +201,8 @@ export class AiService {
       earnings_usd:           totalEarnings,
       success_rate:           successRate,
       avg_rating:             rating,
-      avg_job_duration_days:  0,
-      rehire_rate:            0,
+      avg_job_duration_days:  avgJobDurationDays,
+      rehire_rate:            rehireRate,
     };
   }
 

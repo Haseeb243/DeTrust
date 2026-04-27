@@ -7,24 +7,18 @@ import { HoverCard } from '@/components/ui/hover-card-motion';
 const FEATURES = [
   {
     icon: <ShieldCheck className="h-6 w-6" />,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/40',
     title: 'Programmable Escrow',
     description:
       'Funds lock on job acceptance and auto-release on milestone approval. Disputes freeze funds until jurors decide — no platform middleman.',
   },
   {
     icon: <Sparkles className="h-6 w-6" />,
-    color: 'text-sky-500',
-    bg: 'bg-sky-50 dark:bg-sky-950/40',
     title: 'AI Capability Scoring',
     description:
       'New freelancers get instant credibility through portfolio parsing, Git analysis, and micro skill tests — no more cold-start problem.',
   },
   {
     icon: <Users className="h-6 w-6" />,
-    color: 'text-violet-500',
-    bg: 'bg-violet-50 dark:bg-violet-950/40',
     title: 'Community Arbitration',
     description:
       'Disputes resolve in 7 days through trust-weighted juror voting. Higher trust score = more voting power. Admin cannot overturn jury.',
@@ -63,9 +57,7 @@ export function FeaturesSection() {
             transition={{ delay: idx * 0.1, duration: 0.5 }}
           >
             <HoverCard className="glass-card flex h-full flex-col p-6">
-              <div
-                className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${feat.bg} ${feat.color}`}
-              >
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-dt-border bg-dt-surface text-dt-text">
                 {feat.icon}
               </div>
               <h3 className="text-xl font-semibold">{feat.title}</h3>

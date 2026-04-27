@@ -2,9 +2,8 @@
 
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { toast } from 'sonner';
-import { FileText, ShieldCheck, Trash2, UploadCloud, Wand2 } from 'lucide-react';
+import { FileText, Trash2, UploadCloud, FileBadge } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +13,7 @@ import { userApi, type CertificationEntry, type FreelancerProfile } from '@/lib/
 import { openSecureFileInNewTab } from '@/lib/secure-files';
 import { useAuthStore } from '@/store/auth.store';
 
-const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024; // 8 MB client-side guard
+const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024; // 8 MB
 const ACCEPTED_DOC_TYPES = 'application/pdf,image/png,image/jpeg,image/webp';
 
 interface FreelancerDocumentsCardProps {
@@ -223,73 +222,46 @@ export function FreelancerDocumentsCard({ profile, onResumeUpdated, onCertificat
   };
 
   return (
-    <Card
-      id="documents"
-      className="relative overflow-hidden border border-emerald-100 bg-gradient-to-br from-emerald-50 via-dt-surface to-dt-surface text-dt-text shadow-[0_25px_80px_rgba(16,185,129,0.12)]"
-    >
-      <div className="pointer-events-none absolute inset-0 opacity-70" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(94,234,212,0.25),_transparent_55%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_rgba(6,182,212,0.18),_transparent_65%)]" />
-      </div>
-      <CardHeader className="relative z-10 flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <CardTitle className="text-xl font-semibold tracking-tight text-dt-text">Secure credentials vault</CardTitle>
-          <Badge variant="secondary" className="bg-dt-surface/70 text-emerald-600">
-            AES-256 · Lighthouse
-          </Badge>
-        </div>
-        <p className="text-sm text-dt-text-muted">
-          Encrypt resumes and certifications client-side before they travel through Lighthouse&apos;s encrypted IPFS tunnels.
-          We only expose short-lived streaming URLs to authenticated viewers.
-        </p>
+    <Card id="documents" className="border border-dt-border bg-dt-surface">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold text-dt-text">Documents</CardTitle>
       </CardHeader>
-      <CardContent className="relative z-10 grid gap-6">
-        <section className="rounded-3xl border border-emerald-100 bg-dt-surface/90 p-5 text-sm shadow-inner shadow-emerald-100/60">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
-              <FileText className="h-6 w-6" />
+      <CardContent className="space-y-6">
+        {/* Resume Section */}
+        <section className="rounded-xl border border-dt-border bg-dt-surface-alt p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dt-surface text-dt-text">
+              <FileText className="h-5 w-5" />
             </div>
             <div className="flex-1">
-              <p className="text-xs uppercase tracking-[0.35em] text-emerald-500">Resume signal</p>
-              <p className="text-base font-semibold text-dt-text">{resumeUrl ? 'Encrypted resume on file' : 'No resume uploaded yet'}</p>
+              <p className="text-sm font-medium text-dt-text">Resume</p>
+              <p className="text-xs text-dt-text-muted">{resumeUrl ? 'Uploaded' : 'Not uploaded'}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" className="border-emerald-200 bg-dt-surface text-emerald-700 hover:bg-emerald-50" onClick={triggerResumeDialog} disabled={isResumeUploading}>
-                {isResumeUploading ? 'Uploading…' : resumeCta}
-              </Button>
-            </div>
+            <Button type="button" variant="outline" size="sm" onClick={triggerResumeDialog} disabled={isResumeUploading}>
+              {isResumeUploading ? 'Uploading…' : resumeCta}
+            </Button>
           </div>
+          
           {resumeUrl && (
-            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-xs text-dt-text-muted">
-              <div className="flex items-center gap-2 text-emerald-700">
-                <ShieldCheck className="h-4 w-4" />
-                <span>Streaming endpoint ready</span>
-              </div>
-              <p className="mt-2 break-all font-mono text-[11px] text-dt-text-muted">{resumeUrl}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button type="button" variant="secondary" className="bg-emerald-500 text-white shadow-emerald-200/70" disabled={resumeAction === 'download'} onClick={() => openResume('download')}>
-                  {resumeAction === 'download' ? 'Preparing…' : 'Download encrypted copy'}
+            <div className="mt-4 space-y-3">
+              <p className="text-xs text-dt-text-muted break-all">{resumeUrl}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="secondary" size="sm" disabled={resumeAction === 'view'} onClick={() => openResume('view')}>
+                  {resumeAction === 'view' ? 'Opening…' : 'View'}
                 </Button>
-                <Button type="button" variant="outline" className="border-dt-border bg-dt-surface/80 text-dt-text-muted" disabled={resumeAction === 'view'} onClick={() => openResume('view')}>
-                  {resumeAction === 'view' ? 'Opening…' : 'View inline'}
+                <Button type="button" variant="outline" size="sm" disabled={resumeAction === 'download'} onClick={() => openResume('download')}>
+                  {resumeAction === 'download' ? 'Preparing…' : 'Download'}
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
-                  className={confirmResumeDelete ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'text-rose-600 hover:bg-rose-50'}
+                  size="sm"
+                  className={confirmResumeDelete ? 'text-red-600' : 'text-dt-text-muted hover:text-red-600'}
                   disabled={isResumeDeleting}
                   onClick={handleResumeDelete}
                   onBlur={() => setConfirmResumeDelete(false)}
                 >
-                  {isResumeDeleting ? (
-                    'Removing…'
-                  ) : confirmResumeDelete ? (
-                    'Confirm delete?'
-                  ) : (
-                    <span className="inline-flex items-center gap-2 text-sm">
-                      <Trash2 className="h-4 w-4" /> Delete resume
-                    </span>
-                  )}
+                  {isResumeDeleting ? 'Removing…' : confirmResumeDelete ? 'Confirm?' : <Trash2 className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
@@ -297,122 +269,107 @@ export function FreelancerDocumentsCard({ profile, onResumeUpdated, onCertificat
           <input ref={resumeInputRef} type="file" accept={ACCEPTED_DOC_TYPES} className="hidden" onChange={handleResumeChange} />
         </section>
 
-        <section className="rounded-3xl border border-emerald-100 bg-dt-surface/90 p-5 text-sm shadow-inner shadow-emerald-100/60">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-600">
-              <Wand2 className="h-6 w-6" />
+        {/* Certifications Section */}
+        <section className="rounded-xl border border-dt-border bg-dt-surface-alt p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dt-surface text-dt-text">
+              <FileBadge className="h-5 w-5" />
             </div>
             <div className="flex-1">
-              <p className="text-xs uppercase tracking-[0.35em] text-cyan-500">Signal density</p>
-              <p className="text-base font-semibold text-dt-text">{certificationCountLabel}</p>
+              <p className="text-sm font-medium text-dt-text">Certifications</p>
+              <p className="text-xs text-dt-text-muted">{certificationCountLabel}</p>
             </div>
-            <Button type="button" variant="outline" className="border-cyan-200 bg-dt-surface text-cyan-700 hover:bg-cyan-50" onClick={triggerCertDialog}>
-              Attach document
+            <Button type="button" variant="outline" size="sm" onClick={triggerCertDialog}>
+              Attach
             </Button>
             <input ref={certInputRef} type="file" accept={ACCEPTED_DOC_TYPES} className="hidden" onChange={handleCertFileChange} />
           </div>
 
-          <form className="mt-6 space-y-4" onSubmit={submitCertification}>
+          {/* Add Certification Form */}
+          <form className="mt-4 space-y-3" onSubmit={submitCertification}>
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Credential name</label>
-                <Input name="name" placeholder="Zero-Knowledge Proof Architect" value={certForm.name} onChange={handleCertFieldChange} className="mt-2 border-dt-border bg-dt-surface text-dt-text placeholder:text-dt-text-muted" />
+                <label className="text-xs text-dt-text-muted">Name</label>
+                <Input name="name" placeholder="Certification name" value={certForm.name} onChange={handleCertFieldChange} className="mt-1 border-dt-border bg-dt-surface" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Issuer</label>
-                <Input name="issuer" placeholder="StarkWare" value={certForm.issuer} onChange={handleCertFieldChange} className="mt-2 border-dt-border bg-dt-surface text-dt-text placeholder:text-dt-text-muted" />
+                <label className="text-xs text-dt-text-muted">Issuer</label>
+                <Input name="issuer" placeholder="Organization" value={certForm.issuer} onChange={handleCertFieldChange} className="mt-1 border-dt-border bg-dt-surface" />
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               <div>
-                <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Issued</label>
-                <Input type="date" name="issueDate" value={certForm.issueDate} onChange={handleCertFieldChange} className="mt-2 border-dt-border bg-dt-surface text-dt-text" />
+                <label className="text-xs text-dt-text-muted">Issued</label>
+                <Input type="date" name="issueDate" value={certForm.issueDate} onChange={handleCertFieldChange} className="mt-1 border-dt-border bg-dt-surface" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Expires</label>
-                <Input type="date" name="expiryDate" value={certForm.expiryDate} onChange={handleCertFieldChange} className="mt-2 border-dt-border bg-dt-surface text-dt-text" />
+                <label className="text-xs text-dt-text-muted">Expires</label>
+                <Input type="date" name="expiryDate" value={certForm.expiryDate} onChange={handleCertFieldChange} className="mt-1 border-dt-border bg-dt-surface" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.3em] text-dt-text-muted">Credential ID</label>
-                <Input name="credentialId" placeholder="#ZK-2048" value={certForm.credentialId} onChange={handleCertFieldChange} className="mt-2 border-dt-border bg-dt-surface text-dt-text placeholder:text-dt-text-muted" />
+                <label className="text-xs text-dt-text-muted">ID</label>
+                <Input name="credentialId" placeholder="Credential ID" value={certForm.credentialId} onChange={handleCertFieldChange} className="mt-1 border-dt-border bg-dt-surface" />
               </div>
             </div>
+            
             {certFile ? (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs text-emerald-700">
-                <p className="font-mono text-[11px] uppercase tracking-[0.4em] text-emerald-500">Ready</p>
-                <p>{certFile.name}</p>
+              <div className="rounded-lg border border-dt-border bg-dt-surface p-2 text-xs text-dt-text">
+                <span className="text-dt-text-muted">Selected:</span> {certFile.name}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-dt-border p-4 text-xs text-dt-text-muted">
-                <p className="flex items-center gap-2 text-dt-text-muted">
-                  <UploadCloud className="h-4 w-4 text-cyan-500" />
-                  Drop a PDF or PNG up to 8 MB
-                </p>
-                <p className="mt-1 text-dt-text-muted">Use the “Attach document” button above to browse encrypted uploads.</p>
-              </div>
+              <p className="text-xs text-dt-text-muted flex items-center gap-1">
+                <UploadCloud className="h-3 w-3" /> PDF or PNG up to 8 MB
+              </p>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-dt-text-muted">
-              <span>We encrypt in-memory before Lighthouse transfer.</span>
-              <Button type="submit" disabled={isCertUploading} className="bg-emerald-500 text-white shadow-emerald-200/70 hover:bg-emerald-400">
-                {isCertUploading ? 'Encrypting…' : 'Publish credential'}
-              </Button>
-            </div>
+            
+            <Button type="submit" size="sm" disabled={isCertUploading || !certFile}>
+              {isCertUploading ? 'Saving…' : 'Add certification'}
+            </Button>
           </form>
 
+          {/* Certifications List */}
           {certifications.length > 0 && (
-            <div className="mt-6 space-y-3">
+            <div className="mt-4 space-y-2 border-t border-dt-border pt-4">
               {certifications.map((cert) => {
                 const credentialUrl = cert.credentialUrl ?? null;
                 const isPreviewing = credentialUrl ? certPreviewId === cert.id || certPreviewId === credentialUrl : false;
                 return (
-                <div key={cert.id} className="rounded-2xl border border-dt-border bg-dt-surface-alt/80 p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-base font-semibold text-dt-text">{cert.name}</p>
-                    <Badge variant="outline" className="border-cyan-200 text-cyan-700">
-                      {cert.issuer}
-                    </Badge>
-                    {cert.issueDate && (
-                      <span className="text-xs text-dt-text-muted">Issued {new Date(cert.issueDate).toLocaleDateString()}</span>
-                    )}
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-dt-text-muted">
-                    {cert.credentialId && <span>ID · {cert.credentialId}</span>}
-                    {cert.expiryDate && <span>Expires {new Date(cert.expiryDate).toLocaleDateString()}</span>}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {credentialUrl ? (
+                  <div key={cert.id} className="flex items-center justify-between rounded-lg border border-dt-border bg-dt-surface p-3">
+                    <div>
+                      <p className="text-sm font-medium text-dt-text">{cert.name}</p>
+                      <p className="text-xs text-dt-text-muted">{cert.issuer}</p>
+                      <div className="flex gap-2 text-xs text-dt-text-muted">
+                        {cert.issueDate && <span>Issued: {new Date(cert.issueDate).toLocaleDateString()}</span>}
+                        {cert.expiryDate && <span>· Expires: {new Date(cert.expiryDate).toLocaleDateString()}</span>}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {credentialUrl && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isPreviewing}
+                          onClick={() => openCertification(credentialUrl, cert.id)}
+                        >
+                          {isPreviewing ? '…' : 'View'}
+                        </Button>
+                      )}
                       <Button
                         type="button"
-                        variant="outline"
-                        className="border-emerald-200 bg-dt-surface text-emerald-700"
-                        disabled={isPreviewing}
-                        onClick={() => openCertification(credentialUrl, cert.id)}
+                        variant="ghost"
+                        size="sm"
+                        className={confirmCertDeleteId === cert.id ? 'text-red-600' : 'text-dt-text-muted hover:text-red-600'}
+                        disabled={removingCertificationId === cert.id}
+                        onClick={() => handleCertificationDelete(cert.id)}
+                        onBlur={() => setConfirmCertDeleteId(null)}
                       >
-                        {isPreviewing ? 'Loading…' : 'View document'}
+                        {removingCertificationId === cert.id ? '…' : confirmCertDeleteId === cert.id ? 'Confirm?' : <Trash2 className="h-4 w-4" />}
                       </Button>
-                    ) : null}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className={confirmCertDeleteId === cert.id ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'text-rose-600 hover:bg-rose-50'}
-                      disabled={removingCertificationId === cert.id}
-                      onClick={() => handleCertificationDelete(cert.id)}
-                      onBlur={() => setConfirmCertDeleteId(null)}
-                    >
-                      {removingCertificationId === cert.id ? (
-                        'Removing…'
-                      ) : confirmCertDeleteId === cert.id ? (
-                        'Confirm delete?'
-                      ) : (
-                        <span className="inline-flex items-center gap-2 text-sm">
-                          <Trash2 className="h-4 w-4" /> Delete
-                        </span>
-                      )}
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           )}
         </section>

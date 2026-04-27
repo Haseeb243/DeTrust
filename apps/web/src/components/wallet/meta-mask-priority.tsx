@@ -78,24 +78,24 @@ export function MetaMaskPriorityConnect({ className, compact }: MetaMaskPriority
   };
 
   return (
-    <Card className={cn('border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/80 shadow-lg', className)}>
-      <CardContent className={cn('space-y-4', compact ? 'p-4' : 'p-6')}>
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <Card className={cn('border border-dt-border bg-dt-surface', className)}>
+      <CardContent className={cn('space-y-4', compact ? 'p-4' : 'p-5')}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-              <ShieldCheck className="h-4 w-4 text-emerald-500" /> Prioritizing MetaMask
+            <p className="flex items-center gap-2 text-sm font-medium text-dt-text">
+              <Wallet className="h-4 w-4" /> Step 1: Connect wallet
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-dt-text-muted">
               {metaMaskDetected
-                ? 'MetaMask detected. Launch the extension instantly to stay in sync.'
-                : 'MetaMask extension not detected — WalletConnect is available as a backup.'}
+                ? 'MetaMask detected. Click connect to sign in instantly.'
+                : 'Install MetaMask or choose another wallet below.'}
             </p>
           </div>
           <Button
             type="button"
             onClick={handleMetaMaskConnect}
             disabled={isConnecting || isConnected || !mounted || !metamaskConnector}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-none hover:from-emerald-600 hover:to-emerald-700"
           >
             {isConnecting ? (
               <span className="flex items-center gap-2">
@@ -109,22 +109,22 @@ export function MetaMaskPriorityConnect({ className, compact }: MetaMaskPriority
           </Button>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60 p-4 text-sm text-slate-600 dark:text-slate-400">
-          <p className="font-semibold text-slate-900 dark:text-slate-100">Prefer another wallet?</p>
-          <p className="text-slate-500 dark:text-slate-400">
-            Launch Rainbow or mobile wallets through WalletConnect without leaving this screen.
+        <div className="rounded-xl border border-dt-border p-4">
+          <p className="text-sm font-medium text-dt-text">Other wallets</p>
+          <p className="text-sm text-dt-text-muted">
+            Rainbow, Trust, Coinbase Wallet, and 100+ others via WalletConnect.
           </p>
-          <div className="mt-4">
+          <div className="mt-3">
             <ConnectButton.Custom>
               {({ openConnectModal, mounted }) => (
                 <Button
                   type="button"
                   variant="secondary"
-                  className="w-full justify-center"
+                  className="w-full justify-center bg-dt-text text-dt-surface hover:bg-dt-text/90"
                   onClick={openConnectModal}
                   disabled={!mounted}
                 >
-                  Choose a different wallet
+                  Browse all wallets
                 </Button>
               )}
             </ConnectButton.Custom>

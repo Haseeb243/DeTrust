@@ -30,7 +30,6 @@ const TrustScoreTrendChart = dynamic(
   () => import('@/components/trust-score/trust-score-trend-chart').then((m) => m.TrustScoreTrendChart),
   { ssr: false },
 );
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { computeProfileCompletion, shortWallet } from '@/lib/profile-utils';
 import { useTrustScore, useTrustScoreHistory } from '@/hooks/queries/use-trust-score';
@@ -226,15 +225,6 @@ export default function DashboardPage() {
         <div className="pointer-events-none absolute inset-0 opacity-70 [background:radial-gradient(circle_at_top,_rgba(16,185,129,0.18),_transparent_60%),radial-gradient(circle_at_20%_20%,_rgba(59,130,246,0.14),_transparent_45%)]" />
         <div className="relative z-10 grid gap-8 lg:grid-cols-[1.6fr,auto]">
           <div>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-dt-text-muted">
-              <Badge
-                variant="secondary"
-                className="border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-              >
-                Module 1
-              </Badge>
-              <span className="text-dt-text-muted">{new Date(user.createdAt).toLocaleDateString()}</span>
-            </div>
             <h1 className="mt-4 text-3xl font-semibold text-dt-text">
               {isFreelancer ? 'Ship trustworthy freelance work.' : 'Run verifiable hiring on autopilot.'}
             </h1>

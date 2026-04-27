@@ -809,8 +809,15 @@ export class UserService {
       finalScore = Math.min(100, Math.max(0, Math.round(aiScore)));
     } else {
       // Heuristic fallback when AI service is unavailable
-      const [totalContracts, completedContracts] = await Promise.all([
-        prisma.contract.count({ where: { freelancerId: userId } }),
+      // Only count terminal contracts for success rate — ACTIVE/PENDING are
+      // still in progress and shouldn't penalise the freelancer.
+      const [terminalContracts, completedContracts] = await Promise.all([
+        prisma.contract.count({
+          where: {
+            freelancerId: userId,
+            status: { in: ['COMPLETED', 'CANCELLED', 'DISPUTED'] },
+          },
+        }),
         prisma.contract.count({ where: { freelancerId: userId, status: 'COMPLETED' } }),
       ]);
 
@@ -821,7 +828,7 @@ export class UserService {
 
       const skillPoints       = Math.min(25, profile.skills.length * 5);
       const completedJobPts   = Math.min(25, completedContracts * 5);
-      const successRatePts    = totalContracts > 0 ? (completedContracts / totalContracts) * 20 : 0;
+      const successRatePts    = terminalContracts > 0 ? (completedContracts / terminalContracts) * 20 : 0;
       const avgRating         = reviewAgg._avg.overallRating ? Number(reviewAgg._avg.overallRating) : 0;
       const ratingPts         = avgRating > 0 ? (avgRating / 5) * 15 : 0;
       const certPts           = Math.min(10, profile.certifications.length * 5);
