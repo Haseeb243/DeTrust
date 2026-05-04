@@ -255,6 +255,9 @@ export class UploadController {
 
   async streamFile(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[upload] streamFile request for ${req.params.fileId}, userId=${req.userId ?? '(none)'}, hasCookie=${!!req.cookies?.['detrust-auth-token']}, hasBearer=${!!req.headers.authorization}`);
+      }
       const secureFile = await storageService.getAccessibleFile(req.params.fileId, req.userId);
       const buffer = await storageService.downloadDecryptedFile(secureFile);
 

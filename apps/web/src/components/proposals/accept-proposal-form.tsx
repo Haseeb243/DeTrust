@@ -16,15 +16,13 @@ export interface MilestoneFormItem {
 }
 
 export interface AcceptProposalFormProps {
-  milestones: MilestoneFormItem[];
   /** Whether the confirm action is currently in flight */
   isLoading: boolean;
   /** Job type: FIXED_PRICE or HOURLY */
   jobType?: string;
   /** Freelancer's proposed hourly rate (for hourly jobs) */
   proposedRate?: number;
-  onMilestonesChange: (milestones: MilestoneFormItem[]) => void;
-  onConfirm: () => void;
+  onConfirm: (milestones: MilestoneFormItem[]) => void;
   onConfirmHourly?: (weeklyHourLimit: number, durationWeeks: number) => void;
   onCancel: () => void;
 }
@@ -34,11 +32,9 @@ export interface AcceptProposalFormProps {
 // ---------------------------------------------------------------------------
 
 export function AcceptProposalForm({
-  milestones,
   isLoading,
   jobType,
   proposedRate,
-  onMilestonesChange,
   onConfirm,
   onConfirmHourly,
   onCancel,
@@ -46,6 +42,11 @@ export function AcceptProposalForm({
   const isHourly = jobType === 'HOURLY';
   // Prisma Decimal values arrive as strings — normalise once
   const rate = proposedRate != null ? Number(proposedRate) : 0;
+
+  // Per-proposal milestone state (fixed-price only)
+  const [milestones, setMilestones] = useState<MilestoneFormItem[]>([
+    { title: 'Project Completion', description: '', amount: rate, dueDate: '' },
+  ]);
 
   // Hourly-specific state
   const [weeklyHourLimit, setWeeklyHourLimit] = useState(40);
@@ -66,18 +67,18 @@ export function AcceptProposalForm({
   ) => {
     const updated = [...milestones];
     updated[index] = { ...updated[index], [field]: value };
-    onMilestonesChange(updated);
+    setMilestones(updated);
   };
 
   const addMilestone = () => {
-    onMilestonesChange([
+    setMilestones([
       ...milestones,
       { title: '', description: '', amount: 0, dueDate: '' },
     ]);
   };
 
   const removeMilestone = (index: number) => {
-    onMilestonesChange(milestones.filter((_, i) => i !== index));
+    setMilestones(milestones.filter((_, i) => i !== index));
   };
 
   if (isHourly) {
@@ -254,7 +255,7 @@ export function AcceptProposalForm({
           </Button>
           <Button
             size="sm"
-            onClick={onConfirm}
+            onClick={() => onConfirm(milestones)}
             disabled={isLoading}
             className="bg-emerald-500 text-white hover:bg-emerald-600"
           >

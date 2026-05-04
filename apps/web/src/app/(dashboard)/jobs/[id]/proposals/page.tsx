@@ -23,9 +23,6 @@ export default function JobProposalsPage() {
   const [page, setPage] = useState(1);
   const [acceptingProposal, setAcceptingProposal] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
-  const [milestones, setMilestones] = useState<MilestoneFormItem[]>([
-    { title: 'Project Completion', description: '', amount: 0, dueDate: '' },
-  ]);
 
   const { data: job } = useJob(jobId);
   const qp: GetProposalsParams = { page, limit: 10, sort: 'createdAt', order: 'desc' };
@@ -39,10 +36,6 @@ export default function JobProposalsPage() {
   const actionLoading = acceptMut.isPending ? (acceptMut.variables?.id ?? null)
     : rejectMut.isPending ? (rejectMut.variables?.id ?? null)
     : shortlistMut.isPending ? (shortlistMut.variables ?? null) : null;
-
-  useEffect(() => {
-    if (job?.budget) setMilestones([{ title: 'Project Completion', description: '', amount: job.budget, dueDate: '' }]);
-  }, [job?.budget]);
 
   useEffect(() => {
     if (user?.role !== 'CLIENT') { toast.error('Only clients can access this page'); router.push('/jobs'); }
@@ -61,7 +54,7 @@ export default function JobProposalsPage() {
     });
   };
 
-  const handleAccept = (id: string) => {
+  const handleAccept = (id: string, milestones: MilestoneFormItem[]) => {
     if (milestones.length === 0 || milestones.some((m) => !m.title || m.amount <= 0)) { toast.error('Please add at least one valid milestone'); return; }
     acceptMut.mutate({ id, data: { milestones: milestones.map((m) => ({ title: m.title, description: m.description, amount: m.amount, dueDate: m.dueDate ? new Date(m.dueDate).toISOString() : undefined })) } }, {
       onSuccess: (r) => { if (r.success && r.data?.contract?.id) { toast.success('Proposal accepted! Redirecting to fund escrow...'); router.push(`/contracts/${r.data.contract.id}?autoFund=true`); } else if (r.success) { toast.success('Proposal accepted! Contract created.'); router.push('/contracts'); } else { toast.error(r.error?.message || 'Failed'); } setAcceptingProposal(null); },
@@ -107,7 +100,7 @@ export default function JobProposalsPage() {
           )}
           {proposals.map((p) => (
             <ProposalCard key={p.id} proposal={p} jobType={job?.type} actionLoading={actionLoading} isAccepting={acceptingProposal === p.id} onStartAccept={setAcceptingProposal} onShortlist={handleShortlist} onReject={handleReject}>
-              <AcceptProposalForm milestones={milestones} isLoading={actionLoading === p.id} jobType={job?.type} proposedRate={p.proposedRate} onMilestonesChange={setMilestones} onConfirm={() => handleAccept(p.id)} onConfirmHourly={(whl, dw) => handleAcceptHourly(p.id, whl, dw)} onCancel={() => setAcceptingProposal(null)} />
+              <AcceptProposalForm isLoading={actionLoading === p.id} jobType={job?.type} proposedRate={p.proposedRate} onConfirm={(ms) => handleAccept(p.id, ms)} onConfirmHourly={(whl, dw) => handleAcceptHourly(p.id, whl, dw)} onCancel={() => setAcceptingProposal(null)} />
             </ProposalCard>
           ))}
           {pg.totalPages > 1 && (

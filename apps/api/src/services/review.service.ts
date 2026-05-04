@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { prisma } from '../config/database';
 import { NotFoundError, ForbiddenError, ValidationError } from '../middleware';
 import { notificationService } from './notification.service';
@@ -371,21 +372,26 @@ export class ReviewService {
 
     const ipfsHash = await ipfsService.uploadJSON(ipfsContent, `review-${reviewId}`);
 
-    // 2. Record on blockchain (requires subject wallet address)
+    // 2. Record on blockchain
+    // Use the subject's wallet address if available; otherwise derive a
+    // deterministic pseudo-address from their userId so reviews for users
+    // without wallets (e.g. clients who haven't connected MetaMask) are
+    // still recorded on-chain.
     let blockchainTxHash: string | null = null;
     const subjectUser = await prisma.user.findUnique({
       where: { id: subjectId },
       select: { walletAddress: true },
     });
 
-    if (subjectUser?.walletAddress) {
-      blockchainTxHash = await blockchainService.recordFeedback(
-        contract.id,
-        subjectUser.walletAddress,
-        ipfsHash,
-        Math.round(Number(input.overallRating)),
-      );
-    }
+    const reviewedAddress = subjectUser?.walletAddress
+      || ('0x' + createHash('sha256').update(subjectId).digest('hex').slice(0, 40));
+
+    blockchainTxHash = await blockchainService.recordFeedback(
+      contract.id,
+      reviewedAddress,
+      ipfsHash,
+      Math.round(Number(input.overallRating)),
+    );
 
     // 3. Update review with hashes
     await prisma.review.update({

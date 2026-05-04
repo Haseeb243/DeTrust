@@ -145,6 +145,7 @@ export class ProposalService {
   async updateProposal(proposalId: string, freelancerId: string, data: UpdateProposalInput) {
     const proposal = await prisma.proposal.findUnique({
       where: { id: proposalId },
+      include: { job: true },
     });
 
     if (!proposal) {
@@ -157,6 +158,30 @@ export class ProposalService {
 
     if (proposal.status !== 'PENDING') {
       throw new ForbiddenError('Can only update proposals in PENDING status');
+    }
+
+    // Validate proposed rate against job budget / rate range
+    if (data.proposedRate !== undefined) {
+      const job = proposal.job;
+      if (job.type === 'FIXED_PRICE' && job.budget) {
+        const budget = Number(job.budget);
+        if (data.proposedRate > budget) {
+          throw new ValidationError(
+            `Bid cannot exceed the job budget of $${budget}`
+          );
+        }
+      }
+      if (job.type === 'HOURLY') {
+        const min = job.hourlyRateMin ? Number(job.hourlyRateMin) : null;
+        const max = job.hourlyRateMax ? Number(job.hourlyRateMax) : null;
+        if (min !== null && max !== null) {
+          if (data.proposedRate < min || data.proposedRate > max) {
+            throw new ValidationError(
+              `Proposed hourly rate must be between $${min} and $${max}/hr`
+            );
+          }
+        }
+      }
     }
 
     const updatedProposal = await prisma.proposal.update({
@@ -341,6 +366,10 @@ export class ProposalService {
         contractWeeklyHourLimit = weeklyHourLimit;
       } else {
         // Fixed-price: use client-provided milestones
+        if (!data.milestones || data.milestones.length === 0) {
+          throw new ValidationError('At least one milestone is required for fixed-price contracts');
+        }
+
         milestoneData = data.milestones.map((milestone, index) => ({
           title: milestone.title,
           description: milestone.description || '',
@@ -350,10 +379,45 @@ export class ProposalService {
           status: 'PENDING' as const,
         }));
 
+        // Validate milestone due dates are not in the past
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        for (const ms of milestoneData) {
+          if (ms.dueDate && ms.dueDate < now) {
+            throw new ValidationError(
+              `Milestone "${ms.title}" has a due date in the past`
+            );
+          }
+        }
+
         totalAmount = milestoneData.reduce((sum, m) => sum + m.amount, 0);
+
+        // Validate total milestone amount matches the agreed proposal rate
+        const agreedAmount = Number(proposal.proposedRate);
+        if (Math.abs(totalAmount - agreedAmount) > 0.01) {
+          throw new ValidationError(
+            `Total milestone amount ($${totalAmount.toFixed(2)}) must equal the agreed proposal rate ($${agreedAmount.toFixed(2)})`
+          );
+        }
+
         contractBillingType = 'FIXED';
         contractHourlyRate = undefined;
         contractWeeklyHourLimit = undefined;
+      }
+
+      // Validate contract dates
+      const contractStartDate = data.startDate ? new Date(data.startDate) : new Date();
+      const contractEndDate = data.endDate ? new Date(data.endDate) : null;
+
+      if (contractEndDate) {
+        if (contractEndDate <= contractStartDate) {
+          throw new ValidationError('Contract end date must be after the start date');
+        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (contractEndDate < today) {
+          throw new ValidationError('Contract end date cannot be in the past');
+        }
       }
 
       // Create contract
@@ -370,8 +434,8 @@ export class ProposalService {
           hourlyRate: contractHourlyRate,
           weeklyHourLimit: contractWeeklyHourLimit,
           status: 'PENDING',
-          startDate: data.startDate ? new Date(data.startDate) : new Date(),
-          endDate: data.endDate ? new Date(data.endDate) : null,
+          startDate: contractStartDate,
+          endDate: contractEndDate,
           milestones: {
             create: milestoneData,
           },

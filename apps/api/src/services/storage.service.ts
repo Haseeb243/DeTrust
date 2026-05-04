@@ -100,13 +100,45 @@ class StorageService {
   }
 
   private async downloadFromLighthouse(cid: string) {
-    const url = `${config.storage.lighthouse.gatewayUrl}/ipfs/${cid}`;
-    const result = await fetch(url);
-    if (!result.ok) {
-      throw new AppError('Unable to fetch encrypted blob from Lighthouse', result.status);
+    // Strategy: try the /api/v0/cat/ POST endpoint first (works on the free
+    // tier), then fall back to the traditional /ipfs/ GET path (which now
+    // requires a paid plan and returns 402 on free accounts).
+    const attempts: { url: string; method: string }[] = [
+      { url: `${config.storage.lighthouse.gatewayUrl}/api/v0/cat/${cid}`, method: 'POST' },
+      { url: `${config.storage.lighthouse.gatewayUrl}/ipfs/${cid}`, method: 'GET' },
+    ];
+
+    let lastError: Error | null = null;
+    for (const { url, method } of attempts) {
+      try {
+        const result = await fetch(url, { method });
+        if (result.ok) {
+          const arrayBuffer = await result.arrayBuffer();
+          return Buffer.from(arrayBuffer);
+        }
+
+        // Read the error body for diagnostic purposes
+        let errorBody = '';
+        try {
+          errorBody = await result.text();
+        } catch {
+          // ignore body read errors
+        }
+        console.error(
+          `[storage] Lighthouse gateway returned ${result.status} for CID ${cid} (${method} ${url})`,
+          errorBody ? `— ${errorBody.slice(0, 500)}` : ''
+        );
+        lastError = new AppError(
+          `Unable to fetch encrypted blob from Lighthouse (HTTP ${result.status})`,
+          result.status >= 400 && result.status < 500 ? 502 : result.status
+        );
+      } catch (error) {
+        console.error(`[storage] Lighthouse gateway network error for CID ${cid} (${method} ${url})`, error);
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
     }
-    const arrayBuffer = await result.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+
+    throw lastError ?? new AppError('Unable to fetch encrypted blob from Lighthouse');
   }
 
   private checksum(buffer: Buffer) {

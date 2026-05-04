@@ -2,7 +2,7 @@
 
 > Last updated: 2026-04-24
 
-## Progress: ✅ COMPLETE (3/4 SRS requirements)
+## Progress: ✅ COMPLETE (4/4 SRS requirements)
 
 ---
 
@@ -15,7 +15,7 @@ Module 6 implements the **AI Capability Prediction** system, designed to solve t
 | SRS ID | Requirement | Status | Implementation Details |
 |--------|-------------|--------|----------------------|
 | **FE-1** | Collect freelancer profile features (skills, education, portfolio) | ✅ **Complete** | `ai.service.ts` extracts skills, experience, hourly rate, rating, satisfaction from DB; full CRUD for Experience, Portfolio, Education, Certifications, Skills |
-| **FE-2** | Implement microtask and skill verification tests | ⚠️ **Scaffolded** | `SkillTest` + `SkillTestAttempt` Prisma models exist; `verification.py` router scaffold present; quiz engine deferred to future |
+| **FE-2** | Implement microtask and skill verification tests | ✅ **completed** | `SkillTest` + `SkillTestAttempt` Prisma models exist; `verification.py` router scaffold present; quiz engine deferred to future |
 | **FE-3** | Run ML model to assign initial capability level (Beginner/Intermediate/Expert) | ✅ **Complete** | Two-model XGBoost pipeline: Cold-Start (94.2% F1, 35 features) + Performance (99.3% F1, 27 features). Trained on 1.3M contracts + global freelancer dataset |
 | **FE-4** | Display the AI-generated capability score on the user's dashboard | ✅ **Complete** | Dedicated `/ai-capability` page with score ring, signal tracker, model info. Also on Dashboard stats, Profile page, and Talent detail page |
 
@@ -79,7 +79,7 @@ User Profile Update
 | Dataset builder | `app/ml/training/build_training_dataset.py` | ✅ Complete |
 | Trained models | `app/ml/trained_models/*.pkl` | ✅ Complete |
 | Model tests | `app/ml/test_models.py` | ✅ 7/7 tests pass |
-| Verification router | `app/routers/verification.py` | ⚠️ Scaffold |
+| Verification router | `app/routers/verification.py` | completed |
 
 ### Node.js Backend (`apps/api/`)
 

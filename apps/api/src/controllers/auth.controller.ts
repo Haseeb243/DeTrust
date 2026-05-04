@@ -10,7 +10,7 @@ function cookieOpts(maxAgeMs: number): CookieOptions {
   return {
     httpOnly: true,
     secure: !config.isDev,
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: maxAgeMs,
   };

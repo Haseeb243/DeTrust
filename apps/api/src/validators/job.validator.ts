@@ -29,6 +29,22 @@ export const createJobSchema = z.object({
   return data.hourlyRateMin !== undefined && data.hourlyRateMax !== undefined;
 }, {
   message: 'Fixed price jobs require budget, hourly jobs require rate range',
+}).refine(data => {
+  // Ensure hourly rate range is valid
+  if (data.hourlyRateMin !== undefined && data.hourlyRateMax !== undefined) {
+    return data.hourlyRateMin <= data.hourlyRateMax;
+  }
+  return true;
+}, {
+  message: 'Minimum hourly rate must be less than or equal to maximum hourly rate',
+}).refine(data => {
+  // Reject deadlines in the past
+  if (data.deadline) {
+    return new Date(data.deadline) > new Date();
+  }
+  return true;
+}, {
+  message: 'Job deadline cannot be in the past',
 });
 
 export const updateJobSchema = z.object({

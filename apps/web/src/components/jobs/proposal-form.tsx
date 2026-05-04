@@ -36,10 +36,20 @@ export function ProposalForm({
   const wordCount = proposalData.coverLetter.trim().split(/\s+/).filter(Boolean).length;
 
   const isHourly = job.type === 'HOURLY';
+  const isFixedPrice = job.type === 'FIXED_PRICE';
+
+  // Hourly rate range validation
   const rateMin = isHourly && job.hourlyRateMin ? Number(job.hourlyRateMin) : null;
   const rateMax = isHourly && job.hourlyRateMax ? Number(job.hourlyRateMax) : null;
   const rateOutOfRange = isHourly && rateMin !== null && rateMax !== null && proposalData.proposedRate > 0
     && (proposalData.proposedRate < rateMin || proposalData.proposedRate > rateMax);
+
+  // Fixed-price budget ceiling validation
+  const jobBudget = isFixedPrice && job.budget ? Number(job.budget) : null;
+  const bidOverBudget = isFixedPrice && jobBudget !== null && proposalData.proposedRate > 0
+    && proposalData.proposedRate > jobBudget;
+
+  const hasRateError = !!rateOutOfRange || !!bidOverBudget;
 
   const handleSubmit = async () => {
     if (!proposalData.coverLetter.trim()) { toast.error('Please write a cover letter'); return; }
@@ -47,6 +57,10 @@ export function ProposalForm({
     if (!proposalData.proposedRate || proposalData.proposedRate <= 0) { toast.error('Please enter a valid rate'); return; }
     if (rateOutOfRange) {
       toast.error(`Hourly rate must be between $${rateMin} and $${rateMax}/hr`);
+      return;
+    }
+    if (bidOverBudget) {
+      toast.error(`Bid cannot exceed the job budget of $${jobBudget}`);
       return;
     }
     await onSubmit(proposalData);
@@ -103,13 +117,13 @@ export function ProposalForm({
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-dt-text-muted">
-                Your {job.type === 'FIXED_PRICE' ? 'Bid' : 'Hourly Rate'} ($) *
+                Your {isFixedPrice ? 'Bid' : 'Hourly Rate'} ($) *
               </label>
               <input
                 type="number" value={proposalData.proposedRate || ''}
                 onChange={(e) => update('proposedRate', Number(e.target.value))}
-                placeholder={job.type === 'FIXED_PRICE' ? 'Enter your bid' : 'Enter your hourly rate'}
-                className={`w-full rounded-lg border px-3 py-2 ${rateOutOfRange ? 'border-red-400' : 'border-dt-border'}`}
+                placeholder={isFixedPrice ? 'Enter your bid' : 'Enter your hourly rate'}
+                className={`w-full rounded-lg border px-3 py-2 ${hasRateError ? 'border-red-400' : 'border-dt-border'}`}
               />
               {isHourly && rateMin !== null && rateMax !== null && (
                 <p className={`mt-1 text-xs ${rateOutOfRange ? 'text-red-500 font-medium' : 'text-dt-text-muted'}`}>
@@ -117,10 +131,16 @@ export function ProposalForm({
                   {rateOutOfRange && ' — your rate is outside this range'}
                 </p>
               )}
+              {isFixedPrice && jobBudget !== null && (
+                <p className={`mt-1 text-xs ${bidOverBudget ? 'text-red-500 font-medium' : 'text-dt-text-muted'}`}>
+                  Client&apos;s budget: ${jobBudget.toFixed(2)}
+                  {bidOverBudget && ' — your bid exceeds the budget'}
+                </p>
+              )}
               {proposalData.proposedRate > 0 && (
                 <div className="mt-2 rounded-lg border border-dt-border bg-dt-surface-alt/50 p-3 text-sm">
                   <div className="flex justify-between text-dt-text-muted">
-                    <span>Your {job.type === 'FIXED_PRICE' ? 'bid' : 'rate'}</span>
+                    <span>Your {isFixedPrice ? 'bid' : 'rate'}</span>
                     <span>${Number(proposalData.proposedRate).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-dt-text-muted">
@@ -147,7 +167,7 @@ export function ProposalForm({
               <Button variant="outline" onClick={() => setShowForm(false)} className="border-dt-border">
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} disabled={submitting || !!rateOutOfRange} className="bg-emerald-500 text-white hover:bg-emerald-600">
+              <Button onClick={handleSubmit} disabled={submitting || hasRateError} className="bg-emerald-500 text-white hover:bg-emerald-600">
                 {submitting ? <Spinner size="sm" /> : 'Submit Proposal'}
               </Button>
             </div>
