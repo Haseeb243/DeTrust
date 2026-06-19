@@ -155,8 +155,12 @@ pnpm contracts:deploy:local
 
 # 7. Start development (Terminal 3)
 pnpm dev
+
+# 8. Start ai-service (Terminal 4)
+cd /run/media/kali/D6445B45445B278F/detrust/apps/ai-service
+venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-cd apps/ai-service && app/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+
 ---
 
 ## 📚 Documentation
